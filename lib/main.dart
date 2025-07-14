@@ -202,13 +202,13 @@ class _HomePageState extends State<HomePage> {
     for (int y = 0; y < downsampledImage.height; y++) {
       for (int x = 0; x < downsampledImage.width; x++) {
         final pixel = downsampledImage.getPixel(x, y);
-        final imageColorValue =
-            ((pixel.a * 255).round() << 24) |
-            ((pixel.r * 255).round() << 16) |
-            ((pixel.g * 255).round() << 8) |
-            (pixel.b * 255).round();
-
-        final flutterColor = Color(imageColorValue);
+        final flutterColor = Color.fromARGB(
+          pixel.a.toInt(),
+          pixel.r.toInt(),
+          pixel.g.toInt(),
+          pixel.b.toInt(),
+        );
+        final imageColorValue = flutterColor.value;
 
         int colorIndex;
         if (colorIndexMap.containsKey(imageColorValue)) {
@@ -295,34 +295,39 @@ class _ImageTabViewState extends State<ImageTabView> {
         Expanded(
           child: InteractiveViewer(
             maxScale: 10.0,
-            child: Center(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Visibility(
-                    visible: _showBackground,
-                    maintainState: true,
-                    maintainAnimation: true,
-                    maintainSize: true,
-                    child: Image.memory(widget.tabData.imageData),
-                  ),
-                  if (widget.tabData.isConverted && _showVectors)
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: VectorPainter(
-                          objects: widget.tabData.vectorObjects,
-                          imageSize: widget.tabData.originalImageSize,
-                          fontSize:
-                              double.tryParse(
-                                Hive.box(
-                                  'settings',
-                                ).get('fontSize', defaultValue: '12'),
-                              ) ??
-                              12.0,
+            child: RepaintBoundary(
+              child: Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Visibility(
+                      visible: _showBackground,
+                      maintainState: true,
+                      maintainAnimation: true,
+                      maintainSize: true,
+                      child: Image.memory(widget.tabData.imageData),
+                    ),
+                    if (widget.tabData.isConverted && _showVectors)
+                      Positioned.fill(
+                        child: ValueListenableBuilder(
+                          valueListenable: Hive.box('settings').listenable(),
+                          builder: (context, box, _) {
+                            return CustomPaint(
+                              painter: VectorPainter(
+                                objects: widget.tabData.vectorObjects,
+                                imageSize: widget.tabData.originalImageSize,
+                                fontSize:
+                                    double.tryParse(
+                                      box.get('fontSize', defaultValue: '12'),
+                                    ) ??
+                                    12.0,
+                              ),
+                            );
+                          },
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -421,6 +426,29 @@ class VectorPainter extends CustomPainter {
     final offsetX = (canvasWidth - totalGridWidth) / 2;
     final offsetY = (canvasHeight - totalGridHeight) / 2;
 
+    final gridPaint = Paint()
+      ..color = Colors.red
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    for (int i = 0; i <= imageWidth; i++) {
+      final x = i * cellWidth + offsetX;
+      canvas.drawLine(
+        Offset(x, offsetY),
+        Offset(x, offsetY + totalGridHeight),
+        gridPaint,
+      );
+    }
+
+    for (int i = 0; i <= imageHeight; i++) {
+      final y = i * cellHeight + offsetY;
+      canvas.drawLine(
+        Offset(offsetX, y),
+        Offset(offsetX + totalGridWidth, y),
+        gridPaint,
+      );
+    }
+
     for (final obj in objects) {
       final rect = Rect.fromLTWH(
         obj.rect.left * cellWidth + offsetX,
@@ -428,12 +456,6 @@ class VectorPainter extends CustomPainter {
         obj.rect.width * cellWidth,
         obj.rect.height * cellHeight,
       );
-
-      final borderPaint = Paint()
-        ..color = Colors.red
-        ..strokeWidth = 1.0
-        ..style = PaintingStyle.stroke;
-      canvas.drawRect(rect, borderPaint);
 
       final textPainter = TextPainter(
         text: TextSpan(

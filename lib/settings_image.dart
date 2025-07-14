@@ -25,7 +25,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
   bool _printBackground = false;
   bool _isSaving = false;
   String _selectedPageFormat = 'A4';
-  bool _willClip = false;
   bool _centerImage = true;
   bool _isLandscape = false;
   int _selectedTabIndex = 0;
@@ -70,60 +69,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
     _selectedPageFormat = _settingsBox.get('pageFormat', defaultValue: 'A4');
     _centerImage = _settingsBox.get('centerImage', defaultValue: true);
     _isLandscape = _settingsBox.get('isLandscape', defaultValue: false);
-
-    _objectOutputSizeController.addListener(_validateClipping);
-    _customPageWidthController.addListener(_validateClipping);
-    _customPageHeightController.addListener(_validateClipping);
-    _outputBordersController.addListener(_validateClipping);
-    _validateClipping(); // Initial check
-  }
-
-  void _validateClipping() {
-    final imageSize = widget.tabData.originalImageSize;
-    if (imageSize == null) {
-      setState(() => _willClip = false);
-      return;
-    }
-
-    final objectSize = double.tryParse(_objectOutputSizeController.text);
-    if (objectSize == null) {
-      setState(() => _willClip = false);
-      return;
-    }
-
-    PdfPageFormat pageFormat;
-    if (_selectedPageFormat == 'Custom') {
-      final width = double.tryParse(_customPageWidthController.text) ?? 210;
-      final height = double.tryParse(_customPageHeightController.text) ?? 297;
-      pageFormat = PdfPageFormat(
-        width * PdfPageFormat.mm,
-        height * PdfPageFormat.mm,
-      );
-    } else {
-      pageFormat = _pageFormats[_selectedPageFormat]!;
-    }
-
-    if (_isLandscape) {
-      pageFormat = pageFormat.landscape;
-    }
-
-    final borderSize = double.tryParse(_outputBordersController.text) ?? 10.0;
-
-    final totalDrawingWidth = imageSize.width * objectSize;
-    final totalDrawingHeight = imageSize.height * objectSize;
-
-    final availableWidth =
-        (pageFormat.width / PdfPageFormat.mm) - (2 * borderSize);
-    final availableHeight =
-        (pageFormat.height / PdfPageFormat.mm) - (2 * borderSize);
-
-    final willClip =
-        totalDrawingWidth > availableWidth ||
-        totalDrawingHeight > availableHeight;
-
-    setState(() {
-      _willClip = willClip;
-    });
   }
 
   Future<void> _handlePdfGeneration() async {
@@ -258,7 +203,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       onChanged: (String? newValue) {
                         setState(() {
                           _selectedPageFormat = newValue!;
-                          _validateClipping();
                         });
                       },
                     ),
@@ -292,20 +236,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       onChanged: (bool? value) {
                         setState(() {
                           _isLandscape = value ?? false;
-                          _validateClipping();
                         });
                       },
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
                     ),
-                    if (_willClip)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          'Error: Output size exceeds paper size.',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ),
                     CheckboxListTile(
                       title: const Text('Center Image'),
                       value: _centerImage,
@@ -328,13 +263,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
                     ),
-                    const Spacer(),
                     if (_isSaving)
                       const CircularProgressIndicator()
                     else
                       ElevatedButton(
-                        onPressed:
-                            _willClip || widget.tabData.vectorObjects.isEmpty
+                        onPressed: widget.tabData.vectorObjects.isEmpty
                             ? null
                             : _handlePdfGeneration,
                         child: const Text('Generate PDF'),
@@ -395,16 +328,12 @@ class _SettingsDialogState extends State<SettingsDialog> {
   @override
   void dispose() {
     _downsampleScaleController.dispose();
-    _objectOutputSizeController.removeListener(_validateClipping);
     _objectOutputSizeController.dispose();
     _maxObjectColorsController.dispose();
     _fontSizeController.dispose();
     _outputFontSizeController.dispose();
-    _customPageWidthController.removeListener(_validateClipping);
     _customPageWidthController.dispose();
-    _customPageHeightController.removeListener(_validateClipping);
     _customPageHeightController.dispose();
-    _outputBordersController.removeListener(_validateClipping);
     _outputBordersController.dispose();
     super.dispose();
   }
