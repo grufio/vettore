@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:pdf/pdf.dart';
-import 'package:vettore/main.dart'; // Import TabData
+import 'package:vettore/project_model.dart';
 import 'package:vettore/pdf_generator.dart'; // Import the new generator
 
 class SettingsDialog extends StatefulWidget {
-  final TabData tabData;
-  const SettingsDialog({super.key, required this.tabData});
+  final Project project;
+  const SettingsDialog({super.key, required this.project});
 
   @override
   State<SettingsDialog> createState() => _SettingsDialogState();
@@ -91,12 +91,12 @@ class _SettingsDialogState extends State<SettingsDialog> {
     }
 
     await generateVectorPdf(
-      vectorObjects: widget.tabData.vectorObjects,
-      imageSize: widget.tabData.originalImageSize!,
+      vectorObjects: widget.project.vectorObjects,
+      imageSize: Size(widget.project.imageWidth!, widget.project.imageHeight!),
       objectOutputSize: double.parse(_objectOutputSizeController.text),
       fontSize: double.parse(_outputFontSizeController.text),
       printBackground: _printBackground,
-      originalImageData: widget.tabData.imageData,
+      originalImageData: widget.project.imageData,
       pageFormat: pageFormat,
       centerImage: _centerImage,
       outputBorders: double.tryParse(_outputBordersController.text) ?? 10.0,
@@ -267,7 +267,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       const CircularProgressIndicator()
                     else
                       ElevatedButton(
-                        onPressed: widget.tabData.vectorObjects.isEmpty
+                        onPressed: widget.project.vectorObjects.isEmpty
                             ? null
                             : _handlePdfGeneration,
                         child: const Text('Generate PDF'),
