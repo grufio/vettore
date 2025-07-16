@@ -52,18 +52,23 @@ class VectorObject {
   Rect get rect => Rect.fromLTWH(left, top, width, height);
   Color get color => Color(colorValue);
 
-  void findClosestColor(List<Color> palette) {
+  int findClosestColor(List<Color> palette) {
+    if (palette.isEmpty) return -1;
+
     int minDistance = 1000000;
-    for (final color in palette) {
+    Color closestColor = palette.first;
+
+    for (final pColor in palette) {
       final distance =
-          (color.red - red).abs() +
-          (color.green - green).abs() +
-          (color.blue - blue).abs();
+          (pColor.red - color.red).abs() +
+          (pColor.green - color.green).abs() +
+          (pColor.blue - color.blue).abs();
+
       if (distance < minDistance) {
         minDistance = distance;
-        final closestColor = Color.fromARGB(255, red, green, blue);
-        colorIndex = palette.indexOf(closestColor);
+        closestColor = pColor;
       }
     }
+    return palette.indexOf(closestColor);
   }
 }

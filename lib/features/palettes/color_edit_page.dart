@@ -370,7 +370,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   }
 }
 
-class _ComponentDialog extends ConsumerStatefulWidget {
+class _ComponentDialog extends StatefulWidget {
   final ColorComponent? component;
   final Function(ColorComponent) onSave;
 

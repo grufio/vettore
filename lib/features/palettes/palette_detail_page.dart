@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/color_edit_page.dart';
+import 'package:vettore/features/palettes/color_edit_page.dart';
 import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/providers/palette_provider.dart';

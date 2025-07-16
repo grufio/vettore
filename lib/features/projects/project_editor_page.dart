@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/color_settings.dart';
-import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/settings_image.dart';
+import 'package:vettore/models/project_model.dart';
 import 'package:vettore/models/vector_object_model.dart';
+import 'package:vettore/providers/project_provider.dart';
+import 'package:vettore/services/project_service.dart';
+import 'package:vettore/features/projects/widgets/settings_dialog.dart';
+import 'package:vettore/widgets/color_settings_dialog.dart';
 
 class ProjectEditorPage extends ConsumerStatefulWidget {
   final int projectKey;
 
   const ProjectEditorPage({super.key, required this.projectKey});
-
   @override
   ConsumerState<ProjectEditorPage> createState() => _ProjectEditorPageState();
 }
@@ -28,7 +29,8 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage> {
     }
     showDialog(
       context: context,
-      builder: (context) => ColorSettingsDialog(colors: []), // TODO: Fix this
+      builder: (context) =>
+          const ColorSettingsDialog(colors: []), // TODO: Fix this
     );
   }
 
@@ -46,13 +48,11 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage> {
   @override
   Widget build(BuildContext context) {
     final project = ref.watch(projectProvider(widget.projectKey));
-
     if (project == null) {
       return const Scaffold(
         body: Center(child: Text('Project not found or has been deleted.')),
       );
     }
-
     return Scaffold(
       appBar: AppBar(title: Text(project.name)),
       body: Row(
@@ -161,69 +161,50 @@ class VectorPainter extends CustomPainter {
   final List<VectorObject> objects;
   final Size? imageSize;
   final double fontSize;
-
   VectorPainter({
     required this.objects,
     required this.imageSize,
     required this.fontSize,
   });
-
   @override
   void paint(Canvas canvas, Size size) {
     if (imageSize == null || objects.isEmpty) return;
-
     final imageWidth = imageSize!.width;
     final imageHeight = imageSize!.height;
     if (imageWidth == 0 || imageHeight == 0) return;
-
     final canvasWidth = size.width;
     final canvasHeight = size.height;
-
     final scaleX = canvasWidth / imageWidth;
     final scaleY = canvasHeight / imageHeight;
     final scale = scaleX < scaleY ? scaleX : scaleY;
-
     final cellWidth = scale;
     final cellHeight = scale;
     final totalGridWidth = imageWidth * cellWidth;
     final totalGridHeight = imageHeight * cellHeight;
-
     final offsetX = (canvasWidth - totalGridWidth) / 2;
     final offsetY = (canvasHeight - totalGridHeight) / 2;
-
     final gridPaint = Paint()
       ..color = Colors.red
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke
-      ..strokeJoin = StrokeJoin
-          .bevel // This prevents corner overlap.
+      ..strokeJoin = StrokeJoin.bevel
       ..isAntiAlias = false;
-
-    // Step 1: Draw the outer border as a single, clean rectangle.
     canvas.drawRect(
       Rect.fromLTWH(offsetX, offsetY, totalGridWidth, totalGridHeight),
       gridPaint,
     );
-
-    // Step 2: Draw only the inner lines.
     final innerLinesPath = Path();
-
-    // Add inner vertical lines to the path
     for (int i = 1; i < imageWidth; i++) {
       final x = offsetX + i * cellWidth;
       innerLinesPath.moveTo(x, offsetY);
       innerLinesPath.lineTo(x, offsetY + totalGridHeight);
     }
-
-    // Add inner horizontal lines to the path
     for (int i = 1; i < imageHeight; i++) {
       final y = offsetY + i * cellHeight;
       innerLinesPath.moveTo(offsetX, y);
       innerLinesPath.lineTo(offsetX + totalGridWidth, y);
     }
-
     canvas.drawPath(innerLinesPath, gridPaint);
-
     for (final obj in objects) {
       final rect = Rect.fromLTWH(
         obj.rect.left * cellWidth + offsetX,
@@ -231,7 +212,6 @@ class VectorPainter extends CustomPainter {
         cellWidth,
         cellHeight,
       );
-
       final textPainter = TextPainter(
         text: TextSpan(
           text: obj.colorIndex.toString(),

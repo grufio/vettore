@@ -37,8 +37,8 @@ final projectListProvider =
       );
     });
 
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+class ProjectOverviewPage extends ConsumerWidget {
+  const ProjectOverviewPage({super.key});
 
   Future<void> _deleteProject(
     BuildContext context,
