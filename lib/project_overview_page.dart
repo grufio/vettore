@@ -69,7 +69,7 @@ class HomePage extends ConsumerWidget {
     );
 
     if (confirmed == true) {
-      await ref.read(projectListProvider.notifier).deleteProject(key);
+      await ref.read(projectListProvider.notifier).deleteProject(key as int);
     }
   }
 
@@ -148,7 +148,7 @@ class HomePage extends ConsumerWidget {
                       color: Colors.white,
                       tooltip: 'Delete Project',
                       onPressed: () =>
-                          _deleteProject(context, ref, project.key),
+                          _deleteProject(context, ref, project.key as int),
                     ),
                   ),
                   child: Image.memory(project.thumbnailData, fit: BoxFit.cover),

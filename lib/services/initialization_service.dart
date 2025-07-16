@@ -47,6 +47,7 @@ class InitializationService {
     await _openBoxSafely<Palette>('palettes');
     await _openBoxSafely<Project>('projects');
     await _openBoxSafely<VendorColor>('vendor_colors');
+    await _openBoxSafely<ColorComponent>('color_components');
   }
 
   Future<void> _openBoxSafely<T>(String name) async {

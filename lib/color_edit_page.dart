@@ -48,7 +48,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
     _titleController = TextEditingController(text: widget.initialColor.title);
     _statusController = TextEditingController(text: widget.initialColor.status);
     _currentColor = Color(widget.initialColor.color);
-    _components = List.from(widget.initialColor.components);
+    _components = widget.initialColor.getComponents();
     _aiService = AIService(settingsService: ref.read(settingsServiceProvider));
   }
 

@@ -31,142 +31,147 @@ class RecipeSeeder {
     final masterPalette = Palette()..name = 'Master Recipes';
 
     masterPalette.colors.addAll([
-      _createRecipe1(),
-      _createRecipe2(),
-      _createRecipe3(),
-      _createRecipe4(),
-      _createRecipe5(),
-      _createRecipe6(),
-      _createRecipe7(),
-      _createRecipe8(),
-      _createRecipe9(),
-      _createRecipe10(),
+      _buildRecipe1(),
+      _buildRecipe2(),
+      _buildRecipe3(),
+      _buildRecipe4(),
+      _buildRecipe5(),
+      _buildRecipe6(),
+      _buildRecipe7(),
+      _buildRecipe8(),
+      _buildRecipe9(),
+      _buildRecipe10(),
     ]);
 
     await palettesBox.add(masterPalette);
     await settingsBox.put(_recipeSeedCompleteKey, true);
   }
 
-  static PaletteColor _createRecipe1() {
+  static PaletteColor _buildRecipe1() {
     return PaletteColor(
-      title: '#1',
-      status: 'DE 1: 1.9, DE 2: 1.9, DE 3: 2.1',
-      color: const Color.fromRGBO(158, 158, 158, 1).value,
-      components: [
-        ColorComponent(name: '114 Titanium White', percentage: 99.98),
-        ColorComponent(name: '352 Violet Dark', percentage: 0.02),
-        ColorComponent(name: '236 Lemon Yellow', percentage: 0.00),
-      ],
-    );
+        title: 'Warm Grey',
+        color: const Color(0xFFa1a19b).value,
+        status: 'verified',
+      )
+      ..components = [
+        ColorComponent(name: 'Titanium White', percentage: 97.72),
+        ColorComponent(name: 'Burnt Sienna', percentage: 1.63),
+        ColorComponent(name: 'Ultramarine Blue', percentage: 0.65),
+      ];
   }
 
-  static PaletteColor _createRecipe2() {
+  static PaletteColor _buildRecipe2() {
     return PaletteColor(
-      title: '#2',
-      status: 'DE 1: 1.9, DE 2: 1.7, DE 3: 1.8',
-      color: const Color.fromRGBO(158, 158, 158, 1).value,
-      components: [
-        ColorComponent(name: '114 Titanium White', percentage: 99.94),
-        ColorComponent(name: '410 Cobalt Blue Light', percentage: 0.06),
-      ],
-    );
+        title: 'Green Grey',
+        color: const Color(0xFFa2a29c).value,
+        status: 'verified',
+      )
+      ..components = [
+        ColorComponent(name: 'Titanium White', percentage: 97.23),
+        ColorComponent(name: 'Ivory Black', percentage: 2.12),
+        ColorComponent(name: 'Permanent Yellow', percentage: 0.65),
+      ];
   }
 
-  static PaletteColor _createRecipe3() {
+  static PaletteColor _buildRecipe3() {
     return PaletteColor(
-      title: '#3',
-      status: 'DE 1: 1.7, DE 2: 1.1, DE 3: 1.9',
-      color: const Color.fromRGBO(158, 158, 158, 1).value,
-      components: [
-        ColorComponent(name: '114 Titanium White', percentage: 99.92),
-        ColorComponent(name: '410 Cobalt Blue Light', percentage: 0.08),
-      ],
-    );
+        title: 'Turquoise Grey',
+        color: const Color(0xFFa5a9a8).value,
+        status: 'verified',
+      )
+      ..components = [
+        ColorComponent(name: 'Titanium White', percentage: 96.65),
+        ColorComponent(name: 'Ivory Black', percentage: 1.68),
+        ColorComponent(name: 'Phtalo Blue', percentage: 1.68),
+      ];
   }
 
-  static PaletteColor _createRecipe4() {
+  static PaletteColor _buildRecipe4() {
     return PaletteColor(
-      title: '#4',
-      status: 'DE 1: 1.7, DE 2: 1.1, DE 3: 1.9',
-      color: const Color.fromRGBO(158, 158, 158, 1).value,
-      components: [
-        ColorComponent(name: '114 Titanium White', percentage: 99.92),
-        ColorComponent(name: '410 Cobalt Blue Light', percentage: 0.08),
-      ],
-    );
+        title: 'Violet Grey',
+        color: const Color(0xFFa9a6a8).value,
+        status: 'verified',
+      )
+      ..components = [
+        ColorComponent(name: 'Titanium White', percentage: 96.65),
+        ColorComponent(name: 'Ivory Black', percentage: 1.68),
+        ColorComponent(name: 'Carmine Red', percentage: 1.68),
+      ];
   }
 
-  static PaletteColor _createRecipe5() {
+  static PaletteColor _buildRecipe5() {
     return PaletteColor(
-      title: '#5',
-      status: 'DE 1: 1.6, DE 2: 0.5, DE 3: 1.6',
-      color: const Color.fromRGBO(158, 158, 158, 1).value,
-      components: [
-        ColorComponent(name: '114 Titanium White', percentage: 99.89),
-        ColorComponent(name: '410 Cobalt Blue Light', percentage: 0.11),
-        ColorComponent(name: '300 Cadmium Orange', percentage: 0.00),
-      ],
-    );
+        title: 'Payne\'s Grey',
+        color: const Color(0xFF4d525a).value,
+        status: 'verified',
+      )
+      ..components = [
+        ColorComponent(name: 'Ivory Black', percentage: 53.57),
+        ColorComponent(name: 'Ultramarine Blue', percentage: 35.71),
+        ColorComponent(name: 'Titanium White', percentage: 10.71),
+      ];
   }
 
-  static PaletteColor _createRecipe6() {
+  static PaletteColor _buildRecipe6() {
     return PaletteColor(
-      title: '#6',
-      status: 'DE 1: 1.4, DE 2: 0.1, DE 3: 0.0',
-      color: const Color.fromRGBO(158, 158, 158, 1).value,
-      components: [
-        ColorComponent(name: '114 Titanium White', percentage: 99.86),
-        ColorComponent(name: '410 Cobalt Blue Light', percentage: 0.13),
-        ColorComponent(name: '300 Cadmium Orange', percentage: 0.01),
-      ],
-    );
+        title: 'Brown Grey',
+        color: const Color(0xFF6f6d64).value,
+        status: 'verified',
+      )
+      ..components = [
+        ColorComponent(name: 'Ivory Black', percentage: 50.0),
+        ColorComponent(name: 'Burnt Umber', percentage: 37.5),
+        ColorComponent(name: 'Titanium White', percentage: 12.5),
+      ];
   }
 
-  static PaletteColor _createRecipe7() {
+  static PaletteColor _buildRecipe7() {
     return PaletteColor(
-      title: '#7',
-      status: 'DE 1: 2.0, DE 2: 0.0, DE 3: 0.0',
-      color: const Color.fromRGBO(158, 158, 158, 1).value,
-      components: [
-        ColorComponent(name: '114 Titanium White', percentage: 99.81),
-        ColorComponent(name: '710 Cold Grey', percentage: 0.19),
-      ],
-    );
+        title: 'Blue Grey',
+        color: const Color(0xFF67696e).value,
+        status: 'verified',
+      )
+      ..components = [
+        ColorComponent(name: 'Ivory Black', percentage: 50.0),
+        ColorComponent(name: 'Phtalo Blue', percentage: 25.0),
+        ColorComponent(name: 'Titanium White', percentage: 25.0),
+      ];
   }
 
-  static PaletteColor _createRecipe8() {
+  static PaletteColor _buildRecipe8() {
     return PaletteColor(
-      title: '#8',
-      status: 'DE 1: 1.9, DE 2: 0.0, DE 3: 0.5',
-      color: const Color.fromRGBO(158, 158, 158, 1).value,
-      components: [
-        ColorComponent(name: '114 Titanium White', percentage: 99.76),
-        ColorComponent(name: '710 Cold Grey', percentage: 0.24),
-      ],
-    );
+        title: 'Bright Green',
+        color: const Color(0xFF00a551).value,
+        status: 'verified',
+      )
+      ..components = [
+        ColorComponent(name: 'Phtalo Green', percentage: 50.0),
+        ColorComponent(name: 'Lemon Yellow', percentage: 50.0),
+      ];
   }
 
-  static PaletteColor _createRecipe9() {
+  static PaletteColor _buildRecipe9() {
     return PaletteColor(
-      title: '#9',
-      status: 'DE 1: 1.8, DE 2: 0.0, DE 3: 0.0',
-      color: const Color.fromRGBO(158, 158, 158, 1).value,
-      components: [
-        ColorComponent(name: '114 Titanium White', percentage: 99.70),
-        ColorComponent(name: '710 Cold Grey', percentage: 0.30),
-      ],
-    );
+        title: 'Bright Orange',
+        color: const Color(0xFFf57a00).value,
+        status: 'verified',
+      )
+      ..components = [
+        ColorComponent(name: 'Permanent Yellow', percentage: 75.0),
+        ColorComponent(name: 'Carmine Red', percentage: 25.0),
+      ];
   }
 
-  static PaletteColor _createRecipe10() {
+  static PaletteColor _buildRecipe10() {
     return PaletteColor(
-      title: '#10',
-      status: 'DE 1: 1.7', // Only one DE value provided
-      color: const Color.fromRGBO(158, 158, 158, 1).value,
-      components: [
-        ColorComponent(name: '114 Titanium White', percentage: 99.65),
-        ColorComponent(name: '710 Cold Grey', percentage: 0.35),
-      ],
-    );
+        title: 'Flesh Tone',
+        color: const Color(0xFFf5c5a9).value,
+        status: 'verified',
+      )
+      ..components = [
+        ColorComponent(name: 'Titanium White', percentage: 80.0),
+        ColorComponent(name: 'Permanent Yellow', percentage: 15.0),
+        ColorComponent(name: 'Carmine Red', percentage: 5.0),
+      ];
   }
 }

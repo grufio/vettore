@@ -4,7 +4,7 @@ import 'package:vettore/models/palette_color.dart';
 part 'palette_model.g.dart';
 
 @HiveType(typeId: 1)
-class Palette extends HiveObject {
+class Palette {
   @HiveField(0)
   late String name;
 
@@ -17,6 +17,9 @@ class Palette extends HiveObject {
   @HiveField(3)
   double factor = 1.5;
 
+  @HiveField(4)
+  int? key;
+
   Palette();
 
   // Copy constructor
@@ -27,7 +30,21 @@ class Palette extends HiveObject {
     );
     sizeInMl = other.sizeInMl;
     factor = other.factor;
-    // Note: We don't copy the key from 'other' because this should be a new object
-    // or an object that already has a key.
+    key = other.key;
+  }
+
+  Palette copyWith({
+    String? name,
+    List<PaletteColor>? colors,
+    double? sizeInMl,
+    double? factor,
+    int? key,
+  }) {
+    return Palette.from(this)
+      ..name = name ?? this.name
+      ..colors = colors ?? this.colors.map((c) => PaletteColor.from(c)).toList()
+      ..sizeInMl = sizeInMl ?? this.sizeInMl
+      ..factor = factor ?? this.factor
+      ..key = key ?? this.key;
   }
 }

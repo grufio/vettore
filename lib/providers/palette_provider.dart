@@ -5,6 +5,7 @@ import 'package:vettore/models/color_component_model.dart';
 import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/repositories/palette_repository.dart';
+import 'package:hive/hive.dart';
 
 final paletteProvider = StateNotifierProvider.autoDispose
     .family<PaletteNotifier, Palette?, int>((ref, paletteKey) {
@@ -22,41 +23,44 @@ class PaletteNotifier extends StateNotifier<Palette?> {
 
   PaletteNotifier(super.palette, this._paletteRepository);
 
-  void updateDetails({
+  Future<void> updateDetails({
     required String name,
     required double size,
     required double factor,
-  }) {
+  }) async {
     if (state == null) return;
-    state = state!
-      ..name = name
-      ..sizeInMl = size
-      ..factor = factor;
-    _paletteRepository.updatePalette(state!);
-    // To ensure the state is a "live" object from the box, we re-fetch it.
-    state = _paletteRepository.getPalette(state!.key);
+    final newState = state!.copyWith(
+      name: name,
+      sizeInMl: size,
+      factor: factor,
+    );
+    await _paletteRepository.updatePalette(newState);
+    state = newState;
   }
 
   Future<void> addNewColor(PaletteColor color) async {
     if (state == null) return;
-    state!.colors.add(color);
-    await _paletteRepository.updatePalette(state!);
-    state = _paletteRepository.getPalette(state!.key);
+    final newColors = List<PaletteColor>.from(state!.colors)..add(color);
+    final newState = state!.copyWith(colors: newColors);
+    await _paletteRepository.updatePalette(newState);
+    state = newState;
   }
 
   Future<void> updateColor(int index, PaletteColor color) async {
     if (state == null) return;
-    await _paletteRepository.updateColor(state!, index, color);
-    // Re-fetch to ensure the state is a "live" object from the box.
-    state = _paletteRepository.getPalette(state!.key);
+    final newColors = List<PaletteColor>.from(state!.colors);
+    newColors[index] = color;
+    final newState = state!.copyWith(colors: newColors);
+    await _paletteRepository.updatePalette(newState);
+    state = newState;
   }
 
-  void deleteColor(int index) {
+  Future<void> deleteColor(int index) async {
     if (state == null) return;
-    state!.colors.removeAt(index);
-    _paletteRepository.updatePalette(state!);
-    // Re-fetch to get the live object
-    state = _paletteRepository.getPalette(state!.key);
+    final newColors = List<PaletteColor>.from(state!.colors)..removeAt(index);
+    final newState = state!.copyWith(colors: newColors);
+    await _paletteRepository.updatePalette(newState);
+    state = newState;
   }
 }
 
@@ -78,15 +82,25 @@ class PaletteListNotifier extends StateNotifier<List<Palette>> {
   }
 
   void _updateState() {
-    state = _paletteRepository.getPalettesListenable().value.values.toList();
+    final box = _paletteRepository.getPalettesListenable().value;
+    final List<Palette> palettes = [];
+    for (final key in box.keys) {
+      final palette = box.get(key);
+      if (palette != null) {
+        // Manually assign the key to the palette object
+        palette.key = key;
+        palettes.add(palette);
+      }
+    }
+    state = palettes;
   }
 
   Future<void> addPalette(Palette palette) async {
     await _paletteRepository.addPalette(palette);
   }
 
-  Future<void> deletePalette(Palette palette) async {
-    await _paletteRepository.deletePalette(palette);
+  Future<void> deletePalette(int key) async {
+    await _paletteRepository.deletePalette(key);
   }
 
   @override

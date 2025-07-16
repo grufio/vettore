@@ -14,15 +14,21 @@ class PaletteColor {
   @HiveField(2)
   String status;
 
+  @deprecated
   @HiveField(3)
   List<ColorComponent> components;
+
+  @HiveField(4)
+  List<int> componentKeys;
 
   PaletteColor({
     required this.title,
     required this.color,
     this.status = '',
     List<ColorComponent>? components,
-  }) : components = components ?? [];
+    List<int>? componentKeys,
+  }) : components = components ?? [],
+       componentKeys = componentKeys ?? [];
 
   PaletteColor.from(PaletteColor other)
     : title = other.title,
@@ -30,5 +36,14 @@ class PaletteColor {
       status = other.status,
       components = List<ColorComponent>.from(
         other.components.map((c) => ColorComponent.from(c)),
-      );
+      ),
+      componentKeys = List<int>.from(other.componentKeys);
+
+  List<ColorComponent> getComponents() {
+    final box = Hive.box<ColorComponent>('color_components');
+    return componentKeys
+        .map((key) => box.get(key)!)
+        .where((c) => c != null)
+        .toList();
+  }
 }

@@ -29,11 +29,12 @@ class PalettesOverview extends ConsumerWidget {
             ),
             TextButton(
               child: const Text('Save'),
-              onPressed: () {
+              onPressed: () async {
                 if (nameController.text.isNotEmpty) {
-                  ref
+                  await ref
                       .read(paletteListProvider.notifier)
                       .addPalette(Palette()..name = nameController.text);
+                  if (!context.mounted) return;
                   Navigator.of(context).pop();
                 }
               },
@@ -64,8 +65,11 @@ class PalettesOverview extends ConsumerWidget {
             ),
             TextButton(
               child: const Text('Delete'),
-              onPressed: () {
-                ref.read(paletteListProvider.notifier).deletePalette(palette);
+              onPressed: () async {
+                await ref
+                    .read(paletteListProvider.notifier)
+                    .deletePalette(palette.key!);
+                if (!context.mounted) return;
                 Navigator.of(context).pop();
               },
             ),
@@ -94,11 +98,12 @@ class PalettesOverview extends ConsumerWidget {
                 margin: const EdgeInsets.all(8.0),
                 child: InkWell(
                   onTap: () {
+                    if (palette.key == null) return;
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            PaletteDetailPage(paletteKey: palette.key),
+                            PaletteDetailPage(paletteKey: palette.key!),
                       ),
                     );
                   },
@@ -123,7 +128,7 @@ class PalettesOverview extends ConsumerWidget {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => PaletteDetailPage(
-                                        paletteKey: palette.key,
+                                        paletteKey: palette.key!,
                                       ),
                                     ),
                                   );
@@ -132,11 +137,13 @@ class PalettesOverview extends ConsumerWidget {
                               IconButton(
                                 icon: const Icon(Icons.delete),
                                 tooltip: 'Delete Palette',
-                                onPressed: () => _showDeleteConfirmDialog(
-                                  context,
-                                  ref,
-                                  palette,
-                                ),
+                                onPressed: () {
+                                  _showDeleteConfirmDialog(
+                                    context,
+                                    ref,
+                                    palette,
+                                  );
+                                },
                               ),
                             ],
                           ),

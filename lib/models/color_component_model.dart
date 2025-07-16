@@ -3,7 +3,7 @@ import 'package:hive/hive.dart';
 part 'color_component_model.g.dart';
 
 @HiveType(typeId: 6)
-class ColorComponent extends HiveObject {
+class ColorComponent {
   @HiveField(0)
   String name;
 
