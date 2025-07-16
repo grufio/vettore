@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:pdf/pdf.dart';
-import 'package:vettore/project_model.dart';
+import 'package:vettore/models/project_model.dart';
 import 'package:vettore/pdf_generator.dart'; // Import the new generator
 
 class SettingsDialog extends StatefulWidget {

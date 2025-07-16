@@ -1,50 +1,35 @@
-import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:image/image.dart' as img;
-import 'package:path/path.dart' as p;
-import 'package:vettore/color_settings.dart';
-import 'package:vettore/palette_model.dart';
-import 'package:vettore/palettes_overview.dart';
-import 'package:vettore/settings_image.dart';
-import 'package:vettore/palette_color.dart';
-import 'package:vettore/project_model.dart';
-import 'package:vettore/vector_object_model.dart';
-import 'package:vettore/project_editor_page.dart';
-import 'package:vettore/project_overview_page.dart';
-import 'package:vettore/data/color_seeder.dart';
-import 'package:vettore/vendor_color_model.dart';
-import 'package:vettore/color_component_model.dart';
 import 'package:vettore/loading_page.dart';
+import 'package:vettore/models/palette_model.dart';
+import 'package:vettore/models/project_model.dart';
+import 'package:vettore/repositories/palette_repository.dart';
+import 'package:vettore/repositories/project_repository.dart';
+import 'package:vettore/services/initialization_service.dart';
+import 'package:vettore/services/project_service.dart';
 
-Future<void> _openBoxSafely<T>(String name) async {
-  try {
-    await Hive.openBox<T>(name);
-  } on HiveError catch (e) {
-    debugPrint('Error opening box $name: $e. Deleting and recreating.');
-    await Hive.deleteBoxFromDisk(name);
-    await Hive.openBox<T>(name);
-  }
-}
+final initializationProvider = FutureProvider<void>((ref) async {
+  final initializationService = InitializationService();
+  await initializationService.initialize();
+});
 
-Future<void> main() async {
-  await Hive.initFlutter();
-  Hive.registerAdapter(PaletteAdapter());
-  Hive.registerAdapter(PaletteColorAdapter());
-  Hive.registerAdapter(VectorObjectAdapter());
-  Hive.registerAdapter(ProjectAdapter());
-  Hive.registerAdapter(VendorColorAdapter());
-  Hive.registerAdapter(ColorComponentAdapter());
+final paletteRepositoryProvider = Provider<PaletteRepository>((ref) {
+  final box = Hive.box<Palette>('palettes');
+  return PaletteRepository(box);
+});
 
-  await _openBoxSafely('settings');
-  await _openBoxSafely<Palette>('palettes');
-  await _openBoxSafely<Project>('projects');
-  await _openBoxSafely<VendorColor>('vendor_colors');
+final projectRepositoryProvider = Provider<ProjectRepository>((ref) {
+  final box = Hive.box<Project>('projects');
+  return ProjectRepository(box);
+});
 
-  runApp(const MyApp());
+final projectServiceProvider = Provider<ProjectService>((ref) {
+  return ProjectService();
+});
+
+void main() {
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {

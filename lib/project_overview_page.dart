@@ -2,25 +2,53 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
-import 'package:vettore/palette_model.dart';
+import 'package:vettore/main.dart';
 import 'package:vettore/palettes_overview.dart';
 import 'package:vettore/project_editor_page.dart';
-import 'package:vettore/project_model.dart';
+import 'package:vettore/models/project_model.dart';
+import 'package:vettore/repositories/project_repository.dart';
+import 'package:vettore/services/project_service.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class ProjectListNotifier extends StateNotifier<List<Project>> {
+  final ProjectRepository _projectRepository;
+  final ProjectService _projectService;
 
-  @override
-  State<HomePage> createState() => _HomePageState();
+  ProjectListNotifier(this._projectRepository, this._projectService)
+    : super(_projectRepository.getProjects());
+
+  Future<void> createNewProject() async {
+    final newProject = await _projectService.createProjectFromFile();
+    if (newProject != null) {
+      await _projectRepository.addProject(newProject);
+      state = _projectRepository.getProjects();
+    }
+  }
+
+  Future<void> deleteProject(int key) async {
+    await _projectRepository.deleteProject(key);
+    state = _projectRepository.getProjects();
+  }
 }
 
-class _HomePageState extends State<HomePage> {
-  final Box<Project> _projectsBox = Hive.box<Project>('projects');
+final projectListProvider =
+    StateNotifierProvider<ProjectListNotifier, List<Project>>((ref) {
+      return ProjectListNotifier(
+        ref.watch(projectRepositoryProvider),
+        ref.watch(projectServiceProvider),
+      );
+    });
 
-  Future<void> _deleteProject(dynamic key) async {
+class HomePage extends ConsumerWidget {
+  const HomePage({super.key});
+
+  Future<void> _deleteProject(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic key,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -45,53 +73,18 @@ class _HomePageState extends State<HomePage> {
     );
 
     if (confirmed == true) {
-      await _projectsBox.delete(key);
+      await ref.read(projectListProvider.notifier).deleteProject(key);
     }
   }
 
-  void _pickImages() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: true,
-    );
-
-    if (result != null) {
-      dynamic firstProjectKey;
-
-      for (var file in result.files) {
-        if (file.path != null) {
-          final imageData = await File(file.path!).readAsBytes();
-          final originalImage = img.decodeImage(imageData);
-          if (originalImage == null) continue;
-
-          // Create a thumbnail
-          final thumbnail = img.copyResize(originalImage, width: 200);
-          final thumbnailData = img.encodePng(thumbnail);
-
-          final project = Project()
-            ..name = p.basename(file.path!)
-            ..imageData = imageData
-            ..thumbnailData = thumbnailData;
-
-          final newKey = await _projectsBox.add(project);
-          firstProjectKey ??= newKey;
-        }
-      }
-
-      if (firstProjectKey != null && mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                ProjectEditorPage(projectKey: firstProjectKey),
-          ),
-        );
-      }
-    }
+  Future<void> _pickImages(BuildContext context, WidgetRef ref) async {
+    await ref.read(projectListProvider.notifier).createNewProject();
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projects = ref.watch(projectListProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Projects'),
@@ -108,10 +101,9 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: ValueListenableBuilder(
-        valueListenable: _projectsBox.listenable(),
-        builder: (context, Box<Project> box, _) {
-          if (box.values.isEmpty) {
+      body: Builder(
+        builder: (context) {
+          if (projects.isEmpty) {
             return const Center(
               child: Text('No projects yet. Click + to add one.'),
             );
@@ -124,9 +116,9 @@ class _HomePageState extends State<HomePage> {
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
             ),
-            itemCount: box.length,
+            itemCount: projects.length,
             itemBuilder: (context, index) {
-              final project = box.getAt(index)!;
+              final project = projects[index];
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -149,7 +141,8 @@ class _HomePageState extends State<HomePage> {
                       icon: const Icon(Icons.delete),
                       color: Colors.white,
                       tooltip: 'Delete Project',
-                      onPressed: () => _deleteProject(project.key),
+                      onPressed: () =>
+                          _deleteProject(context, ref, project.key),
                     ),
                   ),
                   child: Image.memory(project.thumbnailData, fit: BoxFit.cover),
@@ -160,7 +153,7 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _pickImages,
+        onPressed: () => _pickImages(context, ref),
         tooltip: 'Add Project',
         child: const Icon(Icons.add),
       ),

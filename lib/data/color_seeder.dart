@@ -2,7 +2,7 @@ import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:hive/hive.dart';
-import 'package:vettore/vendor_color_model.dart';
+import 'package:vettore/models/vendor_color_model.dart';
 
 class ColorSeeder {
   static const String _vendorColorBoxName = 'vendor_colors';

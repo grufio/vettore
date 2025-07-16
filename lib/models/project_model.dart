@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:hive/hive.dart';
-import 'package:vettore/palette_color.dart';
-import 'package:vettore/vector_object_model.dart';
+import 'package:vettore/models/palette_color.dart';
+import 'package:vettore/models/vector_object_model.dart';
 
 part 'project_model.g.dart';
 

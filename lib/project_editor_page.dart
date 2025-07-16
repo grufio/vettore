@@ -2,113 +2,31 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:vettore/color_settings.dart';
-import 'package:vettore/project_model.dart';
+import 'package:vettore/models/project_model.dart';
+import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/settings_image.dart';
-import 'package:vettore/vector_object_model.dart';
+import 'package:vettore/models/vector_object_model.dart';
 
-class ProjectEditorPage extends StatefulWidget {
+class ProjectEditorPage extends ConsumerStatefulWidget {
   final int projectKey;
 
   const ProjectEditorPage({super.key, required this.projectKey});
 
   @override
-  State<ProjectEditorPage> createState() => _ProjectEditorPageState();
+  ConsumerState<ProjectEditorPage> createState() => _ProjectEditorPageState();
 }
 
-class _ProjectEditorPageState extends State<ProjectEditorPage> {
-  late Project _project;
+class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage> {
   bool _showVectors = true;
   bool _showBackground = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _project = Hive.box<Project>('projects').get(widget.projectKey)!;
-  }
-
-  void _runVectorConversion() async {
-    final settings = Hive.box('settings');
-    final scalePercent =
-        double.tryParse(settings.get('downsampleScale', defaultValue: '10')) ??
-        10.0;
-    final Uint8List imageData = _project.imageData;
-
-    final img.Image? originalImage = img.decodeImage(imageData);
-
-    if (originalImage == null) {
-      return;
-    }
-
-    final int newWidth = (originalImage.width * scalePercent / 100).round();
-    final int newHeight = (originalImage.height * scalePercent / 100).round();
-
-    final img.Image downsampledImage = img.copyResize(
-      originalImage,
-      width: newWidth > 0 ? newWidth : 1,
-      height: newHeight > 0 ? newHeight : 1,
-      interpolation: img.Interpolation.nearest,
-    );
-
-    final List<VectorObject> vectorObjects = [];
-    final Map<int, int> colorIndexMap = {};
-    int nextColorIndex = 1;
-    final List<Color> finalPalette = [];
-
-    for (int y = 0; y < downsampledImage.height; y++) {
-      for (int x = 0; x < downsampledImage.width; x++) {
-        final pixel = downsampledImage.getPixel(x, y);
-        final flutterColor = Color.fromARGB(
-          pixel.a.toInt(),
-          pixel.r.toInt(),
-          pixel.g.toInt(),
-          pixel.b.toInt(),
-        );
-
-        int colorIndex;
-        if (colorIndexMap.containsKey(flutterColor.value)) {
-          colorIndex = colorIndexMap[flutterColor.value]!;
-        } else {
-          colorIndex = nextColorIndex;
-          colorIndexMap[flutterColor.value] = colorIndex;
-          finalPalette.add(flutterColor);
-          nextColorIndex++;
-        }
-
-        vectorObjects.add(
-          VectorObject.fromRectAndColor(
-            rect: Rect.fromLTWH(x.toDouble(), y.toDouble(), 1, 1),
-            color: flutterColor,
-            colorIndex: colorIndex,
-          ),
-        );
-      }
-    }
-
-    final Size imageSize = Size(
-      downsampledImage.width.toDouble(),
-      downsampledImage.height.toDouble(),
-    );
-    final Set<int> uniqueColors = vectorObjects
-        .map((obj) => obj.color.value)
-        .toSet();
-
-    setState(() {
-      _project.vectorObjects = vectorObjects;
-      _project.imageWidth = imageSize.width;
-      _project.imageHeight = imageSize.height;
-      _project.isConverted = true;
-      _project.uniqueColorCount = uniqueColors.length;
-      // TODO: Save palette properly
-      // _project.palette = finalPalette;
-      _project.save();
-    });
-  }
-
   void _showColorSettingsDialog() {
-    if (!_project.isConverted) {
+    final project = ref.read(projectProvider(widget.projectKey));
+    if (project == null || !project.isConverted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please convert the image first.')),
       );
@@ -121,18 +39,28 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   void _showImageSettingsDialog() {
+    final project = ref.read(projectProvider(widget.projectKey));
+    if (project == null) return;
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return SettingsDialog(project: _project);
+        return SettingsDialog(project: project);
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final project = ref.watch(projectProvider(widget.projectKey));
+
+    if (project == null) {
+      return const Scaffold(
+        body: Center(child: Text('Project not found or has been deleted.')),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text(_project.name)),
+      appBar: AppBar(title: Text(project.name)),
       body: Row(
         children: [
           Expanded(
@@ -148,30 +76,22 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                         maintainState: true,
                         maintainAnimation: true,
                         maintainSize: true,
-                        child: Image.memory(_project.imageData),
+                        child: Image.memory(project.imageData),
                       ),
-                      if (_project.isConverted && _showVectors)
+                      if (project.isConverted && _showVectors)
                         Positioned.fill(
-                          child: ValueListenableBuilder(
-                            valueListenable: Hive.box('settings').listenable(),
-                            builder: (context, box, _) {
-                              return CustomPaint(
-                                painter: VectorPainter(
-                                  objects: _project.vectorObjects,
-                                  imageSize: _project.imageWidth != null
-                                      ? Size(
-                                          _project.imageWidth!,
-                                          _project.imageHeight!,
-                                        )
-                                      : null,
-                                  fontSize:
-                                      double.tryParse(
-                                        box.get('fontSize', defaultValue: '12'),
-                                      ) ??
-                                      12.0,
-                                ),
-                              );
-                            },
+                          child: CustomPaint(
+                            painter: VectorPainter(
+                              objects: project.vectorObjects,
+                              imageSize: project.imageWidth != null
+                                  ? Size(
+                                      project.imageWidth!,
+                                      project.imageHeight!,
+                                    )
+                                  : null,
+                              // TODO: Get from settings provider
+                              fontSize: 12.0,
+                            ),
                           ),
                         ),
                     ],
@@ -190,7 +110,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _runVectorConversion,
+                    onPressed: () => ref
+                        .read(projectProvider(widget.projectKey).notifier)
+                        .convertProject(),
                     child: const Text('Convert'),
                   ),
                 ),
@@ -203,8 +125,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                   onPressed: _showColorSettingsDialog,
                   icon: const Icon(Icons.palette_outlined),
                   label: Text(
-                    _project.isConverted
-                        ? 'Colors: ${_project.uniqueColorCount}'
+                    project.isConverted
+                        ? 'Colors: ${project.uniqueColorCount}'
                         : 'Colors: N/A',
                   ),
                 ),

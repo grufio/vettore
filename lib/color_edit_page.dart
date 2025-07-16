@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:vettore/color_component_model.dart';
-import 'package:vettore/palette_color.dart';
-import 'package:vettore/vendor_color_model.dart';
+import 'package:vettore/models/color_component_model.dart';
+import 'package:vettore/models/palette_color.dart';
+import 'package:vettore/models/vendor_color_model.dart';
 
 class ColorEditPage extends StatefulWidget {
   final PaletteColor initialColor;

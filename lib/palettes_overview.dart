@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/palette_detail_page.dart';
-import 'package:vettore/palette_model.dart';
+import 'package:vettore/models/palette_model.dart';
+import 'package:vettore/providers/palette_provider.dart';
 
-class PalettesOverview extends StatefulWidget {
+class PalettesOverview extends ConsumerWidget {
   const PalettesOverview({super.key});
 
-  @override
-  State<PalettesOverview> createState() => _PalettesOverviewState();
-}
-
-class _PalettesOverviewState extends State<PalettesOverview> {
-  final Box<Palette> _palettesBox = Hive.box<Palette>('palettes');
-
-  Future<void> _showAddDialog() async {
+  Future<void> _showAddDialog(BuildContext context, WidgetRef ref) async {
     final nameController = TextEditingController();
 
     return showDialog<void>(
@@ -37,7 +31,9 @@ class _PalettesOverviewState extends State<PalettesOverview> {
               child: const Text('Save'),
               onPressed: () {
                 if (nameController.text.isNotEmpty) {
-                  _palettesBox.add(Palette()..name = nameController.text);
+                  ref
+                      .read(paletteListProvider.notifier)
+                      .addPalette(Palette()..name = nameController.text);
                   Navigator.of(context).pop();
                 }
               },
@@ -48,66 +44,11 @@ class _PalettesOverviewState extends State<PalettesOverview> {
     );
   }
 
-  Widget _buildPaletteCardList(Box<Palette> box) {
-    return ListView.builder(
-      itemCount: box.values.length,
-      itemBuilder: (context, index) {
-        final palette = box.getAt(index)!;
-        return Card(
-          margin: const EdgeInsets.all(8.0),
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PaletteDetailPage(palette: palette),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListTile(
-                    title: Text(
-                      palette.name,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          tooltip: 'Edit Palette',
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    PaletteDetailPage(palette: palette),
-                              ),
-                            );
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          tooltip: 'Delete Palette',
-                          onPressed: () => _showDeleteConfirmDialog(palette),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _showDeleteConfirmDialog(Palette palette) async {
+  Future<void> _showDeleteConfirmDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Palette palette,
+  ) async {
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -124,7 +65,7 @@ class _PalettesOverviewState extends State<PalettesOverview> {
             TextButton(
               child: const Text('Delete'),
               onPressed: () {
-                palette.delete();
+                ref.read(paletteListProvider.notifier).deletePalette(palette);
                 Navigator.of(context).pop();
               },
             ),
@@ -135,20 +76,82 @@ class _PalettesOverviewState extends State<PalettesOverview> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palettes = ref.watch(paletteListProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Palettes')),
-      body: ValueListenableBuilder(
-        valueListenable: _palettesBox.listenable(),
-        builder: (context, Box<Palette> box, _) {
-          if (box.values.isEmpty) {
+      body: Builder(
+        builder: (context) {
+          if (palettes.isEmpty) {
             return const Center(child: Text('No palettes created yet.'));
           }
-          return _buildPaletteCardList(box);
+          return ListView.builder(
+            itemCount: palettes.length,
+            itemBuilder: (context, index) {
+              final palette = palettes[index];
+              return Card(
+                margin: const EdgeInsets.all(8.0),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            PaletteDetailPage(paletteKey: palette.key),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          title: Text(
+                            palette.name,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                tooltip: 'Edit Palette',
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PaletteDetailPage(
+                                        paletteKey: palette.key,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                tooltip: 'Delete Palette',
+                                onPressed: () => _showDeleteConfirmDialog(
+                                  context,
+                                  ref,
+                                  palette,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddDialog,
+        onPressed: () => _showAddDialog(context, ref),
         tooltip: 'Add Palette',
         child: const Icon(Icons.add),
       ),
