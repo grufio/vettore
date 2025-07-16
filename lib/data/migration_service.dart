@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:vettore/models/color_component_model.dart';
 import 'package:vettore/models/palette_model.dart';
-import 'package:vettore/models/palette_color.dart';
 
 class MigrationService {
   /// This migration script converts the database from an embedded-document model
@@ -38,9 +37,9 @@ class MigrationService {
     for (final palette in palettesToUpdate) {
       for (final color in palette.colors) {
         // Only migrate if there are components and keys are empty
-        if (color.components.isNotEmpty && color.componentKeys.isEmpty) {
+        if (color.getComponents().isNotEmpty && color.componentKeys.isEmpty) {
           final List<int> newKeys = [];
-          for (final component in color.components) {
+          for (final component in color.getComponents()) {
             // Add component to its own box and get its new auto-incrementing key
             final newKey = await componentsBox.add(component);
             newKeys.add(newKey);

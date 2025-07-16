@@ -20,9 +20,9 @@ class ColorSettingsDialogState extends State<ColorSettingsDialog> {
         ],
         rows: List<DataRow>.generate(widget.colors.length, (index) {
           final color = widget.colors[index];
-          final red = (color.value >> 16) & 0xFF;
-          final green = (color.value >> 8) & 0xFF;
-          final blue = color.value & 0xFF;
+          final red = (color.toARGB32() >> 16) & 0xFF;
+          final green = (color.toARGB32() >> 8) & 0xFF;
+          final blue = color.toARGB32() & 0xFF;
           final hex =
               '#${red.toRadixString(16).padLeft(2, '0')}'
                       '${green.toRadixString(16).padLeft(2, '0')}'

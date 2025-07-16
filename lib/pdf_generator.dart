@@ -57,7 +57,7 @@ Future<void> generateVectorPdf({
                       return pw.Container(
                         height: objectSizeInPoints,
                         color: printBackground
-                            ? PdfColor.fromInt(obj.color.value)
+                            ? PdfColor.fromInt(obj.color.toARGB32())
                             : null,
                         child: pw.Center(
                           child: pw.Text(

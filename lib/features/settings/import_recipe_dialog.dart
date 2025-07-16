@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:async'; // Added for Completer
+import 'dart:typed_data';
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
@@ -61,22 +61,11 @@ class _ImportRecipeDialogState extends State<ImportRecipeDialog> {
     _importImage(() async => await details.files.first.readAsBytes());
   }
 
-  void _onUpload() {
-    _importImage(() async {
-      final result = await FilePicker.platform.pickFiles(type: FileType.image);
-      if (result != null) {
-        final file = File(result.files.single.path!);
-        return await file.readAsBytes();
-      }
-      return null;
-    });
-  }
-
   void _onPaste() {
     debugPrint('[ImportDialog] _onPaste called.');
     _importImage(() async {
-      debugPrint('[ImportDialog] Checking clipboard for image...');
-      final reader = await ClipboardReader.readClipboard();
+      final reader = await SystemClipboard.instance?.read();
+      if (reader == null) return null;
 
       final imageFormats = [
         Formats.png,
@@ -168,7 +157,6 @@ class _ImportRecipeDialogState extends State<ImportRecipeDialog> {
           ],
         );
       case _ImportState.idle:
-      default:
         return Shortcuts(
           shortcuts: <LogicalKeySet, Intent>{
             LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyV):

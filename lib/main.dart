@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vettore/data/migration_service.dart';
 import 'package:vettore/loading_page.dart';
-import 'package:vettore/models/color_component_model.dart';
 import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/models/project_model.dart';
 import 'package:vettore/repositories/palette_repository.dart';

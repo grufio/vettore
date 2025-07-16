@@ -3,18 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/features/palettes/palette_detail_page.dart';
 import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/providers/palette_provider.dart';
+import 'package:vettore/widgets/adaptive_dialog.dart';
 
+/// A page that displays a list of all the user's color palettes.
 class PalettesOverview extends ConsumerWidget {
   const PalettesOverview({super.key});
 
+  /// Shows a dialog to add a new palette.
   Future<void> _showAddDialog(BuildContext context, WidgetRef ref) async {
     final nameController = TextEditingController();
 
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add Palette'),
+        return AdaptiveDialog(
+          title: 'Add Palette',
           content: TextField(
             controller: nameController,
             decoration: const InputDecoration(hintText: 'Palette Name'),
@@ -45,6 +48,7 @@ class PalettesOverview extends ConsumerWidget {
     );
   }
 
+  /// Shows a confirmation dialog before deleting a palette.
   Future<void> _showDeleteConfirmDialog(
     BuildContext context,
     WidgetRef ref,
@@ -53,8 +57,8 @@ class PalettesOverview extends ConsumerWidget {
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Palette'),
+        return AdaptiveDialog(
+          title: 'Delete Palette',
           content: Text('Are you sure you want to delete "${palette.name}"?'),
           actions: <Widget>[
             TextButton(

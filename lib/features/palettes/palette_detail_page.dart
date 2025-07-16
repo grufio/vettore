@@ -7,6 +7,8 @@ import 'package:vettore/providers/palette_provider.dart';
 import 'package:vettore/features/palettes/widgets/palette_color_list.dart';
 import 'package:vettore/features/palettes/widgets/palette_details_form.dart';
 
+/// A page that displays the details of a single color palette
+/// and allows the user to edit it.
 class PaletteDetailPage extends ConsumerStatefulWidget {
   final int paletteKey;
   const PaletteDetailPage({super.key, required this.paletteKey});
@@ -18,6 +20,7 @@ class PaletteDetailPage extends ConsumerStatefulWidget {
 class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
   final _formKey = GlobalKey<FormState>();
 
+  /// Shows a dialog to edit the name of the palette.
   Future<void> _showEditNameDialog(Palette palette) async {
     final nameController = TextEditingController(text: palette.name);
     return showDialog<void>(
@@ -56,6 +59,7 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
     );
   }
 
+  /// Navigates to the color edit page for the selected color.
   void _editColor(int index, PaletteColor color) {
     final palette = ref.read(paletteProvider(widget.paletteKey));
     if (palette == null) return;
@@ -123,7 +127,7 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
         onPressed: () async {
           final newColor = PaletteColor(
             title: 'New Color',
-            color: Colors.black.value,
+            color: Colors.black.toARGB32(),
             status: 'new',
             componentKeys: [],
             components: [],

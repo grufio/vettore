@@ -72,11 +72,11 @@ class ProjectService {
         );
 
         int colorIndex;
-        if (colorIndexMap.containsKey(flutterColor.value)) {
-          colorIndex = colorIndexMap[flutterColor.value]!;
+        if (colorIndexMap.containsKey(flutterColor.toARGB32())) {
+          colorIndex = colorIndexMap[flutterColor.toARGB32()]!;
         } else {
           colorIndex = nextColorIndex;
-          colorIndexMap[flutterColor.value] = colorIndex;
+          colorIndexMap[flutterColor.toARGB32()] = colorIndex;
           nextColorIndex++;
         }
 
@@ -95,7 +95,7 @@ class ProjectService {
       downsampledImage.height.toDouble(),
     );
     final Set<int> uniqueColors = vectorObjects
-        .map((obj) => obj.color.value)
+        .map((obj) => obj.color.toARGB32())
         .toSet();
 
     // Return a new or updated project object

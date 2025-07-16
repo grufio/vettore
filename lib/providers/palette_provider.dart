@@ -1,12 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/main.dart';
-import 'package:vettore/models/color_component_model.dart';
 import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/repositories/palette_repository.dart';
-import 'package:hive/hive.dart';
 
+/// A provider that returns a [PaletteNotifier] for a given palette key.
+///
+/// This provider is used to get the state of a single palette and to
+/// update it.
 final paletteProvider = StateNotifierProvider.autoDispose
     .family<PaletteNotifier, Palette?, int>((ref, paletteKey) {
       final paletteRepository = ref.watch(paletteRepositoryProvider);
@@ -18,11 +19,13 @@ final paletteProvider = StateNotifierProvider.autoDispose
       }
     });
 
+/// A notifier that manages the state of a single palette.
 class PaletteNotifier extends StateNotifier<Palette?> {
   final PaletteRepository _paletteRepository;
 
   PaletteNotifier(super.palette, this._paletteRepository);
 
+  /// Updates the details of the palette (name, size, factor).
   Future<void> updateDetails({
     required String name,
     required double size,
@@ -38,6 +41,7 @@ class PaletteNotifier extends StateNotifier<Palette?> {
     state = newState;
   }
 
+  /// Adds a new color to the palette.
   Future<void> addNewColor(PaletteColor color) async {
     if (state == null) return;
     final newColors = List<PaletteColor>.from(state!.colors)..add(color);
@@ -46,6 +50,7 @@ class PaletteNotifier extends StateNotifier<Palette?> {
     state = newState;
   }
 
+  /// Updates an existing color in the palette.
   Future<void> updateColor(int index, PaletteColor color) async {
     if (state == null) return;
     final newColors = List<PaletteColor>.from(state!.colors);
@@ -55,6 +60,7 @@ class PaletteNotifier extends StateNotifier<Palette?> {
     state = newState;
   }
 
+  /// Deletes a color from the palette.
   Future<void> deleteColor(int index) async {
     if (state == null) return;
     final newColors = List<PaletteColor>.from(state!.colors)..removeAt(index);
@@ -64,11 +70,14 @@ class PaletteNotifier extends StateNotifier<Palette?> {
   }
 }
 
+/// A provider that returns a [PaletteListNotifier] which manages the list
+/// of all palettes.
 final paletteListProvider =
     StateNotifierProvider<PaletteListNotifier, List<Palette>>((ref) {
       return PaletteListNotifier(ref.watch(paletteRepositoryProvider));
     });
 
+/// A notifier that manages the state of the list of all palettes.
 class PaletteListNotifier extends StateNotifier<List<Palette>> {
   final PaletteRepository _paletteRepository;
 
@@ -95,10 +104,12 @@ class PaletteListNotifier extends StateNotifier<List<Palette>> {
     state = palettes;
   }
 
+  /// Adds a new palette to the database.
   Future<void> addPalette(Palette palette) async {
     await _paletteRepository.addPalette(palette);
   }
 
+  /// Deletes a palette from the database.
   Future<void> deletePalette(int key) async {
     await _paletteRepository.deletePalette(key);
   }

@@ -1,7 +1,5 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -10,7 +8,6 @@ import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/vendor_color_model.dart';
 import 'package:vettore/services/ai_service.dart';
 import 'package:vettore/services/settings_service.dart';
-import 'package:super_clipboard/super_clipboard.dart';
 import 'package:vettore/features/settings/import_recipe_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -90,7 +87,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
 
         final updatedColor = PaletteColor(
           title: newTitle,
-          color: newColor.value,
+          color: newColor.toARGB32(),
           status: _statusController.text,
           components: newComponents,
         );
@@ -122,7 +119,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   void _save() {
     final newColor = PaletteColor(
       title: _titleController.text,
-      color: _currentColor.value,
+      color: _currentColor.toARGB32(),
       status: _statusController.text,
       components: _components,
     );
@@ -279,77 +276,101 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Color'),
+        title: Text(widget.initialColor.title),
         actions: [
           IconButton(
-            icon: const Icon(Icons.cloud_upload_outlined),
+            icon: const Icon(Icons.import_export),
             tooltip: 'Import Recipe',
             onPressed: _showImportDialog,
           ),
           IconButton(
             icon: const Icon(Icons.save),
-            tooltip: 'Save',
+            tooltip: 'Save Color',
             onPressed: _save,
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _titleController,
-              focusNode: _titleFocusNode,
-              decoration: const InputDecoration(
-                labelText: 'Title',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _statusController,
-              focusNode: _statusFocusNode,
-              decoration: const InputDecoration(
-                labelText: 'Status',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text('Color', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: _showColorPicker,
-              child: Row(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: _currentColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.shade400),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Color Name',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        TextFormField(
+                          controller: _titleController,
+                          focusNode: _titleFocusNode,
+                          decoration: const InputDecoration(
+                            hintText: 'Enter color name',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: Text(
-                      '#${_currentColor.value.toRadixString(16).padLeft(8, '0').toUpperCase()}',
-                      style: Theme.of(context).textTheme.bodyLarge,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Status',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        TextFormField(
+                          controller: _statusController,
+                          focusNode: _statusFocusNode,
+                          decoration: const InputDecoration(
+                            hintText: 'Enter color status',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
-            _buildComponentList(),
-          ],
+              const SizedBox(height: 24),
+              InkWell(
+                onTap: _showColorPicker,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '#${_currentColor.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: _currentColor,
+                        border: Border.all(color: Colors.grey),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildComponentList(),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ComponentDialog extends StatefulWidget {
+class _ComponentDialog extends ConsumerStatefulWidget {
   final ColorComponent? component;
   final Function(ColorComponent) onSave;
 
