@@ -1,34 +1,58 @@
 PODS:
+  - desktop_drop (0.0.1):
+    - FlutterMacOS
+  - device_info_plus (0.0.1):
+    - FlutterMacOS
   - file_picker (0.0.1):
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
+  - irondash_engine_context (0.0.1):
+    - FlutterMacOS
   - open_file_mac (0.0.1):
     - FlutterMacOS
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - super_native_extensions (0.0.1):
+    - FlutterMacOS
 
 DEPENDENCIES:
+  - desktop_drop (from `Flutter/ephemeral/.symlinks/plugins/desktop_drop/macos`)
+  - device_info_plus (from `Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos`)
   - file_picker (from `Flutter/ephemeral/.symlinks/plugins/file_picker/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
+  - irondash_engine_context (from `Flutter/ephemeral/.symlinks/plugins/irondash_engine_context/macos`)
   - open_file_mac (from `Flutter/ephemeral/.symlinks/plugins/open_file_mac/macos`)
   - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
+  - super_native_extensions (from `Flutter/ephemeral/.symlinks/plugins/super_native_extensions/macos`)
 
 EXTERNAL SOURCES:
+  desktop_drop:
+    :path: Flutter/ephemeral/.symlinks/plugins/desktop_drop/macos
+  device_info_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos
   file_picker:
     :path: Flutter/ephemeral/.symlinks/plugins/file_picker/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
+  irondash_engine_context:
+    :path: Flutter/ephemeral/.symlinks/plugins/irondash_engine_context/macos
   open_file_mac:
     :path: Flutter/ephemeral/.symlinks/plugins/open_file_mac/macos
   path_provider_foundation:
     :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin
+  super_native_extensions:
+    :path: Flutter/ephemeral/.symlinks/plugins/super_native_extensions/macos
 
 SPEC CHECKSUMS:
+  desktop_drop: 248706031734554504f939cab1ad4c5fbc9c9c72
+  device_info_plus: 4fb280989f669696856f8b129e4a5e3cd6c48f76
   file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
   FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+  irondash_engine_context: 893c7d96d20ce361d7e996f39d360c4c2f9869ba
   open_file_mac: 01874b6d6a2c1485ac9b126d7105b99102dea2cf
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
+  super_native_extensions: c2795d6d9aedf4a79fae25cb6160b71b50549189
 
 PODFILE CHECKSUM: 7eb978b976557c8c1cd717d8185ec483fd090a82
 

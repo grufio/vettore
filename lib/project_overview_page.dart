@@ -1,16 +1,12 @@
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image/image.dart' as img;
-import 'package:path/path.dart' as p;
 import 'package:vettore/main.dart';
 import 'package:vettore/palettes_overview.dart';
 import 'package:vettore/project_editor_page.dart';
 import 'package:vettore/models/project_model.dart';
 import 'package:vettore/repositories/project_repository.dart';
 import 'package:vettore/services/project_service.dart';
+import 'package:vettore/settings_dialog.dart';
 
 class ProjectListNotifier extends StateNotifier<List<Project>> {
   final ProjectRepository _projectRepository;
@@ -89,6 +85,16 @@ class HomePage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Projects'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => const SettingsDialog(),
+              );
+            },
+          ),
           TextButton(
             onPressed: () {
               Navigator.of(context).push(

@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:vettore/models/color_component_model.dart';
+import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/palette_model.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class PaletteRepository {
   final Box<Palette> _palettesBox;
@@ -25,6 +26,41 @@ class PaletteRepository {
 
   // Update an existing palette (by saving the object)
   Future<void> updatePalette(Palette palette) async {
+    await palette.save();
+  }
+
+  // Deep update a single color within a palette to prevent state corruption
+  Future<void> updateColor(
+    Palette palette,
+    int colorIndex,
+    PaletteColor updatedColor,
+  ) async {
+    final targetColor = palette.colors[colorIndex];
+
+    // Update the simple properties
+    targetColor.title = updatedColor.title;
+    targetColor.color = updatedColor.color;
+    targetColor.status = updatedColor.status;
+
+    // Perform a deep delete of old components
+    // We use a separate loop for deletion to avoid concurrent modification issues
+    final componentsToDelete = List<ColorComponent>.from(
+      targetColor.components,
+    );
+    for (var component in componentsToDelete) {
+      await component.delete();
+    }
+    targetColor.components.clear();
+
+    // Add new, clean components
+    for (var componentData in updatedColor.components) {
+      final newComponent = ColorComponent(
+        name: componentData.name,
+        percentage: componentData.percentage,
+      );
+      targetColor.components.add(newComponent);
+    }
+
     await palette.save();
   }
 

@@ -1,11 +1,20 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vettore/models/color_component_model.dart';
 import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/vendor_color_model.dart';
+import 'package:vettore/services/ai_service.dart';
+import 'package:vettore/services/settings_service.dart';
+import 'package:super_clipboard/super_clipboard.dart';
+import 'package:vettore/import_recipe_dialog.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ColorEditPage extends StatefulWidget {
+class ColorEditPage extends ConsumerStatefulWidget {
   final PaletteColor initialColor;
   final double sizeInMl;
   final double factor;
@@ -20,16 +29,18 @@ class ColorEditPage extends StatefulWidget {
   });
 
   @override
-  State<ColorEditPage> createState() => _ColorEditPageState();
+  ConsumerState<ColorEditPage> createState() => _ColorEditPageState();
 }
 
-class _ColorEditPageState extends State<ColorEditPage> {
+class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   late TextEditingController _titleController;
   late TextEditingController _statusController;
   late Color _currentColor;
   late List<ColorComponent> _components;
   final _titleFocusNode = FocusNode();
   final _statusFocusNode = FocusNode();
+
+  late final AIService _aiService;
 
   @override
   void initState() {
@@ -38,6 +49,7 @@ class _ColorEditPageState extends State<ColorEditPage> {
     _statusController = TextEditingController(text: widget.initialColor.status);
     _currentColor = Color(widget.initialColor.color);
     _components = List.from(widget.initialColor.components);
+    _aiService = AIService(settingsService: ref.read(settingsServiceProvider));
   }
 
   @override
@@ -47,6 +59,64 @@ class _ColorEditPageState extends State<ColorEditPage> {
     _titleFocusNode.dispose();
     _statusFocusNode.dispose();
     super.dispose();
+  }
+
+  void _showImportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return ImportRecipeDialog(onImageImported: _importFromImage);
+      },
+    );
+  }
+
+  Future<void> _importFromImage(Uint8List imageData) async {
+    try {
+      final result = await _aiService.importRecipeFromImage(imageData);
+      if (result.isNotEmpty) {
+        final newComponents = result['components'] as List<ColorComponent>;
+        final colorData = result['recipeTitleColor'] as Map<String, dynamic>?;
+
+        Color newColor = _currentColor;
+        String newTitle = _titleController.text;
+
+        if (colorData != null) {
+          final r = colorData['r'] as int? ?? 255;
+          final g = colorData['g'] as int? ?? 255;
+          final b = colorData['b'] as int? ?? 255;
+          newColor = Color.fromRGBO(r, g, b, 1.0);
+          newTitle = '$r,$g,$b';
+        }
+
+        final updatedColor = PaletteColor(
+          title: newTitle,
+          color: newColor.value,
+          status: _statusController.text,
+          components: newComponents,
+        );
+
+        widget.onSave(updatedColor);
+
+        if (mounted) {
+          setState(() {
+            _currentColor = newColor;
+            _titleController.text = newTitle;
+            _components = newComponents;
+          });
+        }
+      }
+    } catch (e) {
+      // Handle or show the error to the user
+      debugPrint('Error during import: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error importing recipe: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _save() {
@@ -211,6 +281,11 @@ class _ColorEditPageState extends State<ColorEditPage> {
       appBar: AppBar(
         title: const Text('Edit Color'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.cloud_upload_outlined),
+            tooltip: 'Import Recipe',
+            onPressed: _showImportDialog,
+          ),
           IconButton(
             icon: const Icon(Icons.save),
             tooltip: 'Save',

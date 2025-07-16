@@ -250,8 +250,28 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () =>
-            ref.read(paletteProvider(widget.paletteKey).notifier).addColor(),
+        onPressed: () {
+          // Create a new default color object
+          final newColor = PaletteColor(
+            title: 'New Color',
+            color: Colors.black.value,
+            status: 'new',
+            components: [],
+          );
+
+          // Add it to the palette and then navigate to the edit page for it
+          ref
+              .read(paletteProvider(widget.paletteKey).notifier)
+              .addNewColor(newColor)
+              .then((_) {
+                // After the color is added, get the updated palette
+                final palette = ref.read(paletteProvider(widget.paletteKey));
+                if (palette != null) {
+                  // The new color is at the end of the list.
+                  _editColor(palette.colors.length - 1, newColor);
+                }
+              });
+        },
         tooltip: 'Add Color',
         child: const Icon(Icons.add),
       ),
