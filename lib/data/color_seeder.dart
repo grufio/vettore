@@ -6,66 +6,93 @@ import 'package:vettore/models/vendor_color_model.dart';
 
 class ColorSeeder {
   static const String _vendorColorBoxName = 'vendor_colors';
-  static const String _seedCompleteKey = 'vendor_colors_seed_complete';
+  static const String _seedCompleteKey = 'seed_norma_pro';
 
   static Future<void> seedColors() async {
     final settingsBox = Hive.box('settings');
-    // Ensure the box is open before using it.
     final vendorColorBox = await Hive.openBox<VendorColor>(_vendorColorBoxName);
-    final isSeeded = settingsBox.get(_seedCompleteKey, defaultValue: false);
 
-    if (isSeeded && vendorColorBox.isNotEmpty) {
-      debugPrint('Vendor colors already seeded. Skipping.');
+    debugPrint('[ColorSeeder] Checking if seeding is required...');
+    debugPrint('[ColorSeeder] Using seed key: $_seedCompleteKey');
+    final isSeeded = settingsBox.get(_seedCompleteKey, defaultValue: false);
+    debugPrint('[ColorSeeder] Is seeded flag: $isSeeded');
+    debugPrint(
+      '[ColorSeeder] Colors in box before check: ${vendorColorBox.length}',
+    );
+
+    if (isSeeded) {
+      debugPrint('[ColorSeeder] Seeding not required. Skipping.');
       return;
     }
 
-    debugPrint('Seeding vendor colors...');
-    await vendorColorBox.clear(); // Clear any partial data from failed attempts
+    debugPrint('[ColorSeeder] Seeding required. Starting process...');
+    debugPrint('[ColorSeeder] Clearing vendor color box...');
+    await vendorColorBox.clear();
+    debugPrint(
+      '[ColorSeeder] Vendor color box cleared. Items: ${vendorColorBox.length}',
+    );
 
-    await _seedFromFile(vendorColorBox, '35ml');
-    await _seedFromFile(vendorColorBox, '120ml');
-    await _seedFromFile(vendorColorBox, '200ml');
+    await _seedFromFile(vendorColorBox);
 
-    debugPrint('Seeding complete. ${vendorColorBox.length} colors loaded.');
+    debugPrint(
+      '[ColorSeeder] Seeding complete. ${vendorColorBox.length} colors loaded.',
+    );
     await settingsBox.put(_seedCompleteKey, true);
+    debugPrint('[ColorSeeder] Seeded flag set to true.');
   }
 
-  static Future<void> _seedFromFile(
-    Box<VendorColor> box,
-    String sizeString,
-  ) async {
-    final path = 'lib/input/farben_${sizeString}.csv';
+  static Future<void> _seedFromFile(Box<VendorColor> box) async {
+    const path = 'lib/input/norma_pro_color_codes.csv';
     debugPrint('--> Seeding from $path');
     final rawCsv = await rootBundle.loadString(path);
-
-    debugPrint('--> RAW CSV CONTENT for $path:');
-    debugPrint('------------------------------------');
-    debugPrint(
-      rawCsv.substring(0, (rawCsv.length > 500) ? 500 : rawCsv.length),
-    );
-    debugPrint('------------------------------------');
-
     final List<List<dynamic>> csvTable = const CsvToListConverter(
       fieldDelimiter: ',',
-      eol: '\n', // Explicitly set the end-of-line character
-      shouldParseNumbers: false, // Treat all columns as text initially
+      // Let the converter auto-detect EOL
+      shouldParseNumbers: false,
     ).convert(rawCsv);
 
     debugPrint('--> Found ${csvTable.length - 1} data rows in $path');
 
-    // Skip header row
     for (var i = 1; i < csvTable.length; i++) {
       final row = csvTable[i];
-      if (row.length >= 2) {
-        final vendorColor = VendorColor()
-          ..articleNumber = row[0].toString()
-          ..name = row[1].toString()
-          ..size = int.tryParse(sizeString.replaceAll('ml', '')) ?? 0;
-        await box.add(vendorColor);
-      } else {
-        debugPrint('--> SKIPPING invalid row in $path: $row');
+      try {
+        if (row.length >= 3) {
+          final articleNumber = row[0].toString();
+          final name = row[1].toString();
+          final sizesRaw = row[2].toString();
+          final sizes = sizesRaw
+              .split(',')
+              .map((s) => int.tryParse(s.trim()))
+              .where((s) => s != null)
+              .cast<int>()
+              .toList();
+
+          if (sizes.isEmpty && sizesRaw.trim().isNotEmpty) {
+            debugPrint(
+              '--> [WARNING] Could not parse int from size string "$sizesRaw" for color "$name"',
+            );
+          }
+
+          for (final size in sizes) {
+            final vendorColor = VendorColor()
+              ..articleNumber = articleNumber
+              ..name = name
+              ..size = size;
+            await box.add(vendorColor);
+          }
+        } else {
+          debugPrint(
+            '--> [SKIPPING] Invalid row in $path: $row (column count is ${row.length})',
+          );
+        }
+      } catch (e, s) {
+        debugPrint('--> [ERROR] Failed to process row $i: $row');
+        debugPrint('--> Exception: $e');
+        debugPrint('--> Stack Trace: $s');
       }
     }
-    debugPrint('--> Successfully added ${box.length} colors from this file.');
+    debugPrint(
+      '--> Successfully added ${box.values.length} colors from this file.',
+    );
   }
 }

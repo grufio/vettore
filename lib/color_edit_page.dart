@@ -290,6 +290,7 @@ class _ComponentDialogState extends State<_ComponentDialog> {
   int? _selectedSize;
   String? _selectedColorName;
   List<int> _availableSizes = [];
+  List<String> _colorNames = [];
 
   @override
   void initState() {
@@ -298,21 +299,16 @@ class _ComponentDialogState extends State<_ComponentDialog> {
       text: widget.component?.percentage.toString() ?? '',
     );
 
+    // Initial population of color names
+    _updateColorNames();
+
     // If editing, pre-fill the state
     if (widget.component != null) {
       final componentName = widget.component!.name;
-      // Use the listenable builder's box for initial state check
-      final allColorNames = Hive.box<VendorColor>(
-        'vendor_colors',
-      ).values.map((c) => c.name).toSet();
-
-      if (allColorNames.contains(componentName)) {
+      if (_colorNames.contains(componentName)) {
         _selectedColorName = componentName;
-        _onColorNameSelected(_selectedColorName, shouldSetDefaultSize: false);
-      } else {
-        // The component's name doesn't exist in the vendor list.
-        // Set to null to avoid a crash and force the user to select a valid color.
-        _selectedColorName = null;
+        // Directly call the method to update sizes based on the pre-selected name
+        _updateAvailableSizes(componentName, shouldSetDefaultSize: false);
       }
     }
   }
@@ -323,27 +319,34 @@ class _ComponentDialogState extends State<_ComponentDialog> {
     super.dispose();
   }
 
-  void _onColorNameSelected(String? name, {bool shouldSetDefaultSize = true}) {
+  void _updateColorNames() {
+    _colorNames = _vendorColorBox.values.map((c) => c.name).toSet().toList()
+      ..sort();
+  }
+
+  void _updateAvailableSizes(String? name, {bool shouldSetDefaultSize = true}) {
+    if (name == null) {
+      _availableSizes = [];
+      return;
+    }
+    _availableSizes =
+        _vendorColorBox.values
+            .where((c) => c.name == name)
+            .map((c) => c.size)
+            .toSet()
+            .toList()
+          ..sort((a, b) => b.compareTo(a));
+
+    if (shouldSetDefaultSize) {
+      _selectedSize = _availableSizes.isNotEmpty ? _availableSizes.first : null;
+    }
+  }
+
+  void _onColorNameSelected(String? name) {
     if (name == null) return;
     setState(() {
       _selectedColorName = name;
-      _availableSizes =
-          _vendorColorBox.values
-              .where((c) => c.name == name)
-              .map((c) => c.size)
-              .toSet()
-              .toList()
-            ..sort(
-              (a, b) => b.compareTo(a),
-            ); // Sort descending for largest first
-
-      if (shouldSetDefaultSize) {
-        _selectedSize = _availableSizes.isNotEmpty
-            ? _availableSizes.first
-            : null;
-      } else {
-        _selectedSize = null;
-      }
+      _updateAvailableSizes(name);
     });
   }
 
@@ -363,11 +366,20 @@ class _ComponentDialogState extends State<_ComponentDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // The ValueListenableBuilder is not strictly necessary anymore with this logic,
+    // but it ensures reactivity if the box changes while the dialog is open.
     return ValueListenableBuilder<Box<VendorColor>>(
-      valueListenable: Hive.box<VendorColor>('vendor_colors').listenable(),
+      valueListenable: _vendorColorBox.listenable(),
       builder: (context, box, _) {
-        final colorNames = box.values.map((c) => c.name).toSet().toList()
-          ..sort();
+        // Ensure color names are fresh on each build
+        _updateColorNames();
+        // If the selected color is no longer valid, reset it.
+        if (_selectedColorName != null &&
+            !_colorNames.contains(_selectedColorName)) {
+          _selectedColorName = null;
+          _selectedSize = null;
+          _availableSizes = [];
+        }
 
         return AlertDialog(
           title: Text(
@@ -380,7 +392,7 @@ class _ComponentDialogState extends State<_ComponentDialog> {
                 value: _selectedColorName,
                 hint: const Text('Select Color'),
                 isExpanded: true,
-                items: colorNames.map((name) {
+                items: _colorNames.map((name) {
                   return DropdownMenuItem<String>(
                     value: name,
                     child: Text(name),
@@ -415,7 +427,7 @@ class _ComponentDialogState extends State<_ComponentDialog> {
               child: const Text('Cancel'),
               onPressed: () => Navigator.of(context).pop(),
             ),
-            TextButton(child: const Text('Save'), onPressed: _save),
+            TextButton(onPressed: _save, child: const Text('Save')),
           ],
         );
       },
