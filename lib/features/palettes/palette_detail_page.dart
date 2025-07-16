@@ -4,8 +4,8 @@ import 'package:vettore/color_edit_page.dart';
 import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/providers/palette_provider.dart';
-import 'package:vettore/widgets/palette_color_list.dart';
-import 'package:vettore/widgets/palette_details_form.dart';
+import 'package:vettore/features/palettes/widgets/palette_color_list.dart';
+import 'package:vettore/features/palettes/widgets/palette_details_form.dart';
 
 class PaletteDetailPage extends ConsumerStatefulWidget {
   final int paletteKey;

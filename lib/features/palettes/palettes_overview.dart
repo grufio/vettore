@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/palette_detail_page.dart';
+import 'package:vettore/features/palettes/palette_detail_page.dart';
 import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/providers/palette_provider.dart';
 

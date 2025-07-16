@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/project_overview_page.dart';
+import 'package:vettore/features/projects/project_overview_page.dart';
 import 'package:vettore/services/initialization_service.dart';
 
 // Create a provider for the InitializationService

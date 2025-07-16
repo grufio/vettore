@@ -11,7 +11,7 @@ import 'package:vettore/models/vendor_color_model.dart';
 import 'package:vettore/services/ai_service.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:super_clipboard/super_clipboard.dart';
-import 'package:vettore/import_recipe_dialog.dart';
+import 'package:vettore/features/settings/import_recipe_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ColorEditPage extends ConsumerStatefulWidget {

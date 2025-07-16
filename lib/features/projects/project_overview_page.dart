@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/main.dart';
-import 'package:vettore/palettes_overview.dart';
-import 'package:vettore/project_editor_page.dart';
+import 'package:vettore/features/palettes/palettes_overview.dart';
+import 'package:vettore/features/projects/project_editor_page.dart';
 import 'package:vettore/models/project_model.dart';
 import 'package:vettore/repositories/project_repository.dart';
 import 'package:vettore/services/project_service.dart';
-import 'package:vettore/settings_dialog.dart';
+import 'package:vettore/features/settings/settings_dialog.dart';
 
 class ProjectListNotifier extends StateNotifier<List<Project>> {
   final ProjectRepository _projectRepository;
