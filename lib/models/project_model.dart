@@ -34,4 +34,42 @@ class Project extends HiveObject {
 
   @HiveField(8)
   int? uniqueColorCount;
+
+  @HiveField(9)
+  Uint8List? originalImageData;
+
+  @HiveField(10)
+  double? originalImageWidth;
+
+  @HiveField(11)
+  double? originalImageHeight;
+
+  Project copyWith({
+    String? name,
+    Uint8List? imageData,
+    Uint8List? thumbnailData,
+    bool? isConverted,
+    List<VectorObject>? vectorObjects,
+    List<PaletteColor>? palette,
+    double? imageWidth,
+    double? imageHeight,
+    int? uniqueColorCount,
+    Uint8List? originalImageData,
+    double? originalImageWidth,
+    double? originalImageHeight,
+  }) {
+    return Project()
+      ..name = name ?? this.name
+      ..imageData = imageData ?? this.imageData
+      ..thumbnailData = thumbnailData ?? this.thumbnailData
+      ..isConverted = isConverted ?? this.isConverted
+      ..vectorObjects = vectorObjects ?? this.vectorObjects
+      ..palette = palette ?? this.palette
+      ..imageWidth = imageWidth ?? this.imageWidth
+      ..imageHeight = imageHeight ?? this.imageHeight
+      ..uniqueColorCount = uniqueColorCount ?? this.uniqueColorCount
+      ..originalImageData = originalImageData ?? this.originalImageData
+      ..originalImageWidth = originalImageWidth ?? this.originalImageWidth
+      ..originalImageHeight = originalImageHeight ?? this.originalImageHeight;
+  }
 }

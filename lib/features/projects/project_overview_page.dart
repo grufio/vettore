@@ -43,8 +43,14 @@ class ProjectOverviewPage extends ConsumerWidget {
   Future<void> _deleteProject(
     BuildContext context,
     WidgetRef ref,
-    dynamic key,
+    int? key,
   ) async {
+    if (key == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: Project key is missing.')),
+      );
+      return;
+    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -69,7 +75,7 @@ class ProjectOverviewPage extends ConsumerWidget {
     );
 
     if (confirmed == true) {
-      await ref.read(projectListProvider.notifier).deleteProject(key as int);
+      await ref.read(projectListProvider.notifier).deleteProject(key);
     }
   }
 
@@ -147,8 +153,11 @@ class ProjectOverviewPage extends ConsumerWidget {
                       icon: const Icon(Icons.delete),
                       color: Colors.white,
                       tooltip: 'Delete Project',
-                      onPressed: () =>
-                          _deleteProject(context, ref, project.key as int),
+                      onPressed: () {
+                        if (project.key != null) {
+                          _deleteProject(context, ref, project.key as int);
+                        }
+                      },
                     ),
                   ),
                   child: Image.memory(project.thumbnailData, fit: BoxFit.cover),
