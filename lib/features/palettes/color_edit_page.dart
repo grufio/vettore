@@ -8,7 +8,7 @@ import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/vendor_color_model.dart';
 import 'package:vettore/services/ai_service.dart';
 import 'package:vettore/services/settings_service.dart';
-import 'package:vettore/features/settings/import_recipe_dialog.dart';
+import 'package:vettore/widgets/import_recipe_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ColorEditPage extends ConsumerStatefulWidget {

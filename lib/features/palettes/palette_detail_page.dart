@@ -111,7 +111,11 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
       ),
       body: Column(
         children: [
-          PaletteDetailsForm(palette: palette, formKey: _formKey),
+          PaletteDetailsForm(
+            palette: palette,
+            paletteKey: widget.paletteKey,
+            formKey: _formKey,
+          ),
           Expanded(
             child: PaletteColorList(
               colors: palette.colors,

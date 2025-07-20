@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/main.dart';
+import 'package:hive/hive.dart';
+import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/repositories/palette_repository.dart';
@@ -13,17 +14,18 @@ final paletteProvider = StateNotifierProvider.autoDispose
       final paletteRepository = ref.watch(paletteRepositoryProvider);
       try {
         final palette = paletteRepository.getPalette(paletteKey);
-        return PaletteNotifier(palette, paletteRepository);
+        return PaletteNotifier(palette, paletteRepository, paletteKey);
       } catch (e) {
-        return PaletteNotifier(null, paletteRepository);
+        return PaletteNotifier(null, paletteRepository, paletteKey);
       }
     });
 
 /// A notifier that manages the state of a single palette.
 class PaletteNotifier extends StateNotifier<Palette?> {
   final PaletteRepository _paletteRepository;
+  final int _paletteKey;
 
-  PaletteNotifier(super.palette, this._paletteRepository);
+  PaletteNotifier(super.palette, this._paletteRepository, this._paletteKey);
 
   /// Updates the details of the palette (name, size, factor).
   Future<void> updateDetails({
@@ -37,7 +39,7 @@ class PaletteNotifier extends StateNotifier<Palette?> {
       sizeInMl: size,
       factor: factor,
     );
-    await _paletteRepository.updatePalette(newState);
+    await _paletteRepository.updatePalette(_paletteKey, newState);
     state = newState;
   }
 
@@ -46,7 +48,7 @@ class PaletteNotifier extends StateNotifier<Palette?> {
     if (state == null) return;
     final newColors = List<PaletteColor>.from(state!.colors)..add(color);
     final newState = state!.copyWith(colors: newColors);
-    await _paletteRepository.updatePalette(newState);
+    await _paletteRepository.updatePalette(_paletteKey, newState);
     state = newState;
   }
 
@@ -56,7 +58,7 @@ class PaletteNotifier extends StateNotifier<Palette?> {
     final newColors = List<PaletteColor>.from(state!.colors);
     newColors[index] = color;
     final newState = state!.copyWith(colors: newColors);
-    await _paletteRepository.updatePalette(newState);
+    await _paletteRepository.updatePalette(_paletteKey, newState);
     state = newState;
   }
 
@@ -65,7 +67,7 @@ class PaletteNotifier extends StateNotifier<Palette?> {
     if (state == null) return;
     final newColors = List<PaletteColor>.from(state!.colors)..removeAt(index);
     final newState = state!.copyWith(colors: newColors);
-    await _paletteRepository.updatePalette(newState);
+    await _paletteRepository.updatePalette(_paletteKey, newState);
     state = newState;
   }
 }
@@ -73,35 +75,25 @@ class PaletteNotifier extends StateNotifier<Palette?> {
 /// A provider that returns a [PaletteListNotifier] which manages the list
 /// of all palettes.
 final paletteListProvider =
-    StateNotifierProvider<PaletteListNotifier, List<Palette>>((ref) {
+    StateNotifierProvider<PaletteListNotifier, Box<Palette>>((ref) {
       return PaletteListNotifier(ref.watch(paletteRepositoryProvider));
     });
 
 /// A notifier that manages the state of the list of all palettes.
-class PaletteListNotifier extends StateNotifier<List<Palette>> {
+class PaletteListNotifier extends StateNotifier<Box<Palette>> {
   final PaletteRepository _paletteRepository;
 
-  PaletteListNotifier(this._paletteRepository) : super([]) {
+  PaletteListNotifier(this._paletteRepository)
+    : super(_paletteRepository.getPalettesListenable().value) {
     _listenToPalettes();
   }
 
   void _listenToPalettes() {
     _paletteRepository.getPalettesListenable().addListener(_updateState);
-    _updateState(); // Initial state
   }
 
   void _updateState() {
-    final box = _paletteRepository.getPalettesListenable().value;
-    final List<Palette> palettes = [];
-    for (final key in box.keys) {
-      final palette = box.get(key);
-      if (palette != null) {
-        // Manually assign the key to the palette object
-        palette.key = key;
-        palettes.add(palette);
-      }
-    }
-    state = palettes;
+    state = _paletteRepository.getPalettesListenable().value;
   }
 
   /// Adds a new palette to the database.

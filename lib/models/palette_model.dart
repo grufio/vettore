@@ -17,9 +17,6 @@ class Palette {
   @HiveField(3)
   double factor = 1.5;
 
-  @HiveField(4)
-  int? key;
-
   Palette();
 
   // Copy constructor
@@ -30,7 +27,6 @@ class Palette {
     );
     sizeInMl = other.sizeInMl;
     factor = other.factor;
-    key = other.key;
   }
 
   Palette copyWith({
@@ -38,13 +34,11 @@ class Palette {
     List<PaletteColor>? colors,
     double? sizeInMl,
     double? factor,
-    int? key,
   }) {
     return Palette.from(this)
       ..name = name ?? this.name
       ..colors = colors ?? this.colors.map((c) => PaletteColor.from(c)).toList()
       ..sizeInMl = sizeInMl ?? this.sizeInMl
-      ..factor = factor ?? this.factor
-      ..key = key ?? this.key;
+      ..factor = factor ?? this.factor;
   }
 }

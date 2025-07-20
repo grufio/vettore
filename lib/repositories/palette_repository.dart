@@ -15,21 +15,18 @@ class PaletteRepository {
   }
 
   /// Returns a single palette from the database.
-  Palette? getPalette(dynamic key) {
-    final palette = _palettesBox.get(key);
-    return palette?.copyWith(key: key);
+  Palette? getPalette(int key) {
+    return _palettesBox.get(key);
   }
 
   /// Adds a new palette to the database.
   Future<void> addPalette(Palette palette) async {
-    int id = await _palettesBox.add(palette);
-    palette.key = id;
-    await _palettesBox.put(id, palette);
+    await _palettesBox.add(palette);
   }
 
   /// Updates an existing palette in the database.
-  Future<void> updatePalette(Palette palette) async {
-    await _palettesBox.put(palette.key, palette);
+  Future<void> updatePalette(int key, Palette palette) async {
+    await _palettesBox.put(key, palette);
   }
 
   /// Deletes a palette from the database.

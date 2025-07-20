@@ -1,13 +1,12 @@
-import 'dart:typed_data';
-
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image/image.dart' as img;
-import 'package:vettore/main.dart';
 import 'package:vettore/models/project_model.dart';
+import 'package:vettore/models/vector_object_model.dart';
+import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/repositories/project_repository.dart';
 import 'package:vettore/services/project_service.dart';
-import 'package:flutter/material.dart';
 
 @immutable
 class ProjectState {
@@ -56,58 +55,60 @@ class ProjectNotifier extends StateNotifier<ProjectState> {
   );
 
   Future<void> convertProject() async {
-    if (state.project == null || state.isLoading) return;
+    if (state.project == null || state.isLoading) {
+      return;
+    }
 
     state = state.copyWith(isLoading: true);
 
     try {
-      final updatedProject = await _projectService.performVectorConversion(
-        state.project!,
+      // Pass only the necessary raw data to the isolate.
+      final result = await compute(_performConversionIsolate, {
+        'imageData': state.project!.imageData,
+      });
+
+      final updatedProject = state.project!.copyWith(
+        vectorObjects: result['vectorObjects'],
+        imageWidth: result['imageWidth'],
+        imageHeight: result['imageHeight'],
+        isConverted: true,
+        uniqueColorCount: result['uniqueColorCount'],
       );
-      _projectRepository.updateProject(state.project!.key, updatedProject);
-      state = state.copyWith(project: updatedProject);
+
+      await _projectRepository.updateProject(
+        state.project!.key,
+        updatedProject,
+      );
+      state = state.copyWith(project: updatedProject, isLoading: false);
     } catch (e) {
-      // Handle or log the error appropriately
-      debugPrint('Error during vector conversion: $e');
-    } finally {
+      debugPrint('[ProjectProvider] Error during vector conversion: $e');
       state = state.copyWith(isLoading: false);
     }
   }
 
-  Future<void> updateImage(double scalePercent) async {
+  Future<void> updateImage(
+    double scalePercent,
+    FilterQuality filterQuality,
+  ) async {
     if (state.project == null || state.isLoading) return;
 
     state = state.copyWith(isLoading: true);
 
     try {
-      // Handle legacy projects that don't have originalImageData yet.
-      final bool isLegacyProject = state.project!.originalImageData == null;
-      final Uint8List sourceImageData = isLegacyProject
-          ? state.project!.imageData
-          : state.project!.originalImageData!;
-      final double? sourceImageWidth = isLegacyProject
-          ? state.project!.imageWidth
-          : state.project!.originalImageWidth;
-      final double? sourceImageHeight = isLegacyProject
-          ? state.project!.imageHeight
-          : state.project!.originalImageHeight;
-
       final result = await compute(_performImageUpdate, {
-        'imageData': sourceImageData,
+        'imageData': state.project!.originalImageData!,
         'scalePercent': scalePercent,
+        'filterQuality': filterQuality,
       });
 
       final updatedProjectData = state.project!.copyWith(
         imageData: result['imageData'],
         imageWidth: result['width'],
         imageHeight: result['height'],
+        filterQualityIndex: filterQuality.index,
         isConverted: false,
         vectorObjects: [],
         uniqueColorCount: 0,
-        // If it's a legacy project, "upgrade" it by setting original data.
-        originalImageData: sourceImageData,
-        originalImageWidth: sourceImageWidth,
-        originalImageHeight: sourceImageHeight,
       );
 
       await _projectRepository.updateProject(
@@ -128,6 +129,8 @@ class ProjectNotifier extends StateNotifier<ProjectState> {
       imageData: state.project!.originalImageData,
       imageWidth: state.project!.originalImageWidth,
       imageHeight: state.project!.originalImageHeight,
+      filterQualityIndex:
+          FilterQuality.high.index, // Default to high quality on reset
       isConverted: false,
       vectorObjects: [],
       uniqueColorCount: 0,
@@ -140,6 +143,7 @@ class ProjectNotifier extends StateNotifier<ProjectState> {
 Map<String, dynamic> _performImageUpdate(Map<String, dynamic> params) {
   final Uint8List imageData = params['imageData'];
   final double scalePercent = params['scalePercent'];
+  final FilterQuality filterQuality = params['filterQuality'];
 
   final originalImage = img.decodeImage(imageData);
   if (originalImage == null) {
@@ -149,16 +153,77 @@ Map<String, dynamic> _performImageUpdate(Map<String, dynamic> params) {
   final newWidth = (originalImage.width * scalePercent / 100).round();
   final newHeight = (originalImage.height * scalePercent / 100).round();
 
+  // Map FilterQuality to the image package's Interpolation enum
+  final interpolation = switch (filterQuality) {
+    FilterQuality.high => img.Interpolation.cubic,
+    FilterQuality.medium => img.Interpolation.linear,
+    _ => img.Interpolation.nearest,
+  };
+
   final resizedImage = img.copyResize(
     originalImage,
     width: newWidth > 0 ? newWidth : 1,
     height: newHeight > 0 ? newHeight : 1,
-    interpolation: img.Interpolation.average,
+    interpolation: interpolation,
   );
 
   return {
     'imageData': Uint8List.fromList(img.encodePng(resizedImage)),
     'width': resizedImage.width.toDouble(),
     'height': resizedImage.height.toDouble(),
+  };
+}
+
+// This function will run in a separate isolate.
+Map<String, dynamic> _performConversionIsolate(Map<String, dynamic> params) {
+  final Uint8List imageData = params['imageData'];
+  final img.Image? imageToConvert = img.decodeImage(imageData);
+
+  if (imageToConvert == null) {
+    throw Exception('Could not decode image');
+  }
+
+  final List<VectorObject> vectorObjects = [];
+  final Map<int, int> colorIndexMap = {};
+  int nextColorIndex = 1;
+
+  for (int y = 0; y < imageToConvert.height; y++) {
+    for (int x = 0; x < imageToConvert.width; x++) {
+      final pixel = imageToConvert.getPixel(x, y);
+      final flutterColor = Color.fromARGB(
+        pixel.a.toInt(),
+        pixel.r.toInt(),
+        pixel.g.toInt(),
+        pixel.b.toInt(),
+      );
+
+      int colorIndex;
+      if (colorIndexMap.containsKey(flutterColor.toARGB32())) {
+        colorIndex = colorIndexMap[flutterColor.toARGB32()]!;
+      } else {
+        colorIndex = nextColorIndex;
+        colorIndexMap[flutterColor.toARGB32()] = colorIndex;
+        nextColorIndex++;
+      }
+
+      vectorObjects.add(
+        VectorObject.fromRectAndColor(
+          rect: Rect.fromLTWH(x.toDouble(), y.toDouble(), 1, 1),
+          color: flutterColor,
+          colorIndex: colorIndex,
+        ),
+      );
+    }
+  }
+
+  final Set<int> uniqueColors = vectorObjects
+      .map((obj) => obj.color.toARGB32())
+      .toSet();
+
+  return {
+    'vectorObjects': vectorObjects,
+    'imageWidth': imageToConvert.width.toDouble(),
+    'imageHeight': imageToConvert.height.toDouble(),
+    'uniqueColorCount': uniqueColors.length,
   };
 }

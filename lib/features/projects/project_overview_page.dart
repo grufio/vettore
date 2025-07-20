@@ -1,41 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/main.dart';
+import 'package:hive/hive.dart';
+import 'package:vettore/models/project_model.dart';
 import 'package:vettore/features/palettes/palettes_overview.dart';
 import 'package:vettore/features/projects/project_editor_page.dart';
-import 'package:vettore/models/project_model.dart';
-import 'package:vettore/repositories/project_repository.dart';
-import 'package:vettore/services/project_service.dart';
-import 'package:vettore/features/settings/settings_dialog.dart';
-
-class ProjectListNotifier extends StateNotifier<List<Project>> {
-  final ProjectRepository _projectRepository;
-  final ProjectService _projectService;
-
-  ProjectListNotifier(this._projectRepository, this._projectService)
-    : super(_projectRepository.getProjects());
-
-  Future<void> createNewProject() async {
-    final newProject = await _projectService.createProjectFromFile();
-    if (newProject != null) {
-      await _projectRepository.addProject(newProject);
-      state = _projectRepository.getProjects();
-    }
-  }
-
-  Future<void> deleteProject(int key) async {
-    await _projectRepository.deleteProject(key);
-    state = _projectRepository.getProjects();
-  }
-}
-
-final projectListProvider =
-    StateNotifierProvider<ProjectListNotifier, List<Project>>((ref) {
-      return ProjectListNotifier(
-        ref.watch(projectRepositoryProvider),
-        ref.watch(projectServiceProvider),
-      );
-    });
+import 'package:vettore/providers/application_providers.dart';
+import 'package:vettore/widgets/settings_dialog.dart';
+import 'package:vettore/providers/project_list_provider.dart';
 
 class ProjectOverviewPage extends ConsumerWidget {
   const ProjectOverviewPage({super.key});
@@ -80,12 +51,13 @@ class ProjectOverviewPage extends ConsumerWidget {
   }
 
   Future<void> _pickImages(BuildContext context, WidgetRef ref) async {
+    // We keep using the projectListProvider to handle the business logic of creating a project.
     await ref.read(projectListProvider.notifier).createNewProject();
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final projects = ref.watch(projectListProvider);
+    final projectListenable = ref.watch(projectListenableProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -113,8 +85,10 @@ class ProjectOverviewPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: Builder(
-        builder: (context) {
+      body: ValueListenableBuilder<Box<Project>>(
+        valueListenable: projectListenable,
+        builder: (context, box, _) {
+          final projects = box.values.toList();
           if (projects.isEmpty) {
             return const Center(
               child: Text('No projects yet. Click + to add one.'),
@@ -131,13 +105,15 @@ class ProjectOverviewPage extends ConsumerWidget {
             itemCount: projects.length,
             itemBuilder: (context, index) {
               final project = projects[index];
+              final projectKey = box.keyAt(index) as int;
+
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          ProjectEditorPage(projectKey: project.key),
+                          ProjectEditorPage(projectKey: projectKey),
                     ),
                   );
                 },
@@ -154,9 +130,7 @@ class ProjectOverviewPage extends ConsumerWidget {
                       color: Colors.white,
                       tooltip: 'Delete Project',
                       onPressed: () {
-                        if (project.key != null) {
-                          _deleteProject(context, ref, project.key as int);
-                        }
+                        _deleteProject(context, ref, projectKey);
                       },
                     ),
                   ),

@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'package:image/image.dart' as img;
 import 'package:pdf/pdf.dart';
-import 'package:vettore/models/project_model.dart';
 import 'package:vettore/models/vector_object_model.dart';
 import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/services/project_service.dart';
-import 'package:vettore/features/projects/services/pdf_generator.dart';
+import 'package:vettore/services/pdf_generator.dart';
 import 'package:vettore/widgets/color_settings_dialog.dart';
+import 'package:vettore/features/projects/widgets/resize_dialog.dart';
 
 class ProjectEditorPage extends ConsumerStatefulWidget {
   final int projectKey;
@@ -24,7 +22,6 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   bool _showBackground = true;
 
   // Controllers for conversion settings
-  late final TextEditingController _downsampleScaleController;
   late final TextEditingController _maxObjectColorsController;
 
   // State for Output tab
@@ -39,8 +36,6 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   bool _centerImage = true;
   bool _isLandscape = false;
 
-  final ValueNotifier<Size?> _resultingDimensionsNotifier = ValueNotifier(null);
-
   TabController? _tabController;
 
   final Map<String, PdfPageFormat?> _pageFormats = {
@@ -54,72 +49,61 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-
-    final settingsBox = Hive.box('settings');
-    _downsampleScaleController = TextEditingController(
-      text: settingsBox.get('downsampleScale', defaultValue: '10'),
-    );
-    _downsampleScaleController.addListener(_calculateResultingDimensions);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _calculateResultingDimensions();
-    });
+    _tabController!.addListener(_handleTabSelection);
 
     _maxObjectColorsController = TextEditingController(
-      text: settingsBox.get('maxObjectColors', defaultValue: '40'),
+      text: Hive.box('settings').get('maxObjectColors', defaultValue: '40'),
     );
 
     // Init Output state
     _objectOutputSizeController = TextEditingController(
-      text: settingsBox.get('objectOutputSize', defaultValue: '10'),
+      text: Hive.box('settings').get('objectOutputSize', defaultValue: '10'),
     );
     _outputFontSizeController = TextEditingController(
-      text: settingsBox.get('outputFontSize', defaultValue: '10'),
+      text: Hive.box('settings').get('outputFontSize', defaultValue: '10'),
     );
     _customPageWidthController = TextEditingController(
-      text: settingsBox.get('customPageWidth', defaultValue: '210'),
+      text: Hive.box('settings').get('customPageWidth', defaultValue: '210'),
     );
     _customPageHeightController = TextEditingController(
-      text: settingsBox.get('customPageHeight', defaultValue: '297'),
+      text: Hive.box('settings').get('customPageHeight', defaultValue: '297'),
     );
     _outputBordersController = TextEditingController(
-      text: settingsBox.get('outputBorders', defaultValue: '10'),
+      text: Hive.box('settings').get('outputBorders', defaultValue: '10'),
     );
-    _printBackground = settingsBox.get('printBackground', defaultValue: false);
-    _selectedPageFormat = settingsBox.get('pageFormat', defaultValue: 'A4');
-    _centerImage = settingsBox.get('centerImage', defaultValue: true);
-    _isLandscape = settingsBox.get('isLandscape', defaultValue: false);
+    _printBackground = Hive.box(
+      'settings',
+    ).get('printBackground', defaultValue: false);
+    _selectedPageFormat = Hive.box(
+      'settings',
+    ).get('pageFormat', defaultValue: 'A4');
+    _centerImage = Hive.box('settings').get('centerImage', defaultValue: true);
+    _isLandscape = Hive.box('settings').get('isLandscape', defaultValue: false);
   }
 
   @override
   void dispose() {
+    _tabController!.removeListener(_handleTabSelection);
     _tabController!.dispose();
-    _downsampleScaleController.removeListener(_calculateResultingDimensions);
-    _downsampleScaleController.dispose();
     _maxObjectColorsController.dispose();
     _objectOutputSizeController.dispose();
     _outputFontSizeController.dispose();
     _customPageWidthController.dispose();
     _customPageHeightController.dispose();
     _outputBordersController.dispose();
-    _resultingDimensionsNotifier.dispose();
     super.dispose();
   }
 
-  void _calculateResultingDimensions() {
+  void _handleTabSelection() {
     final project = ref.read(projectProvider(widget.projectKey)).project;
-    if (project == null) {
-      _resultingDimensionsNotifier.value = null;
-      return;
-    }
+    if (project == null) return;
+    final isImageTooLarge =
+        (project.imageWidth ?? 0) > 500 || (project.imageHeight ?? 0) > 500;
 
-    final scale = double.tryParse(_downsampleScaleController.text) ?? 0.0;
-    if (project.imageWidth != null && project.imageHeight != null) {
-      _resultingDimensionsNotifier.value = Size(
-        (project.imageWidth! * scale / 100).round().toDouble(),
-        (project.imageHeight! * scale / 100).round().toDouble(),
-      );
-    } else {
-      _resultingDimensionsNotifier.value = null;
+    if (isImageTooLarge && _tabController!.indexIsChanging) {
+      if (_tabController!.index != 0) {
+        _tabController!.index = 0;
+      }
     }
   }
 
@@ -195,7 +179,8 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
         children: [
           Expanded(
             child: InteractiveViewer(
-              maxScale: 10.0,
+              minScale: 1.0,
+              maxScale: 1.0,
               child: RepaintBoundary(
                 child: Center(
                   child: Stack(
@@ -206,7 +191,13 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                         maintainState: true,
                         maintainAnimation: true,
                         maintainSize: true,
-                        child: Image.memory(project.imageData),
+                        child: Image.memory(
+                          project.imageData,
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                          height: double.infinity,
+                          filterQuality: project.filterQuality,
+                        ),
                       ),
                       if (project.isConverted && _showVectors)
                         Positioned.fill(
@@ -235,36 +226,30 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
             color: Theme.of(context).colorScheme.surfaceContainer,
             child: Column(
               children: [
-                IgnorePointer(
-                  ignoring: isImageTooLarge,
-                  child: TabBar(
-                    controller: _tabController,
-                    tabs: [
-                      const Tab(icon: Icon(Icons.image_outlined)),
-                      Tab(
-                        icon: Icon(
-                          Icons.transform_outlined,
-                          color: isImageTooLarge
-                              ? Theme.of(context).disabledColor
-                              : null,
-                        ),
+                TabBar(
+                  controller: _tabController,
+                  tabs: [
+                    const Tab(icon: Icon(Icons.image_outlined)),
+                    Tab(
+                      icon: Icon(
+                        Icons.transform_outlined,
+                        color: isImageTooLarge
+                            ? Theme.of(context).disabledColor
+                            : null,
                       ),
-                      Tab(
-                        icon: Icon(
-                          Icons.picture_as_pdf_outlined,
-                          color: isImageTooLarge
-                              ? Theme.of(context).disabledColor
-                              : null,
-                        ),
+                    ),
+                    Tab(
+                      icon: Icon(
+                        Icons.picture_as_pdf_outlined,
+                        color: isImageTooLarge
+                            ? Theme.of(context).disabledColor
+                            : null,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 Expanded(
                   child: TabBarView(
-                    physics: isImageTooLarge
-                        ? const NeverScrollableScrollPhysics()
-                        : null,
                     controller: _tabController,
                     children: [
                       // Image Tab
@@ -274,33 +259,23 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Original Dimensions: ${project.imageWidth?.toInt() ?? 'N/A'} x ${project.imageHeight?.toInt() ?? 'N/A'}',
-                            ),
-                            const SizedBox(height: 16),
-                            TextField(
-                              controller: _downsampleScaleController,
-                              decoration: const InputDecoration(
-                                labelText: 'Downsample Scale (%)',
-                                helperText:
-                                    'Reduces image size before conversion. Applied on "Update Image".',
-                              ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (value) => Hive.box(
-                                'settings',
-                              ).put('downsampleScale', value),
+                              'Original Dimensions: ${project.originalImageWidth?.toInt() ?? 'N/A'} x ${project.originalImageHeight?.toInt() ?? 'N/A'}',
                             ),
                             const SizedBox(height: 8),
-                            ValueListenableBuilder<Size?>(
-                              valueListenable: _resultingDimensionsNotifier,
-                              builder: (context, size, child) {
-                                final width = size?.width.toInt() ?? '...';
-                                final height = size?.height.toInt() ?? '...';
-                                return Text(
-                                  'Resulting Dimensions: $width x $height',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                );
-                              },
+                            Text(
+                              'Current Dimensions: ${project.imageWidth?.toInt() ?? 'N/A'} x ${project.imageHeight?.toInt() ?? 'N/A'}',
                             ),
+                            const SizedBox(height: 16),
+                            if (isImageTooLarge)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Text(
+                                  'Image > 500px. Please update.',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              ),
                             const SizedBox(height: 16),
                             if (projectState.isLoading)
                               const Center(child: CircularProgressIndicator())
@@ -308,35 +283,67 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                               Row(
                                 children: [
                                   Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        final scale =
-                                            double.tryParse(
-                                              _downsampleScaleController.text,
-                                            ) ??
-                                            100.0;
-                                        ref
-                                            .read(
-                                              projectProvider(
-                                                widget.projectKey,
-                                              ).notifier,
-                                            )
-                                            .updateImage(scale);
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        final result =
+                                            await showDialog<ResizeResult>(
+                                              context: context,
+                                              builder: (context) =>
+                                                  const ResizeDialog(),
+                                            );
+
+                                        if (result != null && mounted) {
+                                          ref
+                                              .read(
+                                                projectProvider(
+                                                  widget.projectKey,
+                                                ).notifier,
+                                              )
+                                              .updateImage(
+                                                result.percentage,
+                                                result.filterQuality,
+                                              );
+                                        }
                                       },
-                                      icon: const Icon(Icons.update),
-                                      label: const Text('Update'),
+                                      child: const Text('Resize Image'),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
                                   ElevatedButton(
-                                    onPressed: () => ref
-                                        .read(
-                                          projectProvider(
-                                            widget.projectKey,
-                                          ).notifier,
-                                        )
-                                        .resetImage(),
-                                    child: const Icon(Icons.refresh),
+                                    onPressed:
+                                        (project.originalImageData == null)
+                                        ? null
+                                        : () => showDialog(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: const Text('Confirm'),
+                                              content: const Text(
+                                                'You are loosing all information',
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(
+                                                    context,
+                                                  ).pop(),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                    ref
+                                                        .read(
+                                                          projectProvider(
+                                                            widget.projectKey,
+                                                          ).notifier,
+                                                        )
+                                                        .resetImage();
+                                                  },
+                                                  child: const Text('OK'),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                    child: const Text('Reset'),
                                   ),
                                 ],
                               ),

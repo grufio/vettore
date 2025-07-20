@@ -1,10 +1,15 @@
-import 'package:hive/hive.dart';
+import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vettore/models/project_model.dart';
 
 class ProjectRepository {
   final Box<Project> _projectBox;
 
   ProjectRepository(this._projectBox);
+
+  ValueListenable<Box<Project>> getProjectsListenable() {
+    return _projectBox.listenable();
+  }
 
   List<Project> getProjects() {
     return _projectBox.values.toList();

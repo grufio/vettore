@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:hive/hive.dart';
 import 'package:vettore/models/palette_color.dart';
@@ -44,6 +45,11 @@ class Project extends HiveObject {
   @HiveField(11)
   double? originalImageHeight;
 
+  @HiveField(12, defaultValue: 1)
+  int filterQualityIndex = FilterQuality.low.index;
+
+  FilterQuality get filterQuality => FilterQuality.values[filterQualityIndex];
+
   Project copyWith({
     String? name,
     Uint8List? imageData,
@@ -57,6 +63,7 @@ class Project extends HiveObject {
     Uint8List? originalImageData,
     double? originalImageWidth,
     double? originalImageHeight,
+    int? filterQualityIndex,
   }) {
     return Project()
       ..name = name ?? this.name
@@ -70,6 +77,7 @@ class Project extends HiveObject {
       ..uniqueColorCount = uniqueColorCount ?? this.uniqueColorCount
       ..originalImageData = originalImageData ?? this.originalImageData
       ..originalImageWidth = originalImageWidth ?? this.originalImageWidth
-      ..originalImageHeight = originalImageHeight ?? this.originalImageHeight;
+      ..originalImageHeight = originalImageHeight ?? this.originalImageHeight
+      ..filterQualityIndex = filterQualityIndex ?? this.filterQualityIndex;
   }
 }

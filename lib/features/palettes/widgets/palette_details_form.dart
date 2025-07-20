@@ -5,10 +5,12 @@ import 'package:vettore/providers/palette_provider.dart';
 
 class PaletteDetailsForm extends ConsumerStatefulWidget {
   final Palette palette;
+  final int paletteKey;
   final GlobalKey<FormState> formKey;
   const PaletteDetailsForm({
     super.key,
     required this.palette,
+    required this.paletteKey,
     required this.formKey,
   });
 
@@ -95,7 +97,7 @@ class _PaletteDetailsFormState extends ConsumerState<PaletteDetailsForm> {
                 ),
                 onSaved: (value) {
                   ref
-                      .read(paletteProvider(widget.palette.key!).notifier)
+                      .read(paletteProvider(widget.paletteKey).notifier)
                       .updateDetails(
                         name: widget.palette.name,
                         size: double.tryParse(_sizeController.text) ?? 60.0,

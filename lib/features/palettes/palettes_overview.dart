@@ -52,14 +52,15 @@ class PalettesOverview extends ConsumerWidget {
   Future<void> _showDeleteConfirmDialog(
     BuildContext context,
     WidgetRef ref,
-    Palette palette,
+    int paletteKey,
+    String paletteName,
   ) async {
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AdaptiveDialog(
           title: 'Delete Palette',
-          content: Text('Are you sure you want to delete "${palette.name}"?'),
+          content: Text('Are you sure you want to delete "$paletteName"?'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -72,7 +73,7 @@ class PalettesOverview extends ConsumerWidget {
               onPressed: () async {
                 await ref
                     .read(paletteListProvider.notifier)
-                    .deletePalette(palette.key!);
+                    .deletePalette(paletteKey);
                 if (!context.mounted) return;
                 Navigator.of(context).pop();
               },
@@ -85,29 +86,37 @@ class PalettesOverview extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final palettes = ref.watch(paletteListProvider);
+    final paletteBox = ref.watch(paletteListProvider);
+    final paletteKeys = paletteBox.keys.toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Palettes')),
       body: Builder(
         builder: (context) {
-          if (palettes.isEmpty) {
+          if (paletteBox.isEmpty) {
             return const Center(child: Text('No palettes created yet.'));
           }
           return ListView.builder(
-            itemCount: palettes.length,
+            itemCount: paletteKeys.length,
             itemBuilder: (context, index) {
-              final palette = palettes[index];
+              final paletteKey = paletteKeys[index];
+              final palette = paletteBox.get(paletteKey);
+
+              if (palette == null) {
+                return const Card(
+                  child: ListTile(title: Text('Error: Could not load palette')),
+                );
+              }
+
               return Card(
                 margin: const EdgeInsets.all(8.0),
                 child: InkWell(
                   onTap: () {
-                    if (palette.key == null) return;
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            PaletteDetailPage(paletteKey: palette.key!),
+                            PaletteDetailPage(paletteKey: paletteKey as int),
                       ),
                     );
                   },
@@ -132,7 +141,7 @@ class PalettesOverview extends ConsumerWidget {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => PaletteDetailPage(
-                                        paletteKey: palette.key!,
+                                        paletteKey: paletteKey as int,
                                       ),
                                     ),
                                   );
@@ -145,7 +154,8 @@ class PalettesOverview extends ConsumerWidget {
                                   _showDeleteConfirmDialog(
                                     context,
                                     ref,
-                                    palette,
+                                    paletteKey as int,
+                                    palette.name,
                                   );
                                 },
                               ),

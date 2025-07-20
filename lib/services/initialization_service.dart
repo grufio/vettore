@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:vettore/data/color_seeder.dart';
-import 'package:vettore/data/recipe_seeder.dart';
 import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/models/project_model.dart';
@@ -24,11 +22,6 @@ class InitializationService {
     // 3. Open all boxes safely
     await _openBoxes();
     debugPrint('All Hive boxes opened.');
-
-    // 4. Run data seeders
-    await ColorSeeder.seedColors();
-    await RecipeSeeder.seedRecipes();
-    debugPrint('Data seeders completed.');
 
     debugPrint('Application initialization complete.');
   }
