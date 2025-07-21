@@ -94,14 +94,20 @@ class PalettesOverview extends ConsumerWidget {
           if (palettes.isEmpty) {
             return const Center(child: Text('No palettes created yet.'));
           }
-          return ListView.builder(
+          return GridView.builder(
+            padding: const EdgeInsets.all(8.0),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: 8.0,
+              mainAxisSpacing: 8.0,
+            ),
             itemCount: palettes.length,
             itemBuilder: (context, index) {
               final fullPalette = palettes[index];
               final palette = fullPalette.palette;
 
               return Card(
-                margin: const EdgeInsets.all(8.0),
+                clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () {
                     Navigator.push(
@@ -112,50 +118,47 @@ class PalettesOverview extends ConsumerWidget {
                       ),
                     );
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ListTile(
-                          title: Text(
-                            palette.name,
-                            style: Theme.of(context).textTheme.titleLarge,
+                  child: GridTile(
+                    footer: GridTileBar(
+                      backgroundColor: Colors.black45,
+                      title: Text(
+                        palette.name,
+                        textAlign: TextAlign.center,
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.white),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      PaletteDetailPage(paletteId: palette.id),
+                                ),
+                              );
+                            },
+                            tooltip: 'Edit',
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit),
-                                tooltip: 'Edit Palette',
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PaletteDetailPage(
-                                        paletteId: palette.id,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                tooltip: 'Delete Palette',
-                                onPressed: () {
-                                  _showDeleteConfirmDialog(
-                                    context,
-                                    ref,
-                                    palette.id,
-                                    palette.name,
-                                  );
-                                },
-                              ),
-                            ],
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.white),
+                            onPressed: () => _showDeleteConfirmDialog(
+                                context, ref, palette.id, palette.name),
+                            tooltip: 'Delete',
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    child: (palette.thumbnail != null)
+                        ? Image.memory(
+                            palette.thumbnail!,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.image_not_supported),
+                          ),
                   ),
                 ),
               );

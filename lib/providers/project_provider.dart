@@ -53,6 +53,7 @@ class ProjectLogic {
       if (isFirstConversion) {
         final newPalette = PalettesCompanion.insert(
           name: '${project.name} Palette',
+          thumbnail: Value(project.thumbnailData),
         );
         final colors = (result['palette'] as List<Map<String, dynamic>>)
             .map((c) => PaletteColorsCompanion.insert(

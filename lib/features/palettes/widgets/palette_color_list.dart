@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/data/database.dart';
+import 'package:vettore/repositories/palette_repository.dart';
 
 class PaletteColorList extends ConsumerWidget {
-  final List<PaletteColor> colors;
-  final Function(PaletteColor) onEdit;
+  final List<PaletteColorWithComponents> colors;
+  final Function(PaletteColorWithComponents) onEdit;
   final Function(int) onDelete;
 
   const PaletteColorList({
@@ -26,11 +27,12 @@ class PaletteColorList extends ConsumerWidget {
       ),
       itemCount: colors.length,
       itemBuilder: (context, index) {
-        final colorData = colors[index];
+        final colorWithComponents = colors[index];
+        final colorData = colorWithComponents.color;
         return Card(
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => onEdit(colorData),
+            onTap: () => onEdit(colorWithComponents),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -49,7 +51,7 @@ class PaletteColorList extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.edit, size: 20),
                       tooltip: 'Edit Color',
-                      onPressed: () => onEdit(colorData),
+                      onPressed: () => onEdit(colorWithComponents),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, size: 20),

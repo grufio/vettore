@@ -5,6 +5,7 @@ import 'package:vettore/features/palettes/color_edit_page.dart';
 import 'package:vettore/providers/palette_detail_provider.dart';
 import 'package:vettore/features/palettes/widgets/palette_color_list.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:vettore/repositories/palette_repository.dart';
 
 class PaletteDetailPage extends ConsumerStatefulWidget {
   final int paletteId;
@@ -109,16 +110,16 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
     );
   }
 
-  void _editColor(PaletteColor color) {
+  void _editColor(PaletteColorWithComponents color) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ColorEditPage(
           initialColor: color,
-          onSave: (newColor) async {
+          onSave: (newColor, newComponents) async {
             await ref
                 .read(paletteDetailLogicProvider(widget.paletteId))
-                .updateColor(newColor);
+                .updateColor(newColor, newComponents);
           },
         ),
       ),
@@ -148,7 +149,7 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
           ),
           body: PaletteColorList(
             colors: colors,
-            onEdit: (color) => _editColor(color),
+            onEdit: _editColor,
             onDelete: (colorId) async => await ref
                 .read(paletteDetailLogicProvider(widget.paletteId))
                 .deleteColor(colorId),

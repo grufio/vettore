@@ -2,15 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/features/projects/project_overview_page.dart';
 import 'package:vettore/services/settings_service.dart';
+import 'package:vettore/data/database.dart';
+import 'package:vettore/services/seeding_service.dart';
+import 'package:vettore/providers/application_providers.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SettingsService.init();
-  runApp(const ProviderScope(child: MyApp()));
+
+  final database = AppDatabase();
+  await SeedingService(database).seedVendorColors();
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        databaseProvider.overrideWithValue(database),
+      ],
+      child: const VettoreApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class VettoreApp extends StatelessWidget {
+  const VettoreApp({super.key});
 
   @override
   Widget build(BuildContext context) {

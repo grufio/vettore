@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vettore/features/libraries/color_libraries_page.dart';
 import 'package:vettore/features/palettes/palettes_overview.dart';
 import 'package:vettore/features/projects/project_editor_page.dart';
 import 'package:vettore/providers/project_list_provider.dart';
@@ -49,6 +50,17 @@ class ProjectOverviewPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Projects'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.library_books),
+            tooltip: 'Libraries',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ColorLibrariesPage(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',

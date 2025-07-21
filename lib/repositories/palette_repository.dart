@@ -4,9 +4,16 @@ import 'package:drift/drift.dart';
 // A data class to hold a palette and its colors
 class FullPalette {
   final Palette palette;
-  final List<PaletteColor> colors;
+  final List<PaletteColorWithComponents> colors;
 
   FullPalette({required this.palette, required this.colors});
+}
+
+class PaletteColorWithComponents {
+  final PaletteColor color;
+  final List<ColorComponent> components;
+
+  PaletteColorWithComponents({required this.color, required this.components});
 }
 
 class PaletteRepository {
@@ -24,7 +31,17 @@ class PaletteRepository {
         final colors = await (_db.select(_db.paletteColors)
               ..where((c) => c.paletteId.equals(palette.id)))
             .get();
-        fullPalettes.add(FullPalette(palette: palette, colors: colors));
+
+        final colorsWithComponents = <PaletteColorWithComponents>[];
+        for (final color in colors) {
+          final components = await (_db.select(_db.colorComponents)
+                ..where((c) => c.paletteColorId.equals(color.id)))
+              .get();
+          colorsWithComponents.add(
+              PaletteColorWithComponents(color: color, components: components));
+        }
+        fullPalettes
+            .add(FullPalette(palette: palette, colors: colorsWithComponents));
       }
       return fullPalettes;
     });
@@ -32,15 +49,22 @@ class PaletteRepository {
 
   // Get a single full palette by its ID
   Stream<FullPalette> watchPalette(int id) {
-    final paletteStream =
-        (_db.select(_db.palettes)..where((p) => p.id.equals(id))).watchSingle();
+    final paletteQuery =
+        (_db.select(_db.palettes)..where((p) => p.id.equals(id)));
+    final colorsQuery =
+        (_db.select(_db.paletteColors)..where((c) => c.paletteId.equals(id)));
 
-    return paletteStream.asyncExpand((palette) {
-      final colorsStream = (_db.select(_db.paletteColors)
-            ..where((c) => c.paletteId.equals(id)))
-          .watch();
-      return colorsStream.map((colors) {
-        return FullPalette(palette: palette, colors: colors);
+    return paletteQuery.watchSingle().asyncExpand((palette) {
+      return colorsQuery.watch().asyncMap((colors) async {
+        final colorsWithComponents = <PaletteColorWithComponents>[];
+        for (final color in colors) {
+          final components = await (_db.select(_db.colorComponents)
+                ..where((c) => c.paletteColorId.equals(color.id)))
+              .get();
+          colorsWithComponents.add(
+              PaletteColorWithComponents(color: color, components: components));
+        }
+        return FullPalette(palette: palette, colors: colorsWithComponents);
       });
     });
   }
@@ -82,6 +106,13 @@ class PaletteRepository {
   // Update an existing color
   Future<void> updateColor(PaletteColorsCompanion color) {
     return _db.update(_db.paletteColors).replace(color);
+  }
+
+  Future<void> updateColorWithComponents(
+    PaletteColorsCompanion color,
+    List<ColorComponentsCompanion> components,
+  ) {
+    return _db.updatePaletteColorWithComponents(color, components);
   }
 
   // Delete a color from a palette

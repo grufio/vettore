@@ -41,8 +41,11 @@ class PaletteDetailLogic {
         .addColorToPalette(color.copyWith(paletteId: Value(_paletteId)));
   }
 
-  Future<void> updateColor(PaletteColorsCompanion color) async {
-    await _paletteRepository.updateColor(color);
+  Future<void> updateColor(
+    PaletteColorsCompanion color,
+    List<ColorComponentsCompanion> components,
+  ) async {
+    await _paletteRepository.updateColorWithComponents(color, components);
   }
 
   Future<void> deleteColor(int colorId) async {

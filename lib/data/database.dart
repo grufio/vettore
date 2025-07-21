@@ -1,8 +1,12 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sqlite3/sqlite3.dart';
+import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'database.g.dart';
 
@@ -35,8 +39,10 @@ class Projects extends Table {
 class Palettes extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
+  TextColumn get description => text().nullable()();
   RealColumn get sizeInMl => real().withDefault(const Constant(60.0))();
   RealColumn get factor => real().withDefault(const Constant(1.5))();
+  BlobColumn get thumbnail => blob().nullable()();
 }
 
 // Palette Color Table
@@ -51,9 +57,17 @@ class PaletteColors extends Table {
 // Vendor Color Table
 class VendorColors extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get articleNumber => text()();
   TextColumn get name => text()();
+  TextColumn get code => text()();
+  TextColumn get imageUrl => text().withDefault(const Constant(''))();
+}
+
+@DataClassName('VendorColorVariant')
+class VendorColorVariants extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get vendorColorId => integer().references(VendorColors, #id)();
   IntColumn get size => integer()();
+  IntColumn get stock => integer().withDefault(const Constant(0))();
 }
 
 // Color Component Table (linking PaletteColors and VendorColors)
@@ -75,13 +89,84 @@ class ColorComponents extends Table {
   Palettes,
   PaletteColors,
   VendorColors,
-  ColorComponents,
+  VendorColorVariants,
+  ColorComponents
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 6;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        // This is a robust but destructive migration.
+        // It will delete all tables and recreate them on any schema upgrade.
+        // This is acceptable here because all data is either seeded or
+        // can be recreated by the user. This ensures we never have a bad
+        // schema state from a previously failed migration.
+        for (final table in allTables) {
+          await m.deleteTable(table.actualTableName);
+        }
+        await m.createAll();
+      },
+    );
+  }
+
+  Future<List<VendorColorWithVariants>> get allVendorColorsWithVariants async {
+    final colors = await select(vendorColors).get();
+    final variants = await select(vendorColorVariants).get();
+
+    return colors.map((color) {
+      final colorVariants = variants
+          .where((variant) => variant.vendorColorId == color.id)
+          .toList();
+      return VendorColorWithVariants(color: color, variants: colorVariants);
+    }).toList();
+  }
+
+  Future<void> updatePaletteColorWithComponents(
+    PaletteColorsCompanion color,
+    List<ColorComponentsCompanion> components,
+  ) {
+    return transaction(() async {
+      await update(paletteColors).replace(color);
+
+      // First, delete existing components for this color
+      await (delete(colorComponents)
+            ..where((c) => c.paletteColorId.equals(color.id.value)))
+          .go();
+
+      // Then, insert the new ones
+      await batch((batch) {
+        batch.insertAll(
+          colorComponents,
+          components.map(
+            (c) => ColorComponentsCompanion(
+              paletteColorId: color.id,
+              vendorColorId: c.vendorColorId,
+              percentage: c.percentage,
+            ),
+          ),
+        );
+      });
+    });
+  }
+}
+
+class VendorColorWithVariants {
+  final VendorColor color;
+  final List<VendorColorVariant> variants;
+
+  VendorColorWithVariants({
+    required this.color,
+    required this.variants,
+  });
 }
 
 LazyDatabase _openConnection() {
