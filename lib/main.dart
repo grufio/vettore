@@ -1,21 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vettore/features/projects/project_overview_page.dart';
-import 'package:vettore/models/palette_model.dart';
-import 'package:vettore/models/project_model.dart';
-import 'package:vettore/repositories/project_repository.dart';
-import 'package:vettore/services/initialization_service.dart';
-import 'package:vettore/features/splash/splash_page.dart';
-import 'package:vettore/providers/application_providers.dart';
-
-final initializationProvider = FutureProvider<void>((ref) async {
-  final initializationService = InitializationService();
-  await initializationService.initialize();
-});
+import 'package:vettore/services/settings_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SettingsService.init();
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -30,7 +20,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const SplashPage(),
+      home: const ProjectOverviewPage(),
     );
   }
 }

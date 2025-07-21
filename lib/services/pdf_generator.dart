@@ -6,10 +6,15 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:vettore/models/vector_object_model.dart';
+
+class PdfVectorObject {
+  final int x, y;
+  final Color color;
+  PdfVectorObject({required this.x, required this.y, required this.color});
+}
 
 Future<void> generateVectorPdf({
-  required List<VectorObject> vectorObjects,
+  required List<PdfVectorObject> vectorObjects,
   required Size imageSize,
   required double objectOutputSize,
   required double fontSize,
@@ -41,35 +46,35 @@ Future<void> generateVectorPdf({
                   pw.MemoryImage(originalImageData),
                   fit: pw.BoxFit.fill,
                 ),
-              pw.Table(
-                border: pw.TableBorder.all(color: PdfColors.red, width: 0.5),
-                columnWidths: {
-                  for (var i = 0; i < imageSize.width; i++)
-                    i: pw.FixedColumnWidth(objectSizeInPoints),
-                },
+              // Draw the colored squares
+              ...vectorObjects.map(
+                (obj) => pw.Positioned(
+                  left: obj.x * objectSizeInPoints,
+                  top: obj.y * objectSizeInPoints,
+                  child: pw.Container(
+                    width: objectSizeInPoints,
+                    height: objectSizeInPoints,
+                    color: PdfColor.fromInt(obj.color.value),
+                  ),
+                ),
+              ),
+              // Draw the grid on top
+              pw.GridView(
+                crossAxisCount: imageSize.width.toInt(),
+                crossAxisSpacing: 0,
+                mainAxisSpacing: 0,
+                childAspectRatio: 1.0,
                 children: List.generate(
-                  imageSize.height.toInt(),
-                  (y) => pw.TableRow(
-                    children: List.generate(imageSize.width.toInt(), (x) {
-                      final index = y * imageSize.width.toInt() + x;
-                      if (index >= vectorObjects.length) return pw.Container();
-                      final obj = vectorObjects[index];
-                      return pw.Container(
-                        height: objectSizeInPoints,
-                        color: printBackground
-                            ? PdfColor.fromInt(obj.color.toARGB32())
-                            : null,
-                        child: pw.Center(
-                          child: pw.Text(
-                            obj.colorIndex.toString(),
-                            style: pw.TextStyle(
-                              color: PdfColors.red,
-                              fontSize: fontSize,
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
+                  (imageSize.width * imageSize.height).toInt(),
+                  (index) => pw.Container(
+                    width: objectSizeInPoints,
+                    height: objectSizeInPoints,
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(
+                        color: PdfColors.grey500,
+                        width: 0.5,
+                      ),
+                    ),
                   ),
                 ),
               ),

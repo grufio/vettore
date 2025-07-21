@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:ui'; // Required for FilterQuality
+// Required for FilterQuality
 
 // Using a record for a clear and type-safe return value.
 typedef ResizeResult = ({double percentage, FilterQuality filterQuality});
@@ -57,12 +57,11 @@ class _ResizeDialogState extends State<ResizeDialog> {
         children: [
           TextField(
             controller: _controller,
-            autofocus: true,
             decoration: const InputDecoration(
               labelText: 'Resize Percentage',
               suffixText: '%',
             ),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: TextInputType.number,
             onSubmitted: (_) => _submit(),
           ),
           const SizedBox(height: 16),

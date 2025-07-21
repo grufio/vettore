@@ -1,36 +1,91 @@
-import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:vettore/models/palette_model.dart';
+import 'package:vettore/data/database.dart';
+import 'package:drift/drift.dart';
 
-/// A repository that handles all the database operations for palettes.
+// A data class to hold a palette and its colors
+class FullPalette {
+  final Palette palette;
+  final List<PaletteColor> colors;
+
+  FullPalette({required this.palette, required this.colors});
+}
+
 class PaletteRepository {
-  final Box<Palette> _palettesBox;
+  final AppDatabase _db;
 
-  PaletteRepository(this._palettesBox);
+  PaletteRepository(this._db);
 
-  /// Returns a [ValueListenable] that can be used to listen for changes
-  /// to the palettes box.
-  ValueListenable<Box<Palette>> getPalettesListenable() {
-    return _palettesBox.listenable();
+  // Watch for changes to all palettes and their colors
+  Stream<List<FullPalette>> watchAllPalettes() {
+    final paletteStream = _db.select(_db.palettes).watch();
+
+    return paletteStream.asyncMap((palettes) async {
+      final fullPalettes = <FullPalette>[];
+      for (final palette in palettes) {
+        final colors = await (_db.select(_db.paletteColors)
+              ..where((c) => c.paletteId.equals(palette.id)))
+            .get();
+        fullPalettes.add(FullPalette(palette: palette, colors: colors));
+      }
+      return fullPalettes;
+    });
   }
 
-  /// Returns a single palette from the database.
-  Palette? getPalette(int key) {
-    return _palettesBox.get(key);
+  // Get a single full palette by its ID
+  Stream<FullPalette> watchPalette(int id) {
+    final paletteStream =
+        (_db.select(_db.palettes)..where((p) => p.id.equals(id))).watchSingle();
+
+    return paletteStream.asyncExpand((palette) {
+      final colorsStream = (_db.select(_db.paletteColors)
+            ..where((c) => c.paletteId.equals(id)))
+          .watch();
+      return colorsStream.map((colors) {
+        return FullPalette(palette: palette, colors: colors);
+      });
+    });
   }
 
-  /// Adds a new palette to the database and returns its key.
-  Future<int> addPalette(Palette palette) async {
-    return await _palettesBox.add(palette);
+  // Add a new palette with its colors
+  Future<int> addPalette(
+      PalettesCompanion palette, List<PaletteColorsCompanion> colors) {
+    return _db.transaction(() async {
+      final paletteId = await _db.into(_db.palettes).insert(palette);
+      for (final color in colors) {
+        await _db
+            .into(_db.paletteColors)
+            .insert(color.copyWith(paletteId: Value(paletteId)));
+      }
+      return paletteId;
+    });
   }
 
-  /// Updates an existing palette in the database.
-  Future<void> updatePalette(int key, Palette palette) async {
-    await _palettesBox.put(key, palette);
+  // Delete a palette and all its associated colors
+  Future<void> deletePalette(int id) {
+    return _db.transaction(() async {
+      await (_db.delete(_db.paletteColors)
+            ..where((c) => c.paletteId.equals(id)))
+          .go();
+      await (_db.delete(_db.palettes)..where((p) => p.id.equals(id))).go();
+    });
   }
 
-  /// Deletes a palette from the database.
-  Future<void> deletePalette(int key) async {
-    await _palettesBox.delete(key);
+  // Update a palette's details
+  Future<void> updatePaletteDetails(PalettesCompanion palette) {
+    return _db.update(_db.palettes).replace(palette);
+  }
+
+  // Add a new color to an existing palette
+  Future<void> addColorToPalette(PaletteColorsCompanion color) {
+    return _db.into(_db.paletteColors).insert(color);
+  }
+
+  // Update an existing color
+  Future<void> updateColor(PaletteColorsCompanion color) {
+    return _db.update(_db.paletteColors).replace(color);
+  }
+
+  // Delete a color from a palette
+  Future<void> deleteColor(int id) {
+    return (_db.delete(_db.paletteColors)..where((c) => c.id.equals(id))).go();
   }
 }

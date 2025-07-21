@@ -2,26 +2,21 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:vettore/models/color_component_model.dart';
-import 'package:vettore/models/palette_color.dart';
-import 'package:vettore/models/vendor_color_model.dart';
 import 'package:vettore/services/ai_service.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/widgets/import_recipe_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vettore/data/database.dart';
+import 'package:vettore/providers/vendor_color_provider.dart';
+import 'package:drift/drift.dart' as drift;
 
 class ColorEditPage extends ConsumerStatefulWidget {
   final PaletteColor initialColor;
-  final double sizeInMl;
-  final double factor;
-  final Function(PaletteColor) onSave;
+  final Function(PaletteColorsCompanion) onSave;
 
   const ColorEditPage({
     super.key,
     required this.initialColor,
-    required this.sizeInMl,
-    required this.factor,
     required this.onSave,
   });
 
@@ -33,7 +28,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   late TextEditingController _titleController;
   late TextEditingController _statusController;
   late Color _currentColor;
-  late List<ColorComponent> _components;
+  late List<ColorComponentsCompanion> _components;
   final _titleFocusNode = FocusNode();
   final _statusFocusNode = FocusNode();
 
@@ -45,7 +40,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
     _titleController = TextEditingController(text: widget.initialColor.title);
     _statusController = TextEditingController(text: widget.initialColor.status);
     _currentColor = Color(widget.initialColor.color);
-    _components = widget.initialColor.getComponents();
+    _components = []; // TODO: Load components
     _aiService = AIService(settingsService: ref.read(settingsServiceProvider));
   }
 
@@ -59,69 +54,20 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   }
 
   void _showImportDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return ImportRecipeDialog(onImageImported: _importFromImage);
-      },
-    );
+    // TODO: Re-implement import dialog
   }
 
   Future<void> _importFromImage(Uint8List imageData) async {
-    try {
-      final result = await _aiService.importRecipeFromImage(imageData);
-      if (result.isNotEmpty) {
-        final newComponents = result['components'] as List<ColorComponent>;
-        final colorData = result['recipeTitleColor'] as Map<String, dynamic>?;
-
-        Color newColor = _currentColor;
-        String newTitle = _titleController.text;
-
-        if (colorData != null) {
-          final r = colorData['r'] as int? ?? 255;
-          final g = colorData['g'] as int? ?? 255;
-          final b = colorData['b'] as int? ?? 255;
-          newColor = Color.fromRGBO(r, g, b, 1.0);
-          newTitle = '$r,$g,$b';
-        }
-
-        final updatedColor = PaletteColor(
-          title: newTitle,
-          color: newColor.toARGB32(),
-          status: _statusController.text,
-          components: newComponents,
-        );
-
-        widget.onSave(updatedColor);
-
-        if (mounted) {
-          setState(() {
-            _currentColor = newColor;
-            _titleController.text = newTitle;
-            _components = newComponents;
-          });
-        }
-      }
-    } catch (e) {
-      // Handle or show the error to the user
-      debugPrint('Error during import: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error importing recipe: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    // TODO: Re-implement import from image
   }
 
   void _save() {
-    final newColor = PaletteColor(
-      title: _titleController.text,
-      color: _currentColor.toARGB32(),
-      status: _statusController.text,
-      components: _components,
+    final newColor = PaletteColorsCompanion(
+      id: drift.Value(widget.initialColor.id),
+      paletteId: drift.Value(widget.initialColor.paletteId),
+      title: drift.Value(_titleController.text),
+      color: drift.Value(_currentColor.value),
+      status: drift.Value(_statusController.text),
     );
     widget.onSave(newColor);
     Navigator.of(context).pop();
@@ -153,7 +99,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   }
 
   Future<void> _showComponentDialog({
-    ColorComponent? component,
+    ColorComponentsCompanion? component,
     int? index,
   }) async {
     return showDialog<void>(
@@ -182,98 +128,12 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   }
 
   Widget _buildComponentList() {
-    final totalPercentage = _components.fold<double>(
-      0.0,
-      (sum, item) => sum + item.percentage,
-    );
-    final isTotal100 = totalPercentage == 100.0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Divider(height: 32),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Color Components',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _showComponentDialog(),
-            ),
-          ],
-        ),
-        if (_components.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.0),
-            child: Center(child: Text('No components added yet.')),
-          )
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _components.length,
-            itemBuilder: (context, index) {
-              final component = _components[index];
-              final weight =
-                  (component.percentage / 100) *
-                  widget.sizeInMl *
-                  widget.factor;
-              return ListTile(
-                title: Text(component.name),
-                subtitle: Text('${component.percentage}%'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('${weight.toStringAsFixed(3)} g'),
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _showComponentDialog(
-                        component: component,
-                        index: index,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _deleteComponent(index),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        const Divider(),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                'Total: ${totalPercentage.toStringAsFixed(2)}%',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isTotal100 ? Colors.green : Colors.red,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+    // TODO: Re-implement component list logic
+    return const SizedBox.shrink();
   }
 
   @override
   Widget build(BuildContext context) {
-    final vendorColorBox = Hive.box<VendorColor>('vendor_colors');
-    final sizes = vendorColorBox.values.map((c) => c.size).toSet().toList()
-      ..sort();
-    debugPrint(
-      '[_ComponentDialog] Building with ${vendorColorBox.length} vendor colors.',
-    );
-    debugPrint('[_ComponentDialog] Found sizes: $sizes');
-
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.initialColor.title),
@@ -344,7 +204,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        '#${_currentColor.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}',
+                        '#${_currentColor.value.toRadixString(16).padLeft(8, '0').toUpperCase()}',
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ),
@@ -370,43 +230,29 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   }
 }
 
-class _ComponentDialog extends StatefulWidget {
-  final ColorComponent? component;
-  final Function(ColorComponent) onSave;
+class _ComponentDialog extends ConsumerStatefulWidget {
+  final ColorComponentsCompanion? component;
+  final Function(ColorComponentsCompanion) onSave;
 
   const _ComponentDialog({this.component, required this.onSave});
 
   @override
-  State<_ComponentDialog> createState() => _ComponentDialogState();
+  ConsumerState<_ComponentDialog> createState() => _ComponentDialogState();
 }
 
-class _ComponentDialogState extends State<_ComponentDialog> {
-  final _vendorColorBox = Hive.box<VendorColor>('vendor_colors');
+class _ComponentDialogState extends ConsumerState<_ComponentDialog> {
   late final TextEditingController _percentageController;
   int? _selectedSize;
   String? _selectedColorName;
+  int? _selectedVendorColorId;
   List<int> _availableSizes = [];
   List<String> _colorNames = [];
 
   @override
   void initState() {
     super.initState();
-    _percentageController = TextEditingController(
-      text: widget.component?.percentage.toString() ?? '',
-    );
-
-    // Initial population of color names
-    _updateColorNames();
-
-    // If editing, pre-fill the state
-    if (widget.component != null) {
-      final componentName = widget.component!.name;
-      if (_colorNames.contains(componentName)) {
-        _selectedColorName = componentName;
-        // Directly call the method to update sizes based on the pre-selected name
-        _updateAvailableSizes(componentName, shouldSetDefaultSize: false);
-      }
-    }
+    // TODO: Init state for editing
+    _percentageController = TextEditingController();
   }
 
   @override
@@ -415,44 +261,12 @@ class _ComponentDialogState extends State<_ComponentDialog> {
     super.dispose();
   }
 
-  void _updateColorNames() {
-    _colorNames = _vendorColorBox.values.map((c) => c.name).toSet().toList()
-      ..sort();
-  }
-
-  void _updateAvailableSizes(String? name, {bool shouldSetDefaultSize = true}) {
-    if (name == null) {
-      _availableSizes = [];
-      return;
-    }
-    _availableSizes =
-        _vendorColorBox.values
-            .where((c) => c.name == name)
-            .map((c) => c.size)
-            .toSet()
-            .toList()
-          ..sort((a, b) => b.compareTo(a));
-
-    if (shouldSetDefaultSize) {
-      _selectedSize = _availableSizes.isNotEmpty ? _availableSizes.first : null;
-    }
-  }
-
-  void _onColorNameSelected(String? name) {
-    if (name == null) return;
-    setState(() {
-      _selectedColorName = name;
-      _updateAvailableSizes(name);
-    });
-  }
-
   void _save() {
     final percentage = double.tryParse(_percentageController.text);
-    if (_selectedColorName != null &&
-        _selectedSize != null &&
-        percentage != null) {
-      final newComponent = ColorComponent(
-        name: _selectedColorName!,
+    if (_selectedVendorColorId != null && percentage != null) {
+      final newComponent = ColorComponentsCompanion.insert(
+        paletteColorId: -1, // This will be set by the caller
+        vendorColorId: _selectedVendorColorId!,
         percentage: percentage,
       );
       widget.onSave(newComponent);
@@ -462,19 +276,39 @@ class _ComponentDialogState extends State<_ComponentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // The ValueListenableBuilder is not strictly necessary anymore with this logic,
-    // but it ensures reactivity if the box changes while the dialog is open.
-    return ValueListenableBuilder<Box<VendorColor>>(
-      valueListenable: _vendorColorBox.listenable(),
-      builder: (context, box, _) {
-        // Ensure color names are fresh on each build
-        _updateColorNames();
-        // If the selected color is no longer valid, reset it.
-        if (_selectedColorName != null &&
-            !_colorNames.contains(_selectedColorName)) {
-          _selectedColorName = null;
-          _selectedSize = null;
-          _availableSizes = [];
+    final vendorColorsAsync = ref.watch(vendorColorStreamProvider);
+
+    return vendorColorsAsync.when(
+      data: (vendorColors) {
+        _colorNames = vendorColors.map((c) => c.name).toSet().toList()..sort();
+
+        void _updateAvailableSizes(String? name) {
+          if (name == null) {
+            _availableSizes = [];
+            return;
+          }
+          _availableSizes = vendorColors
+              .where((c) => c.name == name)
+              .map((c) => c.size)
+              .toSet()
+              .toList()
+            ..sort((a, b) => b.compareTo(a));
+        }
+
+        void _onColorNameSelected(String? name) {
+          if (name == null) return;
+          setState(() {
+            _selectedColorName = name;
+            _updateAvailableSizes(name);
+            _selectedSize =
+                _availableSizes.isNotEmpty ? _availableSizes.first : null;
+            if (_selectedColorName != null && _selectedSize != null) {
+              _selectedVendorColorId = vendorColors
+                  .firstWhere((c) =>
+                      c.name == _selectedColorName && c.size == _selectedSize)
+                  .id;
+            }
+          });
         }
 
         return AlertDialog(
@@ -507,7 +341,16 @@ class _ComponentDialogState extends State<_ComponentDialog> {
                       child: Text('$size ml'),
                     );
                   }).toList(),
-                  onChanged: (size) => setState(() => _selectedSize = size),
+                  onChanged: (size) => setState(() {
+                    _selectedSize = size;
+                    if (_selectedColorName != null && _selectedSize != null) {
+                      _selectedVendorColorId = vendorColors
+                          .firstWhere((c) =>
+                              c.name == _selectedColorName &&
+                              c.size == _selectedSize)
+                          .id;
+                    }
+                  }),
                 ),
               TextField(
                 controller: _percentageController,
@@ -527,6 +370,9 @@ class _ComponentDialogState extends State<_ComponentDialog> {
           ],
         );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) =>
+          Center(child: Text('Error loading vendor colors: $error')),
     );
   }
 }

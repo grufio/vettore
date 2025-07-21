@@ -1,33 +1,46 @@
-import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:vettore/models/project_model.dart';
+import 'package:vettore/data/database.dart';
 
 class ProjectRepository {
-  final Box<Project> _projectBox;
+  final AppDatabase _db;
 
-  ProjectRepository(this._projectBox);
+  ProjectRepository(this._db);
 
-  ValueListenable<Box<Project>> getProjectsListenable() {
-    return _projectBox.listenable();
+  // Watch for changes to the projects table
+  Stream<List<Project>> watchProjects() {
+    return _db.select(_db.projects).watch();
   }
 
-  List<Project> getProjects() {
-    return _projectBox.values.toList();
+  // Get a list of all projects once
+  Future<List<Project>> getProjects() {
+    return _db.select(_db.projects).get();
   }
 
-  Project? getProject(int key) {
-    return _projectBox.get(key);
+  // Watch for changes to a single project
+  Stream<Project> watchProject(int id) {
+    return (_db.select(_db.projects)..where((p) => p.id.equals(id)))
+        .watchSingle();
   }
 
-  Future<void> addProject(Project project) {
-    return _projectBox.add(project);
+  // Get a single project by its ID
+  Future<Project> getProject(int id) {
+    return (_db.select(_db.projects)..where((p) => p.id.equals(id)))
+        .getSingle();
   }
 
-  Future<void> deleteProject(int key) {
-    return _projectBox.delete(key);
+  // Add a new project
+  Future<int> addProject(ProjectsCompanion project) {
+    return _db.into(_db.projects).insert(project);
   }
 
-  Future<void> updateProject(int key, Project project) {
-    return _projectBox.put(key, project);
+  // Delete a project by its ID
+  Future<void> deleteProject(int id) {
+    return (_db.delete(_db.projects)..where((p) => p.id.equals(id))).go();
+  }
+
+  // Update an existing project
+  Future<void> updateProject(ProjectsCompanion project) {
+    return (_db.update(_db.projects)
+          ..where((p) => p.id.equals(project.id.value)))
+        .write(project);
   }
 }

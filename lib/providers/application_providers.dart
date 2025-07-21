@@ -1,32 +1,37 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
-import 'package:flutter/foundation.dart';
-import 'package:vettore/models/project_model.dart';
+import 'package:vettore/data/database.dart';
 import 'package:vettore/repositories/project_repository.dart';
 import 'package:vettore/services/project_service.dart';
-import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/repositories/palette_repository.dart';
 
-final projectListenableProvider = Provider<ValueListenable<Box<Project>>>((
-  ref,
-) {
-  final projectRepository = ref.watch(projectRepositoryProvider);
-  return projectRepository.getProjectsListenable();
+//-
+//-
+//-         CORE DATA PROVIDERS
+//-
+//-
+
+// The single instance of our database
+final databaseProvider = Provider<AppDatabase>((ref) {
+  return AppDatabase();
 });
 
-final projectBoxProvider = Provider<Box<Project>>((ref) {
-  return Hive.box<Project>('projects');
-});
-
-final paletteRepositoryProvider = Provider<PaletteRepository>((ref) {
-  final box = Hive.box<Palette>('palettes');
-  return PaletteRepository(box);
-});
-
+// The single instance of our project repository
 final projectRepositoryProvider = Provider<ProjectRepository>((ref) {
-  final box = Hive.box<Project>('projects');
-  return ProjectRepository(box);
+  final db = ref.watch(databaseProvider);
+  return ProjectRepository(db);
 });
+
+// The single instance of our palette repository
+final paletteRepositoryProvider = Provider<PaletteRepository>((ref) {
+  final db = ref.watch(databaseProvider);
+  return PaletteRepository(db);
+});
+
+//-
+//-
+//-         SERVICE PROVIDERS
+//-
+//-
 
 final projectServiceProvider = Provider<ProjectService>((ref) {
   return ProjectService();

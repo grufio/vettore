@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
-import 'package:vettore/models/project_model.dart';
 import 'package:vettore/features/palettes/palettes_overview.dart';
 import 'package:vettore/features/projects/project_editor_page.dart';
-import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/widgets/settings_dialog.dart';
 import 'package:vettore/providers/project_list_provider.dart';
+import 'package:vettore/widgets/settings_dialog.dart';
 
 class ProjectOverviewPage extends ConsumerWidget {
   const ProjectOverviewPage({super.key});
@@ -14,14 +11,8 @@ class ProjectOverviewPage extends ConsumerWidget {
   Future<void> _deleteProject(
     BuildContext context,
     WidgetRef ref,
-    int? key,
+    int projectId,
   ) async {
-    if (key == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: Project key is missing.')),
-      );
-      return;
-    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -46,18 +37,13 @@ class ProjectOverviewPage extends ConsumerWidget {
     );
 
     if (confirmed == true) {
-      await ref.read(projectListProvider.notifier).deleteProject(key);
+      await ref.read(projectListLogicProvider).deleteProject(projectId);
     }
-  }
-
-  Future<void> _pickImages(BuildContext context, WidgetRef ref) async {
-    // We keep using the projectListProvider to handle the business logic of creating a project.
-    await ref.read(projectListProvider.notifier).createNewProject();
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final projectListenable = ref.watch(projectListenableProvider);
+    final projectsAsync = ref.watch(projectListStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -85,10 +71,8 @@ class ProjectOverviewPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: ValueListenableBuilder<Box<Project>>(
-        valueListenable: projectListenable,
-        builder: (context, box, _) {
-          final projects = box.values.toList();
+      body: projectsAsync.when(
+        data: (projects) {
           if (projects.isEmpty) {
             return const Center(
               child: Text('No projects yet. Click + to add one.'),
@@ -105,7 +89,6 @@ class ProjectOverviewPage extends ConsumerWidget {
             itemCount: projects.length,
             itemBuilder: (context, index) {
               final project = projects[index];
-              final projectKey = box.keyAt(index) as int;
 
               return GestureDetector(
                 onTap: () {
@@ -113,7 +96,7 @@ class ProjectOverviewPage extends ConsumerWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          ProjectEditorPage(projectKey: projectKey),
+                          ProjectEditorPage(projectId: project.id),
                     ),
                   );
                 },
@@ -129,9 +112,7 @@ class ProjectOverviewPage extends ConsumerWidget {
                       icon: const Icon(Icons.delete),
                       color: Colors.white,
                       tooltip: 'Delete Project',
-                      onPressed: () {
-                        _deleteProject(context, ref, projectKey);
-                      },
+                      onPressed: () => _deleteProject(context, ref, project.id),
                     ),
                   ),
                   child: Image.memory(project.thumbnailData, fit: BoxFit.cover),
@@ -140,9 +121,11 @@ class ProjectOverviewPage extends ConsumerWidget {
             },
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('Error: $error')),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _pickImages(context, ref),
+        onPressed: () => ref.read(projectListLogicProvider).createNewProject(),
         tooltip: 'Add Project',
         child: const Icon(Icons.add),
       ),

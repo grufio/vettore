@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/models/palette_color.dart';
+import 'package:vettore/data/database.dart';
 
 class PaletteColorList extends ConsumerWidget {
   final List<PaletteColor> colors;
-  final Function(int, PaletteColor) onEdit;
+  final Function(PaletteColor) onEdit;
   final Function(int) onDelete;
 
   const PaletteColorList({
@@ -22,7 +22,7 @@ class PaletteColorList extends ConsumerWidget {
         crossAxisCount: 4,
         crossAxisSpacing: 8.0,
         mainAxisSpacing: 8.0,
-        childAspectRatio: 0.8, // To make cards taller than they are wide
+        childAspectRatio: 0.8,
       ),
       itemCount: colors.length,
       itemBuilder: (context, index) {
@@ -30,7 +30,7 @@ class PaletteColorList extends ConsumerWidget {
         return Card(
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => onEdit(index, colorData),
+            onTap: () => onEdit(colorData),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -38,7 +38,7 @@ class PaletteColorList extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    colorData.title, // This now correctly uses the HEX value
+                    '#${colorData.color.toRadixString(16).substring(2).toUpperCase()}',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -49,12 +49,12 @@ class PaletteColorList extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.edit, size: 20),
                       tooltip: 'Edit Color',
-                      onPressed: () => onEdit(index, colorData),
+                      onPressed: () => onEdit(colorData),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, size: 20),
                       tooltip: 'Delete Color',
-                      onPressed: () => onDelete(index),
+                      onPressed: () => onDelete(colorData.id),
                     ),
                   ],
                 ),

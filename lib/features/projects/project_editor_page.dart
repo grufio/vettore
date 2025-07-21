@@ -1,19 +1,27 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
 import 'package:pdf/pdf.dart';
-import 'package:vettore/models/vector_object_model.dart';
+import 'package:vettore/data/database.dart';
+import 'package:vettore/features/projects/widgets/resize_dialog.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/services/pdf_generator.dart';
+import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/widgets/color_settings_dialog.dart';
-import 'package:vettore/features/projects/widgets/resize_dialog.dart';
 
 class ProjectEditorPage extends ConsumerStatefulWidget {
-  final int projectKey;
+  final int projectId;
 
-  const ProjectEditorPage({super.key, required this.projectKey});
+  const ProjectEditorPage({super.key, required this.projectId});
   @override
   ConsumerState<ProjectEditorPage> createState() => _ProjectEditorPageState();
+}
+
+class DisplayVectorObject {
+  final int x, y;
+  final Color color;
+  DisplayVectorObject(this.x, this.y, this.color);
 }
 
 class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
@@ -21,10 +29,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   bool _showVectors = true;
   bool _showBackground = true;
 
-  // Controllers for conversion settings
   late final TextEditingController _maxObjectColorsController;
-
-  // State for Output tab
   late final TextEditingController _objectOutputSizeController;
   late final TextEditingController _outputFontSizeController;
   late final TextEditingController _customPageWidthController;
@@ -48,37 +53,33 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   @override
   void initState() {
     super.initState();
+    final settings = ref.read(settingsServiceProvider);
     _tabController = TabController(length: 3, vsync: this);
     _tabController!.addListener(_handleTabSelection);
 
     _maxObjectColorsController = TextEditingController(
-      text: Hive.box('settings').get('maxObjectColors', defaultValue: '40'),
+      text: settings.maxObjectColors.toString(),
     );
 
-    // Init Output state
     _objectOutputSizeController = TextEditingController(
-      text: Hive.box('settings').get('objectOutputSize', defaultValue: '10'),
+      text: settings.objectOutputSize.toString(),
     );
     _outputFontSizeController = TextEditingController(
-      text: Hive.box('settings').get('outputFontSize', defaultValue: '10'),
+      text: settings.outputFontSize.toString(),
     );
     _customPageWidthController = TextEditingController(
-      text: Hive.box('settings').get('customPageWidth', defaultValue: '210'),
+      text: settings.customPageWidth.toString(),
     );
     _customPageHeightController = TextEditingController(
-      text: Hive.box('settings').get('customPageHeight', defaultValue: '297'),
+      text: settings.customPageHeight.toString(),
     );
     _outputBordersController = TextEditingController(
-      text: Hive.box('settings').get('outputBorders', defaultValue: '10'),
+      text: settings.outputBorders.toString(),
     );
-    _printBackground = Hive.box(
-      'settings',
-    ).get('printBackground', defaultValue: false);
-    _selectedPageFormat = Hive.box(
-      'settings',
-    ).get('pageFormat', defaultValue: 'A4');
-    _centerImage = Hive.box('settings').get('centerImage', defaultValue: true);
-    _isLandscape = Hive.box('settings').get('isLandscape', defaultValue: false);
+    _printBackground = settings.printBackground;
+    _selectedPageFormat = settings.pageFormat;
+    _centerImage = settings.centerImage;
+    _isLandscape = settings.isLandscape;
   }
 
   @override
@@ -95,7 +96,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   }
 
   void _handleTabSelection() {
-    final project = ref.read(projectProvider(widget.projectKey)).project;
+    final project = ref.read(projectStreamProvider(widget.projectId)).value;
     if (project == null) return;
     final isImageTooLarge =
         (project.imageWidth ?? 0) > 500 || (project.imageHeight ?? 0) > 500;
@@ -108,7 +109,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   }
 
   Future<void> _handlePdfGeneration() async {
-    final project = ref.read(projectProvider(widget.projectKey)).project;
+    final project = ref.read(projectStreamProvider(widget.projectId)).value;
     if (project == null) return;
 
     setState(() => _isSaving = true);
@@ -129,11 +130,17 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       pageFormat = pageFormat.landscape;
     }
 
-    // Since this widget is now part of the project feature,
-    // we can import the pdf_generator directly.
+    final decodedObjects = jsonDecode(project.vectorObjects) as List;
+    final displayObjects = decodedObjects
+        .map((obj) =>
+            DisplayVectorObject(obj['x'], obj['y'], Color(obj['color'] as int)))
+        .toList();
+
     await generateVectorPdf(
-      vectorObjects: project.vectorObjects,
-      imageSize: Size(project.imageWidth!, project.imageHeight!),
+      vectorObjects: displayObjects
+          .map((e) => PdfVectorObject(x: e.x, y: e.y, color: e.color))
+          .toList(),
+      imageSize: Size(project.imageWidth ?? 0.0, project.imageHeight ?? 0.0),
       objectOutputSize: double.parse(_objectOutputSizeController.text),
       fontSize: double.parse(_outputFontSizeController.text),
       printBackground: _printBackground,
@@ -146,7 +153,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   }
 
   void _showColorSettingsDialog() {
-    final project = ref.read(projectProvider(widget.projectKey)).project;
+    final project = ref.read(projectStreamProvider(widget.projectId)).value;
     if (project == null || !project.isConverted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please convert the image first.')),
@@ -154,9 +161,9 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       return;
     }
 
-    // Extract unique colors from the vector objects.
-    final uniqueColors = project.vectorObjects
-        .map((obj) => obj.color)
+    final decodedObjects = jsonDecode(project.vectorObjects) as List;
+    final uniqueColors = decodedObjects
+        .map((obj) => Color(obj['color'] as int))
         .toSet()
         .toList();
 
@@ -168,169 +175,281 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
 
   @override
   Widget build(BuildContext context) {
-    final projectState = ref.watch(projectProvider(widget.projectKey));
-    final project = projectState.project;
-    if (project == null) {
-      return const Scaffold(
-        body: Center(child: Text('Project not found or has been deleted.')),
-      );
-    }
+    final projectAsyncValue =
+        ref.watch(projectStreamProvider(widget.projectId));
+    final settings = ref.watch(settingsServiceProvider);
 
-    final bool isImageTooLarge =
-        (project.imageWidth ?? 0) > 500 || (project.imageHeight ?? 0) > 500;
+    return projectAsyncValue.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (err, stack) => Scaffold(
+        body: Center(child: Text('Error: $err')),
+      ),
+      data: (project) {
+        if (project == null) {
+          return const Scaffold(
+            body: Center(child: Text('Project not found.')),
+          );
+        }
 
-    return Scaffold(
-      appBar: AppBar(title: Text(project.name)),
-      body: Row(
-        children: [
-          Expanded(
-            child: InteractiveViewer(
-              minScale: 1.0,
-              maxScale: 1.0,
-              child: RepaintBoundary(
-                child: Center(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Visibility(
-                        visible: _showBackground,
-                        maintainState: true,
-                        maintainAnimation: true,
-                        maintainSize: true,
-                        child: Image.memory(
-                          project.imageData,
-                          fit: BoxFit.contain,
-                          width: double.infinity,
-                          height: double.infinity,
-                          filterQuality: project.filterQuality,
-                        ),
-                      ),
-                      if (project.isConverted && _showVectors)
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: VectorPainter(
-                              objects: project.vectorObjects,
-                              imageSize: project.imageWidth != null
-                                  ? Size(
-                                      project.imageWidth!,
-                                      project.imageHeight!,
-                                    )
-                                  : null,
-                              // TODO: Get from settings provider
-                              fontSize: 12.0,
+        final List<DisplayVectorObject> displayObjects;
+        if (project.isConverted && project.vectorObjects.isNotEmpty) {
+          final decoded = jsonDecode(project.vectorObjects) as List;
+          displayObjects = decoded
+              .map((obj) => DisplayVectorObject(
+                  obj['x'], obj['y'], Color(obj['color'] as int)))
+              .toList();
+        } else {
+          displayObjects = [];
+        }
+
+        final bool isImageTooLarge =
+            (project.imageWidth ?? 0) > 500 || (project.imageHeight ?? 0) > 500;
+
+        return Scaffold(
+          appBar: AppBar(title: Text(project.name)),
+          body: Row(
+            children: [
+              Expanded(
+                child: InteractiveViewer(
+                  minScale: 1.0,
+                  maxScale: 1.0,
+                  child: RepaintBoundary(
+                    child: Center(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Visibility(
+                            visible: _showBackground,
+                            maintainState: true,
+                            maintainAnimation: true,
+                            maintainSize: true,
+                            child: Image.memory(
+                              project.imageData,
+                              fit: BoxFit.contain,
+                              width: double.infinity,
+                              height: double.infinity,
+                              filterQuality: FilterQuality
+                                  .values[project.filterQualityIndex],
                             ),
                           ),
-                        ),
-                    ],
+                          if (project.isConverted && _showVectors)
+                            Positioned.fill(
+                              child: CustomPaint(
+                                painter: VectorPainter(
+                                  objects: displayObjects,
+                                  imageSize: Size(
+                                    project.imageWidth ?? 0.0,
+                                    project.imageHeight ?? 0.0,
+                                  ),
+                                  fontSize: settings.outputFontSize.toDouble(),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          Container(
-            width: 300, // Increased width for the tabs
-            color: Theme.of(context).colorScheme.surfaceContainer,
-            child: Column(
-              children: [
-                TabBar(
-                  controller: _tabController,
-                  tabs: [
-                    const Tab(icon: Icon(Icons.image_outlined)),
-                    Tab(
-                      icon: Icon(
-                        Icons.transform_outlined,
-                        color: isImageTooLarge
-                            ? Theme.of(context).disabledColor
-                            : null,
-                      ),
+              Container(
+                width: 300,
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                child: Column(
+                  children: [
+                    TabBar(
+                      controller: _tabController,
+                      tabs: [
+                        const Tab(icon: Icon(Icons.image_outlined)),
+                        Tab(
+                          icon: Icon(
+                            Icons.transform_outlined,
+                            color: isImageTooLarge
+                                ? Theme.of(context).disabledColor
+                                : null,
+                          ),
+                        ),
+                        Tab(
+                          icon: Icon(
+                            Icons.picture_as_pdf_outlined,
+                            color: isImageTooLarge
+                                ? Theme.of(context).disabledColor
+                                : null,
+                          ),
+                        ),
+                      ],
                     ),
-                    Tab(
-                      icon: Icon(
-                        Icons.picture_as_pdf_outlined,
-                        color: isImageTooLarge
-                            ? Theme.of(context).disabledColor
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Image Tab
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Original Dimensions: ${project.originalImageWidth?.toInt() ?? 'N/A'} x ${project.originalImageHeight?.toInt() ?? 'N/A'}',
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Current Dimensions: ${project.imageWidth?.toInt() ?? 'N/A'} x ${project.imageHeight?.toInt() ?? 'N/A'}',
-                            ),
-                            const SizedBox(height: 16),
-                            if (isImageTooLarge)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: Text(
-                                  'Image > 500px. Please update.',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          // Image Tab
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Original Dimensions: ${project.originalImageWidth?.toInt() ?? 'N/A'} x ${project.originalImageHeight?.toInt() ?? 'N/A'}',
                                 ),
-                              ),
-                            const SizedBox(height: 16),
-                            if (projectState.isLoading)
-                              const Center(child: CircularProgressIndicator())
-                            else
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: () async {
-                                        final result =
-                                            await showDialog<ResizeResult>(
-                                              context: context,
-                                              builder: (context) =>
-                                                  const ResizeDialog(),
-                                            );
-
-                                        if (result != null && mounted) {
-                                          ref
-                                              .read(
-                                                projectProvider(
-                                                  widget.projectKey,
-                                                ).notifier,
-                                              )
-                                              .updateImage(
-                                                result.percentage,
-                                                result.filterQuality,
-                                              );
-                                        }
-                                      },
-                                      child: const Text('Resize Image'),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Current Dimensions: ${project.imageWidth?.toInt() ?? 'N/A'} x ${project.imageHeight?.toInt() ?? 'N/A'}',
+                                ),
+                                const SizedBox(height: 16),
+                                if (isImageTooLarge)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: Text(
+                                      'Image > 500px. Please update.',
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(context).colorScheme.error,
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  ElevatedButton(
-                                    onPressed:
-                                        (project.originalImageData == null)
-                                        ? null
-                                        : () => showDialog(
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: () async {
+                                          final result =
+                                              await showDialog<ResizeResult>(
+                                            context: context,
+                                            builder: (context) =>
+                                                const ResizeDialog(),
+                                          );
+
+                                          if (result != null && mounted) {
+                                            ref
+                                                .read(projectLogicProvider(
+                                                    widget.projectId))
+                                                .updateImage(
+                                                  result.percentage,
+                                                  result.filterQuality,
+                                                );
+                                          }
+                                        },
+                                        child: const Text('Resize Image'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: (project.originalImageData ==
+                                              null)
+                                          ? null
+                                          : () => showDialog(
+                                                context: context,
+                                                builder: (context) =>
+                                                    AlertDialog(
+                                                  title: const Text('Confirm'),
+                                                  content: const Text(
+                                                    'You are loosing all information',
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(
+                                                        context,
+                                                      ).pop(),
+                                                      child:
+                                                          const Text('Cancel'),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                        ref
+                                                            .read(projectLogicProvider(
+                                                                widget
+                                                                    .projectId))
+                                                            .resetImage();
+                                                      },
+                                                      child: const Text('OK'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                      child: const Text('Reset'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Conversion Tab
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  TextField(
+                                    controller: _maxObjectColorsController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Max. Object Colors',
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (value) => settings
+                                        .setMaxObjectColors(int.parse(value)),
+                                  ),
+                                  const Divider(height: 32),
+                                  const Text('Preview'),
+                                  CheckboxListTile(
+                                    title: const Text('Show Vectors'),
+                                    value: _showVectors,
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        _showVectors = value ?? true;
+                                      });
+                                    },
+                                    controlAffinity:
+                                        ListTileControlAffinity.leading,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  CheckboxListTile(
+                                    title: const Text('Show Background'),
+                                    value: _showBackground,
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        _showBackground = value ?? true;
+                                      });
+                                    },
+                                    controlAffinity:
+                                        ListTileControlAffinity.leading,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  const Divider(),
+                                  TextButton.icon(
+                                    onPressed: _showColorSettingsDialog,
+                                    icon: const Icon(Icons.palette_outlined),
+                                    label: Text(
+                                      project.isConverted
+                                          ? 'Colors: ${project.uniqueColorCount ?? 0}'
+                                          : 'Colors: N/A',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        if (project.isConverted) {
+                                          showDialog(
                                             context: context,
                                             builder: (context) => AlertDialog(
                                               title: const Text('Confirm'),
                                               content: const Text(
-                                                'You are loosing all information',
+                                                'This will overwrite the existing grid and resolution data. Are you sure?',
                                               ),
                                               actions: [
                                                 TextButton(
-                                                  onPressed: () => Navigator.of(
-                                                    context,
-                                                  ).pop(),
+                                                  onPressed: () =>
+                                                      Navigator.of(context)
+                                                          .pop(),
                                                   child: const Text('Cancel'),
                                                 ),
                                                 TextButton(
@@ -338,301 +457,194 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                                                     Navigator.of(context).pop();
                                                     ref
                                                         .read(
-                                                          projectProvider(
-                                                            widget.projectKey,
-                                                          ).notifier,
-                                                        )
-                                                        .resetImage();
+                                                            projectLogicProvider(
+                                                                widget
+                                                                    .projectId))
+                                                        .convertProject();
                                                   },
                                                   child: const Text('OK'),
                                                 ),
                                               ],
                                             ),
-                                          ),
-                                    child: const Text('Reset'),
+                                          );
+                                        } else {
+                                          ref
+                                              .read(projectLogicProvider(
+                                                  widget.projectId))
+                                              .convertProject();
+                                        }
+                                      },
+                                      icon: const Icon(Icons.transform),
+                                      label: const Text('Convert'),
+                                    ),
                                   ),
                                 ],
                               ),
-                          ],
-                        ),
-                      ),
+                            ),
+                          ),
 
-                      // Conversion Tab
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              TextField(
-                                controller: _maxObjectColorsController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Max. Object Colors',
-                                ),
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) => Hive.box(
-                                  'settings',
-                                ).put('maxObjectColors', value),
-                              ),
-                              const Divider(height: 32),
-                              const Text('Preview'),
-                              CheckboxListTile(
-                                title: const Text('Show Vectors'),
-                                value: _showVectors,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    _showVectors = value ?? true;
-                                  });
-                                },
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              CheckboxListTile(
-                                title: const Text('Show Background'),
-                                value: _showBackground,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    _showBackground = value ?? true;
-                                  });
-                                },
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              const Divider(),
-                              TextButton.icon(
-                                onPressed: _showColorSettingsDialog,
-                                icon: const Icon(Icons.palette_outlined),
-                                label: Text(
-                                  project.isConverted
-                                      ? 'Colors: ${project.uniqueColorCount}'
-                                      : 'Colors: N/A',
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              if (projectState.isLoading)
-                                const Center(child: CircularProgressIndicator())
-                              else
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      if (project.isConverted) {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: const Text('Confirm'),
-                                            content: const Text(
-                                              'This will overwrite the existing grid and resolution data. Are you sure?',
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(context).pop(),
-                                                child: const Text('Cancel'),
-                                              ),
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                  ref
-                                                      .read(
-                                                        projectProvider(
-                                                          widget.projectKey,
-                                                        ).notifier,
-                                                      )
-                                                      .convertProject();
-                                                },
-                                                child: const Text('OK'),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      } else {
-                                        ref
-                                            .read(
-                                              projectProvider(
-                                                widget.projectKey,
-                                              ).notifier,
-                                            )
-                                            .convertProject();
-                                      }
+                          // Output Tab
+                          SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                children: [
+                                  TextField(
+                                    controller: _objectOutputSizeController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Object Output Size (mm)',
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (value) =>
+                                        settings.setObjectOutputSize(
+                                            double.parse(value)),
+                                  ),
+                                  TextField(
+                                    controller: _outputFontSizeController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Font Size',
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (value) => settings
+                                        .setOutputFontSize(int.parse(value)),
+                                  ),
+                                  TextField(
+                                    controller: _outputBordersController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Output Borders (mm)',
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (value) => settings
+                                        .setOutputBorders(double.parse(value)),
+                                  ),
+                                  DropdownButtonFormField<String>(
+                                    value: _selectedPageFormat,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Page Format',
+                                    ),
+                                    items: _pageFormats.keys.map((String key) {
+                                      return DropdownMenuItem<String>(
+                                        value: key,
+                                        child: Text(key),
+                                      );
+                                    }).toList(),
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        _selectedPageFormat = newValue!;
+                                        settings.setPageFormat(newValue);
+                                      });
                                     },
-                                    icon: const Icon(Icons.transform),
-                                    label: const Text('Convert'),
                                   ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Output Tab
-                      SingleChildScrollView(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            children: [
-                              TextField(
-                                controller: _objectOutputSizeController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Object Output Size (mm)',
-                                ),
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) => Hive.box(
-                                  'settings',
-                                ).put('objectOutputSize', value),
-                              ),
-                              TextField(
-                                controller: _outputFontSizeController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Font Size',
-                                ),
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) => Hive.box(
-                                  'settings',
-                                ).put('outputFontSize', value),
-                              ),
-                              TextField(
-                                controller: _outputBordersController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Output Borders (mm)',
-                                ),
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) => Hive.box(
-                                  'settings',
-                                ).put('outputBorders', value),
-                              ),
-                              DropdownButtonFormField<String>(
-                                value: _selectedPageFormat,
-                                decoration: const InputDecoration(
-                                  labelText: 'Page Format',
-                                ),
-                                items: _pageFormats.keys.map((String key) {
-                                  return DropdownMenuItem<String>(
-                                    value: key,
-                                    child: Text(key),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    _selectedPageFormat = newValue!;
-                                    Hive.box(
-                                      'settings',
-                                    ).put('pageFormat', newValue);
-                                  });
-                                },
-                              ),
-                              if (_selectedPageFormat == 'Custom')
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _customPageWidthController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Width (mm)',
+                                  if (_selectedPageFormat == 'Custom')
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextField(
+                                            controller:
+                                                _customPageWidthController,
+                                            decoration: const InputDecoration(
+                                              labelText: 'Width (mm)',
+                                            ),
+                                            keyboardType: TextInputType.number,
+                                            onChanged: (value) =>
+                                                settings.setCustomPageWidth(
+                                                    double.parse(value)),
+                                          ),
                                         ),
-                                        keyboardType: TextInputType.number,
-                                        onChanged: (value) => Hive.box(
-                                          'settings',
-                                        ).put('customPageWidth', value),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: TextField(
+                                            controller:
+                                                _customPageHeightController,
+                                            decoration: const InputDecoration(
+                                              labelText: 'Height (mm)',
+                                            ),
+                                            keyboardType: TextInputType.number,
+                                            onChanged: (value) =>
+                                                settings.setCustomPageHeight(
+                                                    double.parse(value)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  CheckboxListTile(
+                                    title: const Text('Landscape'),
+                                    value: _isLandscape,
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        _isLandscape = value ?? false;
+                                        settings.setIsLandscape(_isLandscape);
+                                      });
+                                    },
+                                    controlAffinity:
+                                        ListTileControlAffinity.leading,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  CheckboxListTile(
+                                    title: const Text('Center Image'),
+                                    value: _centerImage,
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        _centerImage = value ?? true;
+                                        settings.setCenterImage(_centerImage);
+                                      });
+                                    },
+                                    controlAffinity:
+                                        ListTileControlAffinity.leading,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  CheckboxListTile(
+                                    title: const Text('Print background'),
+                                    value: _printBackground,
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        _printBackground = value ?? false;
+                                        settings.setPrintBackground(
+                                            _printBackground);
+                                      });
+                                    },
+                                    controlAffinity:
+                                        ListTileControlAffinity.leading,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  if (_isSaving)
+                                    const CircularProgressIndicator()
+                                  else
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        onPressed:
+                                            (project.vectorObjects).isEmpty
+                                                ? null
+                                                : _handlePdfGeneration,
+                                        icon: const Icon(
+                                          Icons.picture_as_pdf_outlined,
+                                        ),
+                                        label: const Text('Generate PDF'),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _customPageHeightController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Height (mm)',
-                                        ),
-                                        keyboardType: TextInputType.number,
-                                        onChanged: (value) => Hive.box(
-                                          'settings',
-                                        ).put('customPageHeight', value),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              CheckboxListTile(
-                                title: const Text('Landscape'),
-                                value: _isLandscape,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    _isLandscape = value ?? false;
-                                    Hive.box(
-                                      'settings',
-                                    ).put('isLandscape', _isLandscape);
-                                  });
-                                },
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
+                                ],
                               ),
-                              CheckboxListTile(
-                                title: const Text('Center Image'),
-                                value: _centerImage,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    _centerImage = value ?? true;
-                                    Hive.box(
-                                      'settings',
-                                    ).put('centerImage', _centerImage);
-                                  });
-                                },
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              CheckboxListTile(
-                                title: const Text('Print background'),
-                                value: _printBackground,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    _printBackground = value ?? false;
-                                    Hive.box(
-                                      'settings',
-                                    ).put('printBackground', _printBackground);
-                                  });
-                                },
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              const SizedBox(height: 16),
-                              if (_isSaving)
-                                const CircularProgressIndicator()
-                              else
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: project.vectorObjects.isEmpty
-                                        ? null
-                                        : _handlePdfGeneration,
-                                    icon: const Icon(
-                                      Icons.picture_as_pdf_outlined,
-                                    ),
-                                    label: const Text('Generate PDF'),
-                                  ),
-                                ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
 class VectorPainter extends CustomPainter {
-  final List<VectorObject> objects;
-  final Size? imageSize;
+  final List<DisplayVectorObject> objects;
+  final Size imageSize;
   final double fontSize;
   VectorPainter({
     required this.objects,
@@ -641,9 +653,9 @@ class VectorPainter extends CustomPainter {
   });
   @override
   void paint(Canvas canvas, Size size) {
-    if (imageSize == null || objects.isEmpty) return;
-    final imageWidth = imageSize!.width;
-    final imageHeight = imageSize!.height;
+    if (objects.isEmpty) return;
+    final imageWidth = imageSize.width;
+    final imageHeight = imageSize.height;
     if (imageWidth == 0 || imageHeight == 0) return;
     final canvasWidth = size.width;
     final canvasHeight = size.height;
@@ -662,46 +674,33 @@ class VectorPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.bevel
       ..isAntiAlias = false;
-    canvas.drawRect(
-      Rect.fromLTWH(offsetX, offsetY, totalGridWidth, totalGridHeight),
-      gridPaint,
-    );
-    final innerLinesPath = Path();
-    for (int i = 1; i < imageWidth; i++) {
+
+    // Draw the grid overlay.
+    final path = Path();
+    for (int i = 0; i <= imageWidth; i++) {
       final x = offsetX + i * cellWidth;
-      innerLinesPath.moveTo(x, offsetY);
-      innerLinesPath.lineTo(x, offsetY + totalGridHeight);
+      path.moveTo(x, offsetY);
+      path.lineTo(x, offsetY + totalGridHeight);
     }
-    for (int i = 1; i < imageHeight; i++) {
+    for (int i = 0; i <= imageHeight; i++) {
       final y = offsetY + i * cellHeight;
-      innerLinesPath.moveTo(offsetX, y);
-      innerLinesPath.lineTo(offsetX + totalGridWidth, y);
+      path.moveTo(offsetX, y);
+      path.lineTo(offsetX + totalGridWidth, y);
     }
-    canvas.drawPath(innerLinesPath, gridPaint);
+    canvas.drawPath(path, gridPaint);
+
+    // Draw the actual vector objects (colored cells).
     for (final obj in objects) {
       final rect = Rect.fromLTWH(
-        obj.rect.left * cellWidth + offsetX,
-        obj.rect.top * cellHeight + offsetY,
+        offsetX + obj.x * cellWidth,
+        offsetY + obj.y * cellHeight,
         cellWidth,
         cellHeight,
       );
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: obj.colorIndex.toString(),
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: fontSize,
-            fontWeight: FontWeight.normal,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      final offset = Offset(
-        rect.center.dx - (textPainter.width / 2),
-        rect.center.dy - (textPainter.height / 2),
-      );
-      textPainter.paint(canvas, offset);
+      final cellPaint = Paint()
+        ..color = obj.color
+        ..style = PaintingStyle.fill;
+      canvas.drawRect(rect, cellPaint);
     }
   }
 

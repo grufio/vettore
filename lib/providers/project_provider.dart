@@ -1,172 +1,139 @@
 import 'dart:ui';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'package:image/image.dart' as img;
-import 'package:vettore/models/project_model.dart';
-import 'package:vettore/models/vector_object_model.dart';
-import 'package:vettore/models/palette_color.dart';
+import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/repositories/project_repository.dart';
-import 'package:vettore/services/project_service.dart';
-import 'package:vettore/models/palette_model.dart';
-import 'package:vettore/repositories/palette_repository.dart';
 
-@immutable
-class ProjectState {
-  const ProjectState({this.project, this.isLoading = false});
-  final Project? project;
-  final bool isLoading;
+// A simple data class for vector objects that can be sent to isolates.
+class IsolateVectorObject {
+  final int x, y;
+  final int color;
+  IsolateVectorObject(this.x, this.y, this.color);
 
-  ProjectState copyWith({Project? project, bool? isLoading}) {
-    return ProjectState(
-      project: project ?? this.project,
-      isLoading: isLoading ?? this.isLoading,
-    );
-  }
+  Map<String, dynamic> toJson() => {'x': x, 'y': y, 'color': color};
 }
 
-final projectProvider = StateNotifierProvider.autoDispose
-    .family<ProjectNotifier, ProjectState, int>((ref, projectKey) {
-      final projectRepository = ref.watch(projectRepositoryProvider);
-      final projectService = ref.watch(projectServiceProvider);
-      final paletteRepository = ref.watch(paletteRepositoryProvider);
-      try {
-        final project = projectRepository.getProjects().firstWhere(
-          (p) => p.key == projectKey,
-        );
-        return ProjectNotifier(
-          ProjectState(project: project),
-          projectRepository,
-          projectService,
-          paletteRepository,
-        );
-      } catch (e) {
-        return ProjectNotifier(
-          const ProjectState(),
-          projectRepository,
-          projectService,
-          paletteRepository,
-        );
-      }
-    });
+// Provides a stream of a single project for the editor page.
+final projectStreamProvider =
+    StreamProvider.autoDispose.family<Project, int>((ref, projectId) {
+  final projectRepository = ref.watch(projectRepositoryProvider);
+  return projectRepository.watchProject(projectId);
+});
 
-class ProjectNotifier extends StateNotifier<ProjectState> {
-  final ProjectRepository _projectRepository;
-  final ProjectService _projectService;
-  final PaletteRepository _paletteRepository;
+// A provider for the business logic of the project editor.
+final projectLogicProvider =
+    Provider.autoDispose.family<ProjectLogic, int>((ref, projectId) {
+  return ProjectLogic(ref, projectId);
+});
 
-  ProjectNotifier(
-    super.projectState,
-    this._projectRepository,
-    this._projectService,
-    this._paletteRepository,
-  );
+class ProjectLogic {
+  final Ref ref;
+  final int projectId;
+
+  ProjectLogic(this.ref, this.projectId);
 
   Future<void> convertProject() async {
-    if (state.project == null || state.isLoading) {
-      return;
-    }
+    final projectRepository = ref.read(projectRepositoryProvider);
+    final paletteRepository = ref.read(paletteRepositoryProvider);
+    final project = await projectRepository.getProject(projectId);
 
-    final isFirstConversion = !state.project!.isConverted;
-    state = state.copyWith(isLoading: true);
+    final isFirstConversion = !project.isConverted;
 
     try {
-      // Pass only the necessary raw data to the isolate.
-      final result = await compute(_performConversionIsolate, {
-        'imageData': state.project!.imageData,
-      });
+      final result = await compute(
+          _performConversionIsolate, {'imageData': project.imageData});
 
-      Project updatedProject;
+      final vectorObjects =
+          result['vectorObjects'] as List<IsolateVectorObject>;
+      final vectorObjectsJson = jsonEncode(vectorObjects);
+
       if (isFirstConversion) {
-        // Create and save the new global palette
-        final newPalette = Palette()
-          ..name = '${state.project!.name} Palette'
-          ..colors = result['palette'];
-        final newPaletteKey = await _paletteRepository.addPalette(newPalette);
-
-        updatedProject = state.project!.copyWith(
-          vectorObjects: result['vectorObjects'],
-          imageWidth: result['imageWidth'],
-          imageHeight: result['imageHeight'],
-          isConverted: true,
-          uniqueColorCount: result['uniqueColorCount'],
-          paletteKey: newPaletteKey,
+        final newPalette = PalettesCompanion.insert(
+          name: '${project.name} Palette',
         );
+        final colors = (result['palette'] as List<Map<String, dynamic>>)
+            .map((c) => PaletteColorsCompanion.insert(
+                  title: c['title']!,
+                  color: c['color']!,
+                  paletteId: -1, // This will be set later
+                ))
+            .toList();
+
+        final newPaletteKey =
+            await paletteRepository.addPalette(newPalette, colors);
+
+        final updatedProject = project.toCompanion(false).copyWith(
+              vectorObjects: Value(vectorObjectsJson),
+              imageWidth: Value(result['imageWidth']),
+              imageHeight: Value(result['imageHeight']),
+              isConverted: const Value(true),
+              uniqueColorCount: Value(result['uniqueColorCount']),
+              paletteId: Value(newPaletteKey),
+            );
+        await projectRepository.updateProject(updatedProject);
       } else {
-        // On subsequent conversions, just update the vector objects
-        updatedProject = state.project!.copyWith(
-          vectorObjects: result['vectorObjects'],
-          imageWidth: result['imageWidth'],
-          imageHeight: result['imageHeight'],
-          isConverted: true,
-          uniqueColorCount: result['uniqueColorCount'],
-        );
+        final updatedProject = project.toCompanion(false).copyWith(
+              vectorObjects: Value(vectorObjectsJson),
+              imageWidth: Value(result['imageWidth']),
+              imageHeight: Value(result['imageHeight']),
+              isConverted: const Value(true),
+              uniqueColorCount: Value(result['uniqueColorCount']),
+            );
+        await projectRepository.updateProject(updatedProject);
       }
-
-      await _projectRepository.updateProject(
-        state.project!.key,
-        updatedProject,
-      );
-      state = state.copyWith(project: updatedProject, isLoading: false);
     } catch (e) {
-      debugPrint('[ProjectProvider] Error during vector conversion: $e');
-      state = state.copyWith(isLoading: false);
+      debugPrint('[ProjectLogic] Error during vector conversion: $e');
     }
   }
 
   Future<void> updateImage(
-    double scalePercent,
-    FilterQuality filterQuality,
-  ) async {
-    if (state.project == null || state.isLoading) return;
-
-    state = state.copyWith(isLoading: true);
+      double scalePercent, FilterQuality filterQuality) async {
+    final projectRepository = ref.read(projectRepositoryProvider);
+    final project = await projectRepository.getProject(projectId);
 
     try {
       final result = await compute(_performImageUpdate, {
-        'imageData': state.project!.originalImageData!,
+        'imageData': project.originalImageData!,
         'scalePercent': scalePercent,
         'filterQuality': filterQuality,
       });
 
-      final updatedProjectData = state.project!.copyWith(
-        imageData: result['imageData'],
-        imageWidth: result['width'],
-        imageHeight: result['height'],
-        filterQualityIndex: filterQuality.index,
-        isConverted: false,
-        vectorObjects: [],
-        uniqueColorCount: 0,
-      );
-
-      await _projectRepository.updateProject(
-        state.project!.key,
-        updatedProjectData,
-      );
-      state = state.copyWith(project: updatedProjectData);
+      final updatedProject = project.toCompanion(false).copyWith(
+            imageData: Value(result['imageData'] as Uint8List),
+            imageWidth: Value(result['width'] as double),
+            imageHeight: Value(result['height'] as double),
+            filterQualityIndex: Value(filterQuality.index),
+            isConverted: const Value(false),
+            vectorObjects: const Value('[]'), // Reset conversion data
+            uniqueColorCount: const Value(0),
+          );
+      await projectRepository.updateProject(updatedProject);
     } catch (e) {
-      debugPrint('Error during image update: $e');
-    } finally {
-      state = state.copyWith(isLoading: false);
+      debugPrint('[ProjectLogic] Error during image update: $e');
     }
   }
 
   Future<void> resetImage() async {
-    if (state.project == null || state.isLoading) return;
-    final updatedProject = state.project!.copyWith(
-      imageData: state.project!.originalImageData,
-      imageWidth: state.project!.originalImageWidth,
-      imageHeight: state.project!.originalImageHeight,
-      filterQualityIndex:
-          FilterQuality.high.index, // Default to high quality on reset
-      isConverted: false,
-      vectorObjects: [],
-      uniqueColorCount: 0,
-    );
-    await _projectRepository.updateProject(state.project!.key, updatedProject);
-    state = state.copyWith(project: updatedProject);
+    final projectRepository = ref.read(projectRepositoryProvider);
+    final project = await projectRepository.getProject(projectId);
+
+    final updatedProject = project.toCompanion(false).copyWith(
+          imageData: Value(project.originalImageData!),
+          imageWidth: Value(project.originalImageWidth!),
+          imageHeight: Value(project.originalImageHeight!),
+          filterQualityIndex: const Value(1), // Default high quality
+          isConverted: const Value(false),
+          vectorObjects: const Value('[]'),
+          uniqueColorCount: const Value(0),
+        );
+    await projectRepository.updateProject(updatedProject);
   }
 }
+
+// --- ISOLATE FUNCTIONS ---
 
 Map<String, dynamic> _performImageUpdate(Map<String, dynamic> params) {
   final Uint8List imageData = params['imageData'];
@@ -174,17 +141,13 @@ Map<String, dynamic> _performImageUpdate(Map<String, dynamic> params) {
   final FilterQuality filterQuality = params['filterQuality'];
 
   final originalImage = img.decodeImage(imageData);
-  if (originalImage == null) {
-    throw Exception('Could not decode image for updating.');
-  }
+  if (originalImage == null) throw Exception('Could not decode image.');
 
   final newWidth = (originalImage.width * scalePercent / 100).round();
   final newHeight = (originalImage.height * scalePercent / 100).round();
 
-  // Map FilterQuality to the image package's Interpolation enum
   final interpolation = switch (filterQuality) {
     FilterQuality.high => img.Interpolation.cubic,
-    FilterQuality.medium => img.Interpolation.linear,
     _ => img.Interpolation.nearest,
   };
 
@@ -202,58 +165,32 @@ Map<String, dynamic> _performImageUpdate(Map<String, dynamic> params) {
   };
 }
 
-// This function will run in a separate isolate.
 Map<String, dynamic> _performConversionIsolate(Map<String, dynamic> params) {
   final Uint8List imageData = params['imageData'];
   final img.Image? imageToConvert = img.decodeImage(imageData);
 
-  if (imageToConvert == null) {
-    throw Exception('Could not decode image');
-  }
+  if (imageToConvert == null) throw Exception('Could not decode image');
 
-  final List<VectorObject> vectorObjects = [];
-  final Map<int, int> colorIndexMap = {};
-  int nextColorIndex = 1;
+  final List<IsolateVectorObject> vectorObjects = [];
   final Set<Color> uniqueColorsSet = {};
 
   for (int y = 0; y < imageToConvert.height; y++) {
     for (int x = 0; x < imageToConvert.width; x++) {
       final pixel = imageToConvert.getPixel(x, y);
-      final flutterColor = Color.fromARGB(
-        pixel.a.toInt(),
-        pixel.r.toInt(),
-        pixel.g.toInt(),
-        pixel.b.toInt(),
-      );
-
-      uniqueColorsSet.add(flutterColor);
-
-      int colorIndex;
-      if (colorIndexMap.containsKey(flutterColor.toARGB32())) {
-        colorIndex = colorIndexMap[flutterColor.toARGB32()]!;
-      } else {
-        colorIndex = nextColorIndex;
-        colorIndexMap[flutterColor.toARGB32()] = colorIndex;
-        nextColorIndex++;
-      }
-
-      vectorObjects.add(
-        VectorObject.fromRectAndColor(
-          rect: Rect.fromLTWH(x.toDouble(), y.toDouble(), 1, 1),
-          color: flutterColor,
-          colorIndex: colorIndex,
-        ),
-      );
+      final color = Color.fromARGB(
+          pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
+      uniqueColorsSet.add(color);
+      vectorObjects.add(IsolateVectorObject(x, y, color.value));
     }
   }
 
   final uniqueColorList = uniqueColorsSet.toList();
-  final List<PaletteColor> newPalette = [];
+  final List<Map<String, dynamic>> newPalette = [];
   for (int i = 0; i < uniqueColorList.length; i++) {
     final color = uniqueColorList[i];
     final hex =
         '#${(color.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
-    newPalette.add(PaletteColor(title: hex, color: color.value));
+    newPalette.add({'title': hex, 'color': color.value});
   }
 
   return {

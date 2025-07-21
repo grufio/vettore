@@ -2,18 +2,20 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:vettore/models/color_component_model.dart';
 import 'package:vettore/services/settings_service.dart';
 
 class AIService {
   final SettingsService _settingsService;
 
   AIService({required SettingsService settingsService})
-    : _settingsService = settingsService;
+      : _settingsService = settingsService;
 
   Future<Map<String, dynamic>> importRecipeFromImage(
     Uint8List imageData,
   ) async {
+    // TODO: Re-implement this feature with the new data models.
+    return {};
+    /*
     if (!_settingsService.isGeminiApiEnabled) {
       throw Exception('The Gemini API is disabled in settings.');
     }
@@ -69,5 +71,6 @@ class AIService {
       // Re-throw the exception to be handled by the caller
       rethrow;
     }
+    */
   }
 }

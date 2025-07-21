@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vettore/data/database.dart';
 import 'package:vettore/features/palettes/color_edit_page.dart';
-import 'package:vettore/models/palette_color.dart';
-import 'package:vettore/models/palette_model.dart';
-import 'package:vettore/providers/palette_provider.dart';
+import 'package:vettore/providers/palette_detail_provider.dart';
 import 'package:vettore/features/palettes/widgets/palette_color_list.dart';
+import 'package:drift/drift.dart' as drift;
 
-/// A page that displays the details of a single color palette
-/// and allows the user to edit it.
 class PaletteDetailPage extends ConsumerStatefulWidget {
-  final int paletteKey;
-  const PaletteDetailPage({super.key, required this.paletteKey});
+  final int paletteId;
+  const PaletteDetailPage({super.key, required this.paletteId});
 
   @override
   ConsumerState<PaletteDetailPage> createState() => _PaletteDetailPageState();
 }
 
 class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
-  /// Shows a dialog to edit the settings of the palette.
   Future<void> _showPaletteSettingsDialog(Palette palette) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: palette.name);
@@ -96,7 +93,7 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
                   await ref
-                      .read(paletteProvider(widget.paletteKey).notifier)
+                      .read(paletteDetailLogicProvider(widget.paletteId))
                       .updateDetails(
                         name: nameController.text,
                         size: double.tryParse(sizeController.text) ?? 60.0,
@@ -112,22 +109,16 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
     );
   }
 
-  /// Navigates to the color edit page for the selected color.
-  void _editColor(int index, PaletteColor color) {
-    final palette = ref.read(paletteProvider(widget.paletteKey));
-    if (palette == null) return;
-
+  void _editColor(PaletteColor color) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ColorEditPage(
           initialColor: color,
-          sizeInMl: palette.sizeInMl,
-          factor: palette.factor,
           onSave: (newColor) async {
             await ref
-                .read(paletteProvider(widget.paletteKey).notifier)
-                .updateColor(index, newColor);
+                .read(paletteDetailLogicProvider(widget.paletteId))
+                .updateColor(newColor);
           },
         ),
       ),
@@ -136,55 +127,54 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = ref.watch(paletteProvider(widget.paletteKey));
+    final paletteAsync =
+        ref.watch(paletteDetailStreamProvider(widget.paletteId));
 
-    if (palette == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    return paletteAsync.when(
+      data: (fullPalette) {
+        final palette = fullPalette.palette;
+        final colors = fullPalette.colors;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(palette.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Palette Settings',
-            onPressed: () => _showPaletteSettingsDialog(palette),
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(palette.name),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: 'Palette Settings',
+                onPressed: () => _showPaletteSettingsDialog(palette),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: PaletteColorList(
-        colors: palette.colors,
-        onEdit: (index, color) => _editColor(index, color),
-        onDelete: (index) async => await ref
-            .read(paletteProvider(widget.paletteKey).notifier)
-            .deleteColor(index),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final newColor = PaletteColor(
-            title: 'New Color',
-            color: Colors.black.toARGB32(),
-            status: 'new',
-            componentKeys: [],
-            components: [],
-          );
+          body: PaletteColorList(
+            colors: colors,
+            onEdit: (color) => _editColor(color),
+            onDelete: (colorId) async => await ref
+                .read(paletteDetailLogicProvider(widget.paletteId))
+                .deleteColor(colorId),
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () async {
+              final newColor = PaletteColorsCompanion.insert(
+                paletteId: widget.paletteId,
+                title: 'New Color',
+                color: Colors.black.value,
+                status: drift.Value('new'),
+              );
 
-          await ref
-              .read(paletteProvider(widget.paletteKey).notifier)
-              .addNewColor(newColor);
-
-          if (!context.mounted) return;
-
-          final updatedPalette = ref.read(paletteProvider(widget.paletteKey));
-          if (updatedPalette != null) {
-            final newColorFromServer = updatedPalette.colors.last;
-            _editColor(updatedPalette.colors.length - 1, newColorFromServer);
-          }
-        },
-        tooltip: 'Add Color',
-        child: const Icon(Icons.add),
-      ),
+              await ref
+                  .read(paletteDetailLogicProvider(widget.paletteId))
+                  .addColor(newColor);
+            },
+            tooltip: 'Add Color',
+            child: const Icon(Icons.add),
+          ),
+        );
+      },
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stack) =>
+          Scaffold(body: Center(child: Text('Error: $error'))),
     );
   }
 }

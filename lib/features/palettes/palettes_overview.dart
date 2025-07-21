@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/features/palettes/palette_detail_page.dart';
-import 'package:vettore/models/palette_model.dart';
-import 'package:vettore/providers/palette_provider.dart';
+import 'package:vettore/providers/palette_list_provider.dart';
 import 'package:vettore/widgets/adaptive_dialog.dart';
 
 /// A page that displays a list of all the user's color palettes.
@@ -35,8 +34,8 @@ class PalettesOverview extends ConsumerWidget {
               onPressed: () async {
                 if (nameController.text.isNotEmpty) {
                   await ref
-                      .read(paletteListProvider.notifier)
-                      .addPalette(Palette()..name = nameController.text);
+                      .read(paletteListLogicProvider)
+                      .createNewPalette(nameController.text);
                   if (!context.mounted) return;
                   Navigator.of(context).pop();
                 }
@@ -52,7 +51,7 @@ class PalettesOverview extends ConsumerWidget {
   Future<void> _showDeleteConfirmDialog(
     BuildContext context,
     WidgetRef ref,
-    int paletteKey,
+    int paletteId,
     String paletteName,
   ) async {
     return showDialog<void>(
@@ -72,8 +71,8 @@ class PalettesOverview extends ConsumerWidget {
               child: const Text('Delete'),
               onPressed: () async {
                 await ref
-                    .read(paletteListProvider.notifier)
-                    .deletePalette(paletteKey);
+                    .read(paletteListLogicProvider)
+                    .deletePalette(paletteId);
                 if (!context.mounted) return;
                 Navigator.of(context).pop();
               },
@@ -86,27 +85,20 @@ class PalettesOverview extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final paletteBox = ref.watch(paletteListProvider);
-    final paletteKeys = paletteBox.keys.toList();
+    final palettesAsync = ref.watch(paletteListStreamProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Palettes')),
-      body: Builder(
-        builder: (context) {
-          if (paletteBox.isEmpty) {
+      body: palettesAsync.when(
+        data: (palettes) {
+          if (palettes.isEmpty) {
             return const Center(child: Text('No palettes created yet.'));
           }
           return ListView.builder(
-            itemCount: paletteKeys.length,
+            itemCount: palettes.length,
             itemBuilder: (context, index) {
-              final paletteKey = paletteKeys[index];
-              final palette = paletteBox.get(paletteKey);
-
-              if (palette == null) {
-                return const Card(
-                  child: ListTile(title: Text('Error: Could not load palette')),
-                );
-              }
+              final fullPalette = palettes[index];
+              final palette = fullPalette.palette;
 
               return Card(
                 margin: const EdgeInsets.all(8.0),
@@ -116,7 +108,7 @@ class PalettesOverview extends ConsumerWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            PaletteDetailPage(paletteKey: paletteKey as int),
+                            PaletteDetailPage(paletteId: palette.id),
                       ),
                     );
                   },
@@ -141,7 +133,7 @@ class PalettesOverview extends ConsumerWidget {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => PaletteDetailPage(
-                                        paletteKey: paletteKey as int,
+                                        paletteId: palette.id,
                                       ),
                                     ),
                                   );
@@ -154,7 +146,7 @@ class PalettesOverview extends ConsumerWidget {
                                   _showDeleteConfirmDialog(
                                     context,
                                     ref,
-                                    paletteKey as int,
+                                    palette.id,
                                     palette.name,
                                   );
                                 },
@@ -170,6 +162,8 @@ class PalettesOverview extends ConsumerWidget {
             },
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('Error: $error')),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(context, ref),

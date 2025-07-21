@@ -1,65 +1,43 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/models/project_model.dart';
 import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/repositories/palette_repository.dart';
-import 'package:vettore/repositories/project_repository.dart';
-import 'package:vettore/services/project_service.dart';
+import 'package:vettore/data/database.dart';
 
-class ProjectListNotifier extends StateNotifier<List<Project>> {
-  final ProjectRepository _projectRepository;
-  final ProjectService _projectService;
-  final PaletteRepository _paletteRepository;
+// Provides the stream of all projects from the database.
+// The UI will watch this provider to get a live-updating list of projects.
+final projectListStreamProvider = StreamProvider<List<Project>>((ref) {
+  final projectRepository = ref.watch(projectRepositoryProvider);
+  return projectRepository.watchProjects();
+});
 
-  ProjectListNotifier(
-    this._projectRepository,
-    this._projectService,
-    this._paletteRepository,
-  ) : super(_projectRepository.getProjects()) {
-    _listenToProjects();
-  }
+// A provider for the business logic of creating and deleting projects.
+final projectListLogicProvider = Provider<ProjectListLogic>((ref) {
+  return ProjectListLogic(ref);
+});
 
-  void _listenToProjects() {
-    _projectRepository.getProjectsListenable().addListener(_updateState);
-  }
-
-  void _updateState() {
-    state = _projectRepository.getProjects();
-  }
+class ProjectListLogic {
+  final Ref _ref;
+  ProjectListLogic(this._ref);
 
   Future<void> createNewProject() async {
-    final newProject = await _projectService.createProjectFromFile();
-    if (newProject != null) {
-      await _projectRepository.addProject(newProject);
-      // State is updated automatically by the listener
+    final projectService = _ref.read(projectServiceProvider);
+    final projectRepository = _ref.read(projectRepositoryProvider);
+
+    final newProjectCompanion = await projectService.createProjectFromFile();
+    if (newProjectCompanion != null) {
+      await projectRepository.addProject(newProjectCompanion);
     }
   }
 
-  Future<void> deleteProject(int key) async {
-    // First, find the project to get its paletteKey
-    final projectToDelete = _projectRepository.getProject(key);
+  Future<void> deleteProject(int id) async {
+    final projectRepository = _ref.read(projectRepositoryProvider);
+    final paletteRepository = _ref.read(paletteRepositoryProvider);
 
-    if (projectToDelete != null && projectToDelete.paletteKey != null) {
-      // If a palette is linked, delete it first.
-      await _paletteRepository.deletePalette(projectToDelete.paletteKey!);
+    // Get the project to check for a linked palette
+    final projectToDelete = await projectRepository.getProject(id);
+    if (projectToDelete.paletteId != null) {
+      await paletteRepository.deletePalette(projectToDelete.paletteId!);
     }
 
-    // Then, delete the project itself.
-    await _projectRepository.deleteProject(key);
-    // State is updated automatically by the listener
-  }
-
-  @override
-  void dispose() {
-    _projectRepository.getProjectsListenable().removeListener(_updateState);
-    super.dispose();
+    await projectRepository.deleteProject(id);
   }
 }
-
-final projectListProvider =
-    StateNotifierProvider<ProjectListNotifier, List<Project>>((ref) {
-      return ProjectListNotifier(
-        ref.watch(projectRepositoryProvider),
-        ref.watch(projectServiceProvider),
-        ref.watch(paletteRepositoryProvider),
-      );
-    });
