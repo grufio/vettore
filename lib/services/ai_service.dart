@@ -13,9 +13,6 @@ class AIService {
   Future<Map<String, dynamic>> importRecipeFromImage(
     Uint8List imageData,
   ) async {
-    // TODO: Re-implement this feature with the new data models.
-    return {};
-    /*
     if (!_settingsService.isGeminiApiEnabled) {
       throw Exception('The Gemini API is disabled in settings.');
     }
@@ -27,7 +24,7 @@ class AIService {
     final model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey);
 
     final prompt = TextPart(
-      'Analyze the attached image which contains a color recipe. On the left side of the image, there are two colored rectangular areas. Identify the one that is furthest to the left. Determine the uniform RGB color of that specific, leftmost area. Also, extract the color components and their percentages from the right side of the image. Return the data ONLY as a valid JSON object with two keys: "recipeTitleColor" (as an object with "r", "g", and "b" integer keys) and "components" (as an array where each object has a "name" and a "percentage" key).',
+      'Analyze the attached image which contains a color recipe. Each line contains a number, a color name, and a percentage. You must ignore the number at the beginning of each line. Extract only the color name and its corresponding percentage. Return the data ONLY as a valid JSON object with one key: "components" (as an array where each object has a "name" (string) and a "percentage" (number, not a string) key).',
     );
 
     final imagePart = DataPart('image/jpeg', imageData);
@@ -41,17 +38,16 @@ class AIService {
         throw Exception('Received null response from API');
       }
 
-      final String cleanedJson = response.text!
-          .replaceAll('`', '')
-          .replaceAll('json', '')
-          .trim();
+      final String cleanedJson =
+          response.text!.replaceAll('`', '').replaceAll('json', '').trim();
 
       final Map<String, dynamic> decodedJson = jsonDecode(cleanedJson);
 
       final componentsData = decodedJson['components'] as List<dynamic>? ?? [];
-      final recipeTitleColor =
-          decodedJson['recipeTitleColor'] as Map<String, dynamic>?;
 
+      // TODO: This part needs to be adapted to the new data model
+      // For now, we will return the raw data and process it in the UI layer.
+      /*
       final components = componentsData.map((item) {
         final name = item['name'] as String?;
         final percentage = item['percentage'] as num?;
@@ -64,13 +60,15 @@ class AIService {
 
         return ColorComponent(name: name, percentage: percentage.toDouble());
       }).toList();
+      */
 
-      return {'components': components, 'recipeTitleColor': recipeTitleColor};
+      return {
+        'components': componentsData,
+      };
     } catch (e) {
       print('Error parsing recipe from image: $e');
       // Re-throw the exception to be handled by the caller
       rethrow;
     }
-    */
   }
 }

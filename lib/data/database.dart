@@ -105,15 +105,26 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // This is a robust but destructive migration.
-        // It will delete all tables and recreate them on any schema upgrade.
-        // This is acceptable here because all data is either seeded or
-        // can be recreated by the user. This ensures we never have a bad
-        // schema state from a previously failed migration.
-        for (final table in allTables) {
-          await m.deleteTable(table.actualTableName);
+        // This is a safe, additive migration.
+        // It will apply changes incrementally without deleting user data.
+        if (from < 2) {
+          // Version 2 added the imageUrl to vendor colors.
+          // Note: The old destructive migration likely handled this, but this is
+          // the correct, safe way for any future migrations.
+          await m.addColumn(vendorColors, vendorColors.imageUrl);
         }
-        await m.createAll();
+        if (from < 4) {
+          // Version 4 added the variants table.
+          await m.createTable(vendorColorVariants);
+        }
+        if (from < 5) {
+          // Version 5 added the components table.
+          await m.createTable(colorComponents);
+        }
+        if (from < 6) {
+          // Version 6 added the thumbnail to palettes.
+          await m.addColumn(palettes, palettes.thumbnail);
+        }
       },
     );
   }

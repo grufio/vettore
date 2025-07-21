@@ -62,11 +62,48 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   }
 
   void _showImportDialog() {
-    // TODO: Re-implement import dialog
+    showDialog(
+      context: context,
+      builder: (context) => ImportRecipeDialog(
+        onImageImported: (imageData) async {
+          await _importFromImage(imageData);
+        },
+      ),
+    );
   }
 
   Future<void> _importFromImage(Uint8List imageData) async {
-    // TODO: Re-implement import from image
+    final vendorColors = await ref.read(vendorColorsProvider.future);
+    final result = await _aiService.importRecipeFromImage(imageData);
+
+    final componentsData = result['components'] as List<dynamic>? ?? [];
+
+    final newComponents = <ColorComponentsCompanion>[];
+    for (final item in componentsData) {
+      final name = item['name'] as String?;
+      final percentage = item['percentage'] as num?;
+
+      if (name != null && percentage != null) {
+        // Find the corresponding vendor color variant by name (case-insensitive)
+        final vendorColor = vendorColors.firstWhere(
+          (vc) => vc.color.name.toLowerCase() == name.toLowerCase(),
+          orElse: () =>
+              throw Exception('Vendor color not found for name: "$name"'),
+        );
+        final variant = vendorColor.variants.first;
+
+        newComponents.add(
+          ColorComponentsCompanion(
+            vendorColorId: drift.Value(vendorColor.color.id),
+            percentage: drift.Value(percentage.toDouble()),
+          ),
+        );
+      }
+    }
+
+    setState(() {
+      _components = newComponents;
+    });
   }
 
   void _save() {
@@ -119,9 +156,16 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
         if (_components.isEmpty) {
           return const SizedBox.shrink();
         }
-        return ListView.builder(
+        return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            crossAxisSpacing: 8.0,
+            mainAxisSpacing: 8.0,
+            childAspectRatio: 0.8,
+          ),
           itemCount: _components.length,
           itemBuilder: (context, index) {
             final component = _components[index];
@@ -131,19 +175,42 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
                 .color;
 
             return Card(
-              margin: const EdgeInsets.symmetric(vertical: 8.0),
-              child: ListTile(
-                leading: Image.asset(
-                  vendorColor.imageUrl,
-                  width: 56,
-                  height: 56,
-                  fit: BoxFit.cover,
+              clipBehavior: Clip.antiAlias,
+              child: GridTile(
+                footer: GridTileBar(
+                  backgroundColor: Colors.black45,
+                  title: Text(
+                    vendorColor.name,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                  subtitle: Text(
+                    '${component.percentage.value.toStringAsFixed(1)}%',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit,
+                            size: 20, color: Colors.white),
+                        onPressed: () => _showComponentDialog(
+                            component: component, index: index),
+                        tooltip: 'Edit',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete,
+                            size: 20, color: Colors.white),
+                        onPressed: () => _deleteComponent(index),
+                        tooltip: 'Delete',
+                      ),
+                    ],
+                  ),
                 ),
-                title: Text(vendorColor.name),
-                subtitle: Text('Percentage: ${component.percentage.value}%'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteComponent(index),
+                child: Image.asset(
+                  vendorColor.imageUrl,
+                  fit: BoxFit.cover,
                 ),
               ),
             );
@@ -157,6 +224,9 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(settingsServiceProvider);
+    final isApiEnabled = settings.isGeminiApiEnabled;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.initialColor.color.title),
@@ -164,7 +234,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
           IconButton(
             icon: const Icon(Icons.import_export),
             tooltip: 'Import Recipe',
-            onPressed: _showImportDialog,
+            onPressed: isApiEnabled ? _showImportDialog : null,
           ),
           IconButton(
             icon: const Icon(Icons.save),

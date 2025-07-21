@@ -120,6 +120,8 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
             await ref
                 .read(paletteDetailLogicProvider(widget.paletteId))
                 .updateColor(newColor, newComponents);
+            // Invalidate the provider to force a refresh
+            ref.invalidate(paletteDetailStreamProvider(widget.paletteId));
           },
         ),
       ),
