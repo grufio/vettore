@@ -153,10 +153,16 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       );
       return;
     }
+
+    // Extract unique colors from the vector objects.
+    final uniqueColors = project.vectorObjects
+        .map((obj) => obj.color)
+        .toSet()
+        .toList();
+
     showDialog(
       context: context,
-      builder: (context) =>
-          const ColorSettingsDialog(colors: []), // TODO: Fix this
+      builder: (context) => ColorSettingsDialog(colors: uniqueColors),
     );
   }
 

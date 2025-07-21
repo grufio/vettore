@@ -19,9 +19,9 @@ class PaletteRepository {
     return _palettesBox.get(key);
   }
 
-  /// Adds a new palette to the database.
-  Future<void> addPalette(Palette palette) async {
-    await _palettesBox.add(palette);
+  /// Adds a new palette to the database and returns its key.
+  Future<int> addPalette(Palette palette) async {
+    return await _palettesBox.add(palette);
   }
 
   /// Updates an existing palette in the database.

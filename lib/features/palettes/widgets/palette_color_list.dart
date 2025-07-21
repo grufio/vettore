@@ -16,42 +16,50 @@ class PaletteColorList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListView.builder(
+    return GridView.builder(
+      padding: const EdgeInsets.all(8.0),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 8.0,
+        mainAxisSpacing: 8.0,
+        childAspectRatio: 0.8, // To make cards taller than they are wide
+      ),
       itemCount: colors.length,
       itemBuilder: (context, index) {
         final colorData = colors[index];
-        return ListTile(
-          leading: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('#${index + 1}'),
-              const SizedBox(width: 16),
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Color(colorData.color),
-                  border: Border.all(color: Colors.grey),
-                  shape: BoxShape.circle,
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => onEdit(index, colorData),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: Container(color: Color(colorData.color))),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    colorData.title, // This now correctly uses the HEX value
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          title: Text(colorData.title),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.edit),
-                tooltip: 'Edit Color',
-                onPressed: () => onEdit(index, colorData),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                tooltip: 'Delete Color',
-                onPressed: () => onDelete(index),
-              ),
-            ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 20),
+                      tooltip: 'Edit Color',
+                      onPressed: () => onEdit(index, colorData),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, size: 20),
+                      tooltip: 'Delete Color',
+                      onPressed: () => onDelete(index),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },

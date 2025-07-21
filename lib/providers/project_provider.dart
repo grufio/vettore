@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image/image.dart' as img;
 import 'package:vettore/models/project_model.dart';
 import 'package:vettore/models/vector_object_model.dart';
+import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/repositories/project_repository.dart';
 import 'package:vettore/services/project_service.dart';
+import 'package:vettore/models/palette_model.dart';
+import 'package:vettore/repositories/palette_repository.dart';
 
 @immutable
 class ProjectState {
@@ -26,6 +29,7 @@ final projectProvider = StateNotifierProvider.autoDispose
     .family<ProjectNotifier, ProjectState, int>((ref, projectKey) {
       final projectRepository = ref.watch(projectRepositoryProvider);
       final projectService = ref.watch(projectServiceProvider);
+      final paletteRepository = ref.watch(paletteRepositoryProvider);
       try {
         final project = projectRepository.getProjects().firstWhere(
           (p) => p.key == projectKey,
@@ -34,12 +38,14 @@ final projectProvider = StateNotifierProvider.autoDispose
           ProjectState(project: project),
           projectRepository,
           projectService,
+          paletteRepository,
         );
       } catch (e) {
         return ProjectNotifier(
           const ProjectState(),
           projectRepository,
           projectService,
+          paletteRepository,
         );
       }
     });
@@ -47,11 +53,13 @@ final projectProvider = StateNotifierProvider.autoDispose
 class ProjectNotifier extends StateNotifier<ProjectState> {
   final ProjectRepository _projectRepository;
   final ProjectService _projectService;
+  final PaletteRepository _paletteRepository;
 
   ProjectNotifier(
     super.projectState,
     this._projectRepository,
     this._projectService,
+    this._paletteRepository,
   );
 
   Future<void> convertProject() async {
@@ -59,6 +67,7 @@ class ProjectNotifier extends StateNotifier<ProjectState> {
       return;
     }
 
+    final isFirstConversion = !state.project!.isConverted;
     state = state.copyWith(isLoading: true);
 
     try {
@@ -67,13 +76,32 @@ class ProjectNotifier extends StateNotifier<ProjectState> {
         'imageData': state.project!.imageData,
       });
 
-      final updatedProject = state.project!.copyWith(
-        vectorObjects: result['vectorObjects'],
-        imageWidth: result['imageWidth'],
-        imageHeight: result['imageHeight'],
-        isConverted: true,
-        uniqueColorCount: result['uniqueColorCount'],
-      );
+      Project updatedProject;
+      if (isFirstConversion) {
+        // Create and save the new global palette
+        final newPalette = Palette()
+          ..name = '${state.project!.name} Palette'
+          ..colors = result['palette'];
+        final newPaletteKey = await _paletteRepository.addPalette(newPalette);
+
+        updatedProject = state.project!.copyWith(
+          vectorObjects: result['vectorObjects'],
+          imageWidth: result['imageWidth'],
+          imageHeight: result['imageHeight'],
+          isConverted: true,
+          uniqueColorCount: result['uniqueColorCount'],
+          paletteKey: newPaletteKey,
+        );
+      } else {
+        // On subsequent conversions, just update the vector objects
+        updatedProject = state.project!.copyWith(
+          vectorObjects: result['vectorObjects'],
+          imageWidth: result['imageWidth'],
+          imageHeight: result['imageHeight'],
+          isConverted: true,
+          uniqueColorCount: result['uniqueColorCount'],
+        );
+      }
 
       await _projectRepository.updateProject(
         state.project!.key,
@@ -186,6 +214,7 @@ Map<String, dynamic> _performConversionIsolate(Map<String, dynamic> params) {
   final List<VectorObject> vectorObjects = [];
   final Map<int, int> colorIndexMap = {};
   int nextColorIndex = 1;
+  final Set<Color> uniqueColorsSet = {};
 
   for (int y = 0; y < imageToConvert.height; y++) {
     for (int x = 0; x < imageToConvert.width; x++) {
@@ -196,6 +225,8 @@ Map<String, dynamic> _performConversionIsolate(Map<String, dynamic> params) {
         pixel.g.toInt(),
         pixel.b.toInt(),
       );
+
+      uniqueColorsSet.add(flutterColor);
 
       int colorIndex;
       if (colorIndexMap.containsKey(flutterColor.toARGB32())) {
@@ -216,14 +247,20 @@ Map<String, dynamic> _performConversionIsolate(Map<String, dynamic> params) {
     }
   }
 
-  final Set<int> uniqueColors = vectorObjects
-      .map((obj) => obj.color.toARGB32())
-      .toSet();
+  final uniqueColorList = uniqueColorsSet.toList();
+  final List<PaletteColor> newPalette = [];
+  for (int i = 0; i < uniqueColorList.length; i++) {
+    final color = uniqueColorList[i];
+    final hex =
+        '#${(color.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+    newPalette.add(PaletteColor(title: hex, color: color.value));
+  }
 
   return {
     'vectorObjects': vectorObjects,
     'imageWidth': imageToConvert.width.toDouble(),
     'imageHeight': imageToConvert.height.toDouble(),
-    'uniqueColorCount': uniqueColors.length,
+    'uniqueColorCount': uniqueColorsSet.length,
+    'palette': newPalette,
   };
 }

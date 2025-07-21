@@ -48,6 +48,9 @@ class Project extends HiveObject {
   @HiveField(12, defaultValue: 1)
   int filterQualityIndex = FilterQuality.low.index;
 
+  @HiveField(13)
+  int? paletteKey;
+
   FilterQuality get filterQuality => FilterQuality.values[filterQualityIndex];
 
   Project copyWith({
@@ -64,6 +67,7 @@ class Project extends HiveObject {
     double? originalImageWidth,
     double? originalImageHeight,
     int? filterQualityIndex,
+    int? paletteKey,
   }) {
     return Project()
       ..name = name ?? this.name
@@ -78,6 +82,7 @@ class Project extends HiveObject {
       ..originalImageData = originalImageData ?? this.originalImageData
       ..originalImageWidth = originalImageWidth ?? this.originalImageWidth
       ..originalImageHeight = originalImageHeight ?? this.originalImageHeight
-      ..filterQualityIndex = filterQualityIndex ?? this.filterQualityIndex;
+      ..filterQualityIndex = filterQualityIndex ?? this.filterQualityIndex
+      ..paletteKey = paletteKey ?? this.paletteKey;
   }
 }

@@ -15,6 +15,10 @@ class ProjectRepository {
     return _projectBox.values.toList();
   }
 
+  Project? getProject(int key) {
+    return _projectBox.get(key);
+  }
+
   Future<void> addProject(Project project) {
     return _projectBox.add(project);
   }

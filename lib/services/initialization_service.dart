@@ -40,6 +40,9 @@ class InitializationService {
     await _openBoxSafely<Palette>('palettes');
     await _openBoxSafely<Project>('projects');
     await _openBoxSafely<VendorColor>('vendor_colors');
+    debugPrint(
+      'Vendor colors box opened. It contains ${Hive.box<VendorColor>('vendor_colors').length} colors.',
+    );
     await _openBoxSafely<ColorComponent>('color_components');
   }
 

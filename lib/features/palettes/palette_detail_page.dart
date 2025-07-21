@@ -5,7 +5,6 @@ import 'package:vettore/models/palette_color.dart';
 import 'package:vettore/models/palette_model.dart';
 import 'package:vettore/providers/palette_provider.dart';
 import 'package:vettore/features/palettes/widgets/palette_color_list.dart';
-import 'package:vettore/features/palettes/widgets/palette_details_form.dart';
 
 /// A page that displays the details of a single color palette
 /// and allows the user to edit it.
@@ -18,20 +17,74 @@ class PaletteDetailPage extends ConsumerStatefulWidget {
 }
 
 class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
-  final _formKey = GlobalKey<FormState>();
-
-  /// Shows a dialog to edit the name of the palette.
-  Future<void> _showEditNameDialog(Palette palette) async {
+  /// Shows a dialog to edit the settings of the palette.
+  Future<void> _showPaletteSettingsDialog(Palette palette) async {
+    final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: palette.name);
+    final sizeController = TextEditingController(
+      text: palette.sizeInMl.toString(),
+    );
+    final factorController = TextEditingController(
+      text: palette.factor.toString(),
+    );
+
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Palette Name'),
-          content: TextField(
-            controller: nameController,
-            decoration: const InputDecoration(hintText: 'Palette Name'),
-            autofocus: true,
+          title: const Text('Palette Settings'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Palette Name',
+                    ),
+                    autofocus: true,
+                    validator: (value) =>
+                        value!.isEmpty ? 'Please enter a name.' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: sizeController,
+                    decoration: const InputDecoration(labelText: 'Size in ml'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a size.';
+                      }
+                      if (double.tryParse(value) == null) {
+                        return 'Please enter a valid number.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: factorController,
+                    decoration: const InputDecoration(labelText: 'Factor'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a factor.';
+                      }
+                      if (double.tryParse(value) == null) {
+                        return 'Please enter a valid number.';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
           actions: <Widget>[
             TextButton(
@@ -41,13 +94,13 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
             TextButton(
               child: const Text('Save'),
               onPressed: () async {
-                if (nameController.text.isNotEmpty) {
+                if (formKey.currentState!.validate()) {
                   await ref
                       .read(paletteProvider(widget.paletteKey).notifier)
                       .updateDetails(
                         name: nameController.text,
-                        size: palette.sizeInMl,
-                        factor: palette.factor,
+                        size: double.tryParse(sizeController.text) ?? 60.0,
+                        factor: double.tryParse(factorController.text) ?? 1.5,
                       );
                   if (context.mounted) Navigator.of(context).pop();
                 }
@@ -94,38 +147,18 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
         title: Text(palette.name),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
-            tooltip: 'Edit Name',
-            onPressed: () => _showEditNameDialog(palette),
-          ),
-          IconButton(
-            icon: const Icon(Icons.save),
-            tooltip: 'Save Palette',
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                _formKey.currentState!.save();
-              }
-            },
+            icon: const Icon(Icons.settings),
+            tooltip: 'Palette Settings',
+            onPressed: () => _showPaletteSettingsDialog(palette),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          PaletteDetailsForm(
-            palette: palette,
-            paletteKey: widget.paletteKey,
-            formKey: _formKey,
-          ),
-          Expanded(
-            child: PaletteColorList(
-              colors: palette.colors,
-              onEdit: (index, color) => _editColor(index, color),
-              onDelete: (index) async => await ref
-                  .read(paletteProvider(widget.paletteKey).notifier)
-                  .deleteColor(index),
-            ),
-          ),
-        ],
+      body: PaletteColorList(
+        colors: palette.colors,
+        onEdit: (index, color) => _editColor(index, color),
+        onDelete: (index) async => await ref
+            .read(paletteProvider(widget.paletteKey).notifier)
+            .deleteColor(index),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
