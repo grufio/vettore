@@ -60,6 +60,8 @@ class VendorColors extends Table {
   TextColumn get name => text()();
   TextColumn get code => text()();
   TextColumn get imageUrl => text().withDefault(const Constant(''))();
+  RealColumn get weightInGrams => real().nullable()();
+  RealColumn get colorDensity => real().nullable()();
 }
 
 @DataClassName('VendorColorVariant')
@@ -68,6 +70,7 @@ class VendorColorVariants extends Table {
   IntColumn get vendorColorId => integer().references(VendorColors, #id)();
   IntColumn get size => integer()();
   IntColumn get stock => integer().withDefault(const Constant(0))();
+  RealColumn get weightInGrams => real().nullable()();
 }
 
 // Color Component Table (linking PaletteColors and VendorColors)
@@ -96,7 +99,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration {
@@ -124,6 +127,19 @@ class AppDatabase extends _$AppDatabase {
         if (from < 6) {
           // Version 6 added the thumbnail to palettes.
           await m.addColumn(palettes, palettes.thumbnail);
+        }
+        if (from < 7) {
+          // Version 7 added the weight to vendor color variants.
+          await m.addColumn(
+              vendorColorVariants, vendorColorVariants.weightInGrams);
+        }
+        if (from < 8) {
+          // Version 8 adds the corrected weight column to the main color table.
+          await m.addColumn(vendorColors, vendorColors.weightInGrams);
+        }
+        if (from < 9) {
+          // Version 9 adds the color density column.
+          await m.addColumn(vendorColors, vendorColors.colorDensity);
         }
       },
     );

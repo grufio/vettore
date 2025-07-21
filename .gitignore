@@ -88,3 +88,6 @@ pubspec.lock
 melos.yaml
 melos.lock
 melos_local.yaml
+
+# Local database file
+db.sqlite
