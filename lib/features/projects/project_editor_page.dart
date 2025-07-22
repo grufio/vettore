@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -106,6 +107,94 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
         _tabController!.index = 0;
       }
     }
+    // This setState will trigger a rebuild when the tab changes,
+    // which is needed to update the painter's visibility flags.
+    setState(() {});
+  }
+
+  bool _isBackgroundVisible() {
+    if (_tabController == null) return false;
+    switch (_tabController!.index) {
+      case 0: // Image Tab
+        return true;
+      case 1: // Convert Tab
+        return _showBackground;
+      case 2: // PDF Tab
+        return _printBackground;
+      default:
+        return false;
+    }
+  }
+
+  bool _isVectorLayerVisible() {
+    if (_tabController == null) return false;
+    switch (_tabController!.index) {
+      case 1: // Convert Tab
+        return _showVectors;
+      case 2: // PDF Tab
+        return true; // Always show vectors in PDF preview
+      default:
+        return false;
+    }
+  }
+
+  Widget _buildCurrentView(Project project,
+      List<DisplayVectorObject> displayObjects, SettingsService settings) {
+    final currentTabIndex = _tabController?.index ?? 0;
+
+    if (currentTabIndex == 0) {
+      // Viewer for Image Tab
+      return InteractiveViewer(
+        minScale: 1.0,
+        maxScale: 5.0,
+        child: Image.memory(
+          project.imageData,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.none,
+        ),
+      );
+    } else {
+      // Advanced Viewer for Convert & PDF Tabs
+      return InteractiveViewer(
+        minScale: 1.0,
+        maxScale: 5.0,
+        child: AspectRatio(
+          aspectRatio: (project.imageWidth ?? 1) / (project.imageHeight ?? 1),
+          child: Stack(
+            key: ValueKey(
+                '${_tabController?.index}:${_showBackground}:${_showVectors}:${_printBackground}'),
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: _isBackgroundVisible() ? 1.0 : 0.0,
+                  child: Image.memory(
+                    project.imageData,
+                    fit: BoxFit.fill,
+                    filterQuality: FilterQuality.none,
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Opacity(
+                  opacity: _isVectorLayerVisible() ? 1.0 : 0.0,
+                  child: CustomPaint(
+                    painter: VectorPainter(
+                      objects: displayObjects,
+                      imageSize: Size(
+                        project.imageWidth ?? 1,
+                        project.imageHeight ?? 1,
+                      ),
+                      fontSize: settings.outputFontSize.toDouble(),
+                      showNumbers: _showVectors,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _handlePdfGeneration() async {
@@ -212,46 +301,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
           body: Row(
             children: [
               Expanded(
-                child: InteractiveViewer(
-                  minScale: 1.0,
-                  maxScale: 1.0,
-                  child: RepaintBoundary(
-                    child: Center(
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Visibility(
-                            visible: _showBackground,
-                            maintainState: true,
-                            maintainAnimation: true,
-                            maintainSize: true,
-                            child: Image.memory(
-                              project.imageData,
-                              fit: BoxFit.contain,
-                              width: double.infinity,
-                              height: double.infinity,
-                              filterQuality: FilterQuality
-                                  .values[project.filterQualityIndex],
-                            ),
-                          ),
-                          if (project.isConverted && _showVectors)
-                            Positioned.fill(
-                              child: CustomPaint(
-                                painter: VectorPainter(
-                                  objects: displayObjects,
-                                  imageSize: Size(
-                                    project.imageWidth ?? 0.0,
-                                    project.imageHeight ?? 0.0,
-                                  ),
-                                  fontSize: settings.outputFontSize.toDouble(),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                child: _buildCurrentView(project, displayObjects, settings),
               ),
               Container(
                 width: 300,
@@ -283,6 +333,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
+                        physics: const NeverScrollableScrollPhysics(),
                         children: [
                           // Image Tab
                           Padding(
@@ -646,61 +697,62 @@ class VectorPainter extends CustomPainter {
   final List<DisplayVectorObject> objects;
   final Size imageSize;
   final double fontSize;
+  final bool showNumbers;
+
   VectorPainter({
     required this.objects,
     required this.imageSize,
     required this.fontSize,
+    required this.showNumbers,
   });
+
   @override
   void paint(Canvas canvas, Size size) {
-    if (objects.isEmpty) return;
+    if (size.isEmpty) return;
+
     final imageWidth = imageSize.width;
     final imageHeight = imageSize.height;
     if (imageWidth == 0 || imageHeight == 0) return;
-    final canvasWidth = size.width;
-    final canvasHeight = size.height;
-    final scaleX = canvasWidth / imageWidth;
-    final scaleY = canvasHeight / imageHeight;
-    final scale = scaleX < scaleY ? scaleX : scaleY;
-    final cellWidth = scale;
-    final cellHeight = scale;
-    final totalGridWidth = imageWidth * cellWidth;
-    final totalGridHeight = imageHeight * cellHeight;
-    final offsetX = (canvasWidth - totalGridWidth) / 2;
-    final offsetY = (canvasHeight - totalGridHeight) / 2;
-    final gridPaint = Paint()
-      ..color = Colors.red
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke
-      ..strokeJoin = StrokeJoin.bevel
-      ..isAntiAlias = false;
 
-    // Draw the grid overlay.
-    final path = Path();
-    for (int i = 0; i <= imageWidth; i++) {
-      final x = offsetX + i * cellWidth;
-      path.moveTo(x, offsetY);
-      path.lineTo(x, offsetY + totalGridHeight);
-    }
-    for (int i = 0; i <= imageHeight; i++) {
-      final y = offsetY + i * cellHeight;
-      path.moveTo(offsetX, y);
-      path.lineTo(offsetX + totalGridWidth, y);
-    }
-    canvas.drawPath(path, gridPaint);
+    final cellWidth = size.width / imageWidth;
+    final cellHeight = size.height / imageHeight;
 
-    // Draw the actual vector objects (colored cells).
-    for (final obj in objects) {
-      final rect = Rect.fromLTWH(
-        offsetX + obj.x * cellWidth,
-        offsetY + obj.y * cellHeight,
-        cellWidth,
-        cellHeight,
-      );
-      final cellPaint = Paint()
-        ..color = obj.color
-        ..style = PaintingStyle.fill;
-      canvas.drawRect(rect, cellPaint);
+    if (objects.isNotEmpty) {
+      final uniqueColors = objects.map((o) => o.color).toSet().toList();
+      for (final obj in objects) {
+        final rect = Rect.fromLTWH(
+          obj.x * cellWidth,
+          obj.y * cellHeight,
+          cellWidth,
+          cellHeight,
+        );
+        final cellPaint = Paint()
+          ..color = obj.color
+          ..isAntiAlias = false;
+        canvas.drawRect(rect, cellPaint);
+
+        if (showNumbers) {
+          final colorIndex = uniqueColors.indexOf(obj.color);
+          final textSpan = TextSpan(
+            text: '${colorIndex + 1}',
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: fontSize,
+            ),
+          );
+          final textPainter = TextPainter(
+            text: textSpan,
+            textAlign: TextAlign.center,
+            textDirection: ui.TextDirection.ltr,
+          );
+          textPainter.layout(minWidth: 0, maxWidth: cellWidth);
+          final textOffset = Offset(
+            rect.center.dx - textPainter.width / 2,
+            rect.center.dy - textPainter.height / 2,
+          );
+          textPainter.paint(canvas, textOffset);
+        }
+      }
     }
   }
 
@@ -708,6 +760,7 @@ class VectorPainter extends CustomPainter {
   bool shouldRepaint(covariant VectorPainter oldDelegate) {
     return oldDelegate.objects != objects ||
         oldDelegate.imageSize != imageSize ||
-        oldDelegate.fontSize != fontSize;
+        oldDelegate.fontSize != fontSize ||
+        oldDelegate.showNumbers != oldDelegate.showNumbers;
   }
 }

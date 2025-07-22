@@ -145,6 +145,31 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> updatePaletteColorWithComponents(
+    PaletteColorsCompanion color,
+    List<ColorComponentsCompanion> components,
+  ) {
+    return transaction(() async {
+      // First, update the color itself.
+      await update(paletteColors).replace(color);
+
+      // Then, delete all existing components for this color.
+      await (delete(colorComponents)
+            ..where((c) => c.paletteColorId.equals(color.id.value)))
+          .go();
+
+      // Finally, insert the new components.
+      await batch((batch) {
+        batch.insertAll(
+          colorComponents,
+          components.map(
+            (c) => c.copyWith(paletteColorId: color.id),
+          ),
+        );
+      });
+    });
+  }
+
   Future<List<VendorColorWithVariants>> get allVendorColorsWithVariants async {
     final colors = await select(vendorColors).get();
     final variants = await select(vendorColorVariants).get();
@@ -155,34 +180,6 @@ class AppDatabase extends _$AppDatabase {
           .toList();
       return VendorColorWithVariants(color: color, variants: colorVariants);
     }).toList();
-  }
-
-  Future<void> updatePaletteColorWithComponents(
-    PaletteColorsCompanion color,
-    List<ColorComponentsCompanion> components,
-  ) {
-    return transaction(() async {
-      await update(paletteColors).replace(color);
-
-      // First, delete existing components for this color
-      await (delete(colorComponents)
-            ..where((c) => c.paletteColorId.equals(color.id.value)))
-          .go();
-
-      // Then, insert the new ones
-      await batch((batch) {
-        batch.insertAll(
-          colorComponents,
-          components.map(
-            (c) => ColorComponentsCompanion(
-              paletteColorId: color.id,
-              vendorColorId: c.vendorColorId,
-              percentage: c.percentage,
-            ),
-          ),
-        );
-      });
-    });
   }
 }
 

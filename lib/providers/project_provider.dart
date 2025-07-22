@@ -178,10 +178,12 @@ Map<String, dynamic> _performConversionIsolate(Map<String, dynamic> params) {
   for (int y = 0; y < imageToConvert.height; y++) {
     for (int x = 0; x < imageToConvert.width; x++) {
       final pixel = imageToConvert.getPixel(x, y);
-      final color = Color.fromARGB(
-          pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
-      uniqueColorsSet.add(color);
-      vectorObjects.add(IsolateVectorObject(x, y, color.value));
+      if (pixel.a > 0) {
+        final color = Color.fromARGB(
+            pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
+        uniqueColorsSet.add(color);
+        vectorObjects.add(IsolateVectorObject(x, y, color.value));
+      }
     }
   }
 
