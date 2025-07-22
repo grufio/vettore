@@ -116,12 +116,10 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
       MaterialPageRoute(
         builder: (context) => ColorEditPage(
           initialColor: color,
-          onSave: (newColor, newComponents) async {
-            await ref
+          onSave: (newColor, newComponents) {
+            ref
                 .read(paletteDetailLogicProvider(widget.paletteId))
-                .updateColor(newColor, newComponents);
-            // Invalidate the provider to force a refresh
-            ref.invalidate(paletteDetailStreamProvider(widget.paletteId));
+                .updateColorAndComponents(newColor, newComponents);
           },
         ),
       ),

@@ -114,108 +114,189 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
       color: drift.Value(_currentColor.value),
       status: drift.Value(_statusController.text),
     );
-    // Use the provider to save the color and its components
-    widget.onSave(newColor, _components);
-    Navigator.of(context).pop();
+    // This now only saves the main color details, not the components.
+    ref
+        .read(paletteDetailLogicProvider(widget.initialColor.color.paletteId))
+        .updateColor(newColor);
+  }
+
+  Future<void> _showColorSettingsDialog() async {
+    // We need to create new controllers for the dialog to avoid issues
+    // with the widget tree when the main text fields are removed.
+    final titleController = TextEditingController(text: _titleController.text);
+    final statusController =
+        TextEditingController(text: _statusController.text);
+    final formKey = GlobalKey<FormState>();
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Color Settings'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Color Name',
+                    ),
+                    autofocus: true,
+                    validator: (value) =>
+                        value!.isEmpty ? 'Please enter a name.' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: statusController,
+                    decoration: const InputDecoration(labelText: 'Status'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Save'),
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  // Update the main controllers so the UI reflects the change
+                  _titleController.text = titleController.text;
+                  _statusController.text = statusController.text;
+                  // Call the save method to persist the changes
+                  _save();
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _showComponentDialog({
     ColorComponentsCompanion? component,
     int? index,
   }) async {
+    final logic = ref
+        .read(paletteDetailLogicProvider(widget.initialColor.color.paletteId));
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return _ComponentDialog(
           component: component,
           onSave: (newComponent) {
-            setState(() {
-              if (index != null) {
-                _components[index] = newComponent;
-              } else {
-                _components.add(newComponent);
-              }
-            });
+            if (component != null) {
+              // This is an edit
+              logic.updateComponent(
+                newComponent.copyWith(id: component.id),
+              );
+            } else {
+              // This is a new component
+              logic.addComponent(
+                newComponent.copyWith(
+                  paletteColorId: drift.Value(widget.initialColor.color.id),
+                ),
+              );
+            }
           },
         );
       },
     );
   }
 
-  void _deleteComponent(int index) {
-    setState(() {
-      _components.removeAt(index);
-    });
+  void _deleteComponent(int componentId) {
+    ref
+        .read(paletteDetailLogicProvider(widget.initialColor.color.paletteId))
+        .deleteComponent(componentId);
   }
 
   Widget _buildComponentList() {
-    final vendorColorsAsync = ref.watch(vendorColorsProvider);
+    // Watch the components directly from the database for live updates
+    final componentsStream = ref.watch(
+        paletteColorComponentsStreamProvider(widget.initialColor.color.id));
 
-    return vendorColorsAsync.when(
-      data: (vendorColors) {
-        if (_components.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 8.0,
-            childAspectRatio: 0.8,
-          ),
-          itemCount: _components.length,
-          itemBuilder: (context, index) {
-            final component = _components[index];
-            final vendorColor = vendorColors
-                .firstWhere(
-                    (vc) => vc.color.id == component.vendorColorId.value)
-                .color;
+    return componentsStream.when(
+      data: (components) {
+        return ref.watch(vendorColorsProvider).when(
+              data: (vendorColors) {
+                if (components.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 8.0,
+                    mainAxisSpacing: 8.0,
+                    childAspectRatio: 0.8,
+                  ),
+                  itemCount: components.length,
+                  itemBuilder: (context, index) {
+                    final component = components[index];
+                    final vendorColor = vendorColors
+                        .firstWhere(
+                            (vc) => vc.color.id == component.vendorColorId)
+                        .color;
 
-            return Card(
-              clipBehavior: Clip.antiAlias,
-              child: GridTile(
-                footer: GridTileBar(
-                  backgroundColor: Colors.black45,
-                  title: Text(
-                    vendorColor.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 10),
-                  ),
-                  subtitle: Text(
-                    '${component.percentage.value.toStringAsFixed(1)}%',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 10),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit,
-                            size: 20, color: Colors.white),
-                        onPressed: () => _showComponentDialog(
-                            component: component, index: index),
-                        tooltip: 'Edit',
+                    return Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: GridTile(
+                        footer: GridTileBar(
+                          backgroundColor: Colors.black45,
+                          title: Text(
+                            vendorColor.name,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                          subtitle: Text(
+                            '${component.percentage.toStringAsFixed(1)}%',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit,
+                                    size: 20, color: Colors.white),
+                                onPressed: () => _showComponentDialog(
+                                    component: component.toCompanion(true),
+                                    index: index),
+                                tooltip: 'Edit',
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    size: 20, color: Colors.white),
+                                onPressed: () => _deleteComponent(component.id),
+                                tooltip: 'Delete',
+                              ),
+                            ],
+                          ),
+                        ),
+                        child: Image.asset(
+                          vendorColor.imageUrl,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete,
-                            size: 20, color: Colors.white),
-                        onPressed: () => _deleteComponent(index),
-                        tooltip: 'Delete',
-                      ),
-                    ],
-                  ),
-                ),
-                child: Image.asset(
-                  vendorColor.imageUrl,
-                  fit: BoxFit.cover,
-                ),
-              ),
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text('Error: $err')),
             );
-          },
-        );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(child: Text('Error: $err')),
@@ -232,14 +313,14 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
         title: Text(widget.initialColor.color.title),
         actions: [
           IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Color Settings',
+            onPressed: _showColorSettingsDialog,
+          ),
+          IconButton(
             icon: const Icon(Icons.import_export),
             tooltip: 'Import Recipe',
             onPressed: isApiEnabled ? _showImportDialog : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.save),
-            tooltip: 'Save Color',
-            onPressed: _save,
           ),
         ],
       ),
@@ -249,47 +330,6 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Color Name',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        TextFormField(
-                          controller: _titleController,
-                          focusNode: _titleFocusNode,
-                          decoration: const InputDecoration(
-                            hintText: 'Enter color name',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Status',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        TextFormField(
-                          controller: _statusController,
-                          focusNode: _statusFocusNode,
-                          decoration: const InputDecoration(
-                            hintText: 'Enter color status',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
               _buildComponentList(),
             ],
           ),

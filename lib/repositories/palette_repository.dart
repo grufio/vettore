@@ -119,4 +119,23 @@ class PaletteRepository {
   Future<void> deleteColor(int id) {
     return (_db.delete(_db.paletteColors)..where((c) => c.id.equals(id))).go();
   }
+
+  //-
+  //-         Palette Color Component Methods
+  //-
+
+  Future<int> addComponent(ColorComponentsCompanion component) =>
+      _db.into(_db.colorComponents).insert(component);
+
+  Future<bool> updateComponent(ColorComponentsCompanion component) =>
+      _db.update(_db.colorComponents).replace(component);
+
+  Future<int> deleteComponent(int id) =>
+      (_db.delete(_db.colorComponents)..where((c) => c.id.equals(id))).go();
+
+  Stream<List<ColorComponent>> watchColorComponents(int paletteColorId) {
+    return (_db.select(_db.colorComponents)
+          ..where((c) => c.paletteColorId.equals(paletteColorId)))
+        .watch();
+  }
 }
