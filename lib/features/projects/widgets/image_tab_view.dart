@@ -6,17 +6,16 @@ import 'package:vettore/providers/project_provider.dart';
 
 class ImageTabView extends ConsumerWidget {
   final Project project;
+  final bool isImageTooLarge;
 
   const ImageTabView({
     super.key,
     required this.project,
+    required this.isImageTooLarge,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bool isImageTooLarge =
-        (project.imageWidth ?? 0) > 500 || (project.imageHeight ?? 0) > 500;
-
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(

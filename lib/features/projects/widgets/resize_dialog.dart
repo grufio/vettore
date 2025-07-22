@@ -56,6 +56,7 @@ class _ResizeDialogState extends State<ResizeDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
+            autofocus: true,
             controller: _controller,
             decoration: const InputDecoration(
               labelText: 'Resize Percentage',

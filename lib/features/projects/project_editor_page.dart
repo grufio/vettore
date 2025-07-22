@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdf/pdf.dart';
@@ -10,6 +11,9 @@ import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/services/pdf_generator.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/widgets/color_settings_dialog.dart';
+import 'package:vettore/features/projects/widgets/image_tab_view.dart';
+import 'package:vettore/features/projects/widgets/convert_tab_view.dart';
+import 'package:vettore/features/projects/widgets/output_tab_view.dart';
 
 class ProjectEditorPage extends ConsumerStatefulWidget {
   final int projectId;
@@ -29,6 +33,10 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     with SingleTickerProviderStateMixin {
   bool _showVectors = true;
   bool _showBackground = true;
+
+  // State for the decoded image
+  ui.Image? _decodedImage;
+  Uint8List? _loadedImageData;
 
   late final TextEditingController _maxObjectColorsController;
   late final TextEditingController _objectOutputSizeController;
@@ -160,37 +168,19 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
         maxScale: 5.0,
         child: AspectRatio(
           aspectRatio: (project.imageWidth ?? 1) / (project.imageHeight ?? 1),
-          child: Stack(
-            key: ValueKey(
-                '${_tabController?.index}:${_showBackground}:${_showVectors}:${_printBackground}'),
-            children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: _isBackgroundVisible() ? 1.0 : 0.0,
-                  child: Image.memory(
-                    project.imageData,
-                    fit: BoxFit.fill,
-                    filterQuality: FilterQuality.none,
-                  ),
-                ),
+          child: CustomPaint(
+            painter: VectorPainter(
+              backgroundImage: _decodedImage,
+              objects: displayObjects,
+              imageSize: Size(
+                project.imageWidth ?? 1,
+                project.imageHeight ?? 1,
               ),
-              Positioned.fill(
-                child: Opacity(
-                  opacity: _isVectorLayerVisible() ? 1.0 : 0.0,
-                  child: CustomPaint(
-                    painter: VectorPainter(
-                      objects: displayObjects,
-                      imageSize: Size(
-                        project.imageWidth ?? 1,
-                        project.imageHeight ?? 1,
-                      ),
-                      fontSize: settings.outputFontSize.toDouble(),
-                      showNumbers: _showVectors,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              fontSize: settings.outputFontSize.toDouble(),
+              showBackground: _isBackgroundVisible(),
+              showVectors: _isVectorLayerVisible(),
+              showNumbers: _isVectorLayerVisible(),
+            ),
           ),
         ),
       );
@@ -276,10 +266,21 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
         body: Center(child: Text('Error: $err')),
       ),
       data: (project) {
-        if (project == null) {
-          return const Scaffold(
-            body: Center(child: Text('Project not found.')),
-          );
+        if (!listEquals(_loadedImageData, project.imageData)) {
+          _loadedImageData = project.imageData;
+          // Reset image and start decoding
+          _decodedImage = null;
+          if (project.imageData.isNotEmpty) {
+            ui.instantiateImageCodec(project.imageData).then((codec) {
+              return codec.getNextFrame();
+            }).then((frame) {
+              if (mounted) {
+                setState(() {
+                  _decodedImage = frame.image;
+                });
+              }
+            });
+          }
         }
 
         final List<DisplayVectorObject> displayObjects;
@@ -335,349 +336,71 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                         controller: _tabController,
                         physics: const NeverScrollableScrollPhysics(),
                         children: [
-                          // Image Tab
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Original Dimensions: ${project.originalImageWidth?.toInt() ?? 'N/A'} x ${project.originalImageHeight?.toInt() ?? 'N/A'}',
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Current Dimensions: ${project.imageWidth?.toInt() ?? 'N/A'} x ${project.imageHeight?.toInt() ?? 'N/A'}',
-                                ),
-                                const SizedBox(height: 16),
-                                if (isImageTooLarge)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 8.0),
-                                    child: Text(
-                                      'Image > 500px. Please update.',
-                                      style: TextStyle(
-                                        color:
-                                            Theme.of(context).colorScheme.error,
-                                      ),
-                                    ),
-                                  ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: () async {
-                                          final result =
-                                              await showDialog<ResizeResult>(
-                                            context: context,
-                                            builder: (context) =>
-                                                const ResizeDialog(),
-                                          );
-
-                                          if (result != null && mounted) {
-                                            ref
-                                                .read(projectLogicProvider(
-                                                    widget.projectId))
-                                                .updateImage(
-                                                  result.percentage,
-                                                  result.filterQuality,
-                                                );
-                                          }
-                                        },
-                                        child: const Text('Resize Image'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
-                                      onPressed: (project.originalImageData ==
-                                              null)
-                                          ? null
-                                          : () => showDialog(
-                                                context: context,
-                                                builder: (context) =>
-                                                    AlertDialog(
-                                                  title: const Text('Confirm'),
-                                                  content: const Text(
-                                                    'You are loosing all information',
-                                                  ),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () =>
-                                                          Navigator.of(
-                                                        context,
-                                                      ).pop(),
-                                                      child:
-                                                          const Text('Cancel'),
-                                                    ),
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context)
-                                                            .pop();
-                                                        ref
-                                                            .read(projectLogicProvider(
-                                                                widget
-                                                                    .projectId))
-                                                            .resetImage();
-                                                      },
-                                                      child: const Text('OK'),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                      child: const Text('Reset'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                          ImageTabView(
+                            project: project,
+                            isImageTooLarge: isImageTooLarge,
                           ),
-
-                          // Conversion Tab
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  TextField(
-                                    controller: _maxObjectColorsController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Max. Object Colors',
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (value) => settings
-                                        .setMaxObjectColors(int.parse(value)),
-                                  ),
-                                  const Divider(height: 32),
-                                  const Text('Preview'),
-                                  CheckboxListTile(
-                                    title: const Text('Show Vectors'),
-                                    value: _showVectors,
-                                    onChanged: (bool? value) {
-                                      setState(() {
-                                        _showVectors = value ?? true;
-                                      });
-                                    },
-                                    controlAffinity:
-                                        ListTileControlAffinity.leading,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  CheckboxListTile(
-                                    title: const Text('Show Background'),
-                                    value: _showBackground,
-                                    onChanged: (bool? value) {
-                                      setState(() {
-                                        _showBackground = value ?? true;
-                                      });
-                                    },
-                                    controlAffinity:
-                                        ListTileControlAffinity.leading,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  const Divider(),
-                                  TextButton.icon(
-                                    onPressed: _showColorSettingsDialog,
-                                    icon: const Icon(Icons.palette_outlined),
-                                    label: Text(
-                                      project.isConverted
-                                          ? 'Colors: ${project.uniqueColorCount ?? 0}'
-                                          : 'Colors: N/A',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        if (project.isConverted) {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: const Text('Confirm'),
-                                              content: const Text(
-                                                'This will overwrite the existing grid and resolution data. Are you sure?',
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.of(context)
-                                                          .pop(),
-                                                  child: const Text('Cancel'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                    ref
-                                                        .read(
-                                                            projectLogicProvider(
-                                                                widget
-                                                                    .projectId))
-                                                        .convertProject();
-                                                  },
-                                                  child: const Text('OK'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        } else {
-                                          ref
-                                              .read(projectLogicProvider(
-                                                  widget.projectId))
-                                              .convertProject();
-                                        }
-                                      },
-                                      icon: const Icon(Icons.transform),
-                                      label: const Text('Convert'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          ConvertTabView(
+                            project: project,
+                            settings: settings,
+                            maxObjectColorsController:
+                                _maxObjectColorsController,
+                            showVectors: _showVectors,
+                            showBackground: _showBackground,
+                            onShowColorSettings: _showColorSettingsDialog,
+                            onShowVectorsChanged: (value) {
+                              setState(() {
+                                _showVectors = value;
+                              });
+                            },
+                            onShowBackgroundChanged: (value) {
+                              setState(() {
+                                _showBackground = value;
+                              });
+                            },
                           ),
-
-                          // Output Tab
-                          SingleChildScrollView(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                children: [
-                                  TextField(
-                                    controller: _objectOutputSizeController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Object Output Size (mm)',
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (value) =>
-                                        settings.setObjectOutputSize(
-                                            double.parse(value)),
-                                  ),
-                                  TextField(
-                                    controller: _outputFontSizeController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Font Size',
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (value) => settings
-                                        .setOutputFontSize(int.parse(value)),
-                                  ),
-                                  TextField(
-                                    controller: _outputBordersController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Output Borders (mm)',
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (value) => settings
-                                        .setOutputBorders(double.parse(value)),
-                                  ),
-                                  DropdownButtonFormField<String>(
-                                    value: _selectedPageFormat,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Page Format',
-                                    ),
-                                    items: _pageFormats.keys.map((String key) {
-                                      return DropdownMenuItem<String>(
-                                        value: key,
-                                        child: Text(key),
-                                      );
-                                    }).toList(),
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        _selectedPageFormat = newValue!;
-                                        settings.setPageFormat(newValue);
-                                      });
-                                    },
-                                  ),
-                                  if (_selectedPageFormat == 'Custom')
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: TextField(
-                                            controller:
-                                                _customPageWidthController,
-                                            decoration: const InputDecoration(
-                                              labelText: 'Width (mm)',
-                                            ),
-                                            keyboardType: TextInputType.number,
-                                            onChanged: (value) =>
-                                                settings.setCustomPageWidth(
-                                                    double.parse(value)),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: TextField(
-                                            controller:
-                                                _customPageHeightController,
-                                            decoration: const InputDecoration(
-                                              labelText: 'Height (mm)',
-                                            ),
-                                            keyboardType: TextInputType.number,
-                                            onChanged: (value) =>
-                                                settings.setCustomPageHeight(
-                                                    double.parse(value)),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  CheckboxListTile(
-                                    title: const Text('Landscape'),
-                                    value: _isLandscape,
-                                    onChanged: (bool? value) {
-                                      setState(() {
-                                        _isLandscape = value ?? false;
-                                        settings.setIsLandscape(_isLandscape);
-                                      });
-                                    },
-                                    controlAffinity:
-                                        ListTileControlAffinity.leading,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  CheckboxListTile(
-                                    title: const Text('Center Image'),
-                                    value: _centerImage,
-                                    onChanged: (bool? value) {
-                                      setState(() {
-                                        _centerImage = value ?? true;
-                                        settings.setCenterImage(_centerImage);
-                                      });
-                                    },
-                                    controlAffinity:
-                                        ListTileControlAffinity.leading,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  CheckboxListTile(
-                                    title: const Text('Print background'),
-                                    value: _printBackground,
-                                    onChanged: (bool? value) {
-                                      setState(() {
-                                        _printBackground = value ?? false;
-                                        settings.setPrintBackground(
-                                            _printBackground);
-                                      });
-                                    },
-                                    controlAffinity:
-                                        ListTileControlAffinity.leading,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  if (_isSaving)
-                                    const CircularProgressIndicator()
-                                  else
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton.icon(
-                                        onPressed:
-                                            (project.vectorObjects).isEmpty
-                                                ? null
-                                                : _handlePdfGeneration,
-                                        icon: const Icon(
-                                          Icons.picture_as_pdf_outlined,
-                                        ),
-                                        label: const Text('Generate PDF'),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
+                          OutputTabView(
+                            settings: settings,
+                            objectOutputSizeController:
+                                _objectOutputSizeController,
+                            outputFontSizeController: _outputFontSizeController,
+                            outputBordersController: _outputBordersController,
+                            customPageWidthController:
+                                _customPageWidthController,
+                            customPageHeightController:
+                                _customPageHeightController,
+                            isSaving: _isSaving,
+                            canGenerate: project.vectorObjects.isNotEmpty,
+                            onGenerate: _handlePdfGeneration,
+                            pageFormats: _pageFormats,
+                            selectedPageFormat: _selectedPageFormat,
+                            onPageFormatChanged: (value) {
+                              setState(() {
+                                _selectedPageFormat = value;
+                                settings.setPageFormat(value);
+                              });
+                            },
+                            isLandscape: _isLandscape,
+                            onLandscapeChanged: (value) {
+                              setState(() {
+                                _isLandscape = value;
+                                settings.setIsLandscape(value);
+                              });
+                            },
+                            centerImage: _centerImage,
+                            onCenterImageChanged: (value) {
+                              setState(() {
+                                _centerImage = value;
+                                settings.setCenterImage(value);
+                              });
+                            },
+                            printBackground: _printBackground,
+                            onPrintBackgroundChanged: (value) {
+                              setState(() {
+                                _printBackground = value;
+                                settings.setPrintBackground(value);
+                              });
+                            },
                           ),
                         ],
                       ),
@@ -694,42 +417,88 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
 }
 
 class VectorPainter extends CustomPainter {
+  final ui.Image? backgroundImage;
   final List<DisplayVectorObject> objects;
   final Size imageSize;
   final double fontSize;
   final bool showNumbers;
+  final bool showBackground;
+  final bool showVectors;
 
   VectorPainter({
+    this.backgroundImage,
     required this.objects,
     required this.imageSize,
     required this.fontSize,
     required this.showNumbers,
+    required this.showBackground,
+    required this.showVectors,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
 
-    final imageWidth = imageSize.width;
-    final imageHeight = imageSize.height;
+    // Calculate the destination rectangle to fit the image with aspect ratio
+    final double imageWidth = imageSize.width;
+    final double imageHeight = imageSize.height;
     if (imageWidth == 0 || imageHeight == 0) return;
 
-    final cellWidth = size.width / imageWidth;
-    final cellHeight = size.height / imageHeight;
+    final imageAspectRatio = imageWidth / imageHeight;
+    final canvasAspectRatio = size.width / size.height;
 
-    if (objects.isNotEmpty) {
+    double dstWidth;
+    double dstHeight;
+
+    if (imageAspectRatio > canvasAspectRatio) {
+      dstWidth = size.width;
+      dstHeight = dstWidth / imageAspectRatio;
+    } else {
+      dstHeight = size.height;
+      dstWidth = dstHeight * imageAspectRatio;
+    }
+
+    final dstRect = Rect.fromLTWH(
+      (size.width - dstWidth) / 2,
+      (size.height - dstHeight) / 2,
+      dstWidth,
+      dstHeight,
+    );
+
+    // Layer 1: Background Image
+    if (showBackground && backgroundImage != null) {
+      canvas.drawImageRect(
+        backgroundImage!,
+        Rect.fromLTWH(
+          0,
+          0,
+          backgroundImage!.width.toDouble(),
+          backgroundImage!.height.toDouble(),
+        ),
+        dstRect,
+        Paint()..filterQuality = FilterQuality.none,
+      );
+    }
+
+    // Layer 2: Vectors and Numbers (drawn within the same dstRect)
+    if (showVectors && objects.isNotEmpty) {
+      final cellWidth = dstRect.width / imageWidth;
+      final cellHeight = dstRect.height / imageHeight;
+
       final uniqueColors = objects.map((o) => o.color).toSet().toList();
       for (final obj in objects) {
         final rect = Rect.fromLTWH(
-          obj.x * cellWidth,
-          obj.y * cellHeight,
+          dstRect.left + (obj.x * cellWidth),
+          dstRect.top + (obj.y * cellHeight),
           cellWidth,
           cellHeight,
         );
-        final cellPaint = Paint()
-          ..color = obj.color
-          ..isAntiAlias = false;
-        canvas.drawRect(rect, cellPaint);
+
+        final borderPaint = Paint()
+          ..color = Colors.red
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1;
+        canvas.drawRect(rect, borderPaint);
 
         if (showNumbers) {
           final colorIndex = uniqueColors.indexOf(obj.color);
@@ -758,9 +527,12 @@ class VectorPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant VectorPainter oldDelegate) {
-    return oldDelegate.objects != objects ||
+    return oldDelegate.backgroundImage != backgroundImage ||
+        oldDelegate.objects != objects ||
         oldDelegate.imageSize != imageSize ||
         oldDelegate.fontSize != fontSize ||
-        oldDelegate.showNumbers != oldDelegate.showNumbers;
+        oldDelegate.showNumbers != showNumbers ||
+        oldDelegate.showBackground != showBackground ||
+        oldDelegate.showVectors != showVectors;
   }
 }
