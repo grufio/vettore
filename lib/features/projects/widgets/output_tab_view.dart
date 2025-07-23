@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vettore/constants/ui_constants.dart';
 import 'package:vettore/services/settings_service.dart';
 
 class OutputTabView extends StatefulWidget {
@@ -9,16 +10,15 @@ class OutputTabView extends StatefulWidget {
   final Map<String, dynamic> pageFormats;
   final String selectedPageFormat;
   final Function(String) onPageFormatChanged;
-  final bool isLandscape;
-  final Function(bool) onLandscapeChanged;
-  final bool centerImage;
-  final Function(bool) onCenterImageChanged;
-  final bool printBackground;
-  final Function(bool) onPrintBackgroundChanged;
+  final bool printCells;
+  final Function(bool) onPrintCellsChanged;
+  final bool printBorders;
+  final Function(bool) onPrintBordersChanged;
+  final bool printNumbers;
+  final Function(bool) onPrintNumbersChanged;
 
   final TextEditingController objectOutputSizeController;
   final TextEditingController outputFontSizeController;
-  final TextEditingController outputBordersController;
   final TextEditingController customPageWidthController;
   final TextEditingController customPageHeightController;
 
@@ -31,15 +31,14 @@ class OutputTabView extends StatefulWidget {
     required this.pageFormats,
     required this.selectedPageFormat,
     required this.onPageFormatChanged,
-    required this.isLandscape,
-    required this.onLandscapeChanged,
-    required this.centerImage,
-    required this.onCenterImageChanged,
-    required this.printBackground,
-    required this.onPrintBackgroundChanged,
+    required this.printCells,
+    required this.onPrintCellsChanged,
+    required this.printBorders,
+    required this.onPrintBordersChanged,
+    required this.printNumbers,
+    required this.onPrintNumbersChanged,
     required this.objectOutputSizeController,
     required this.outputFontSizeController,
-    required this.outputBordersController,
     required this.customPageWidthController,
     required this.customPageHeightController,
   });
@@ -65,6 +64,7 @@ class _OutputTabViewState extends State<OutputTabView> {
               onChanged: (value) =>
                   widget.settings.setObjectOutputSize(double.parse(value)),
             ),
+            const SizedBox(height: kSpacingM),
             TextField(
               controller: widget.outputFontSizeController,
               decoration: const InputDecoration(
@@ -74,15 +74,7 @@ class _OutputTabViewState extends State<OutputTabView> {
               onChanged: (value) =>
                   widget.settings.setOutputFontSize(int.parse(value)),
             ),
-            TextField(
-              controller: widget.outputBordersController,
-              decoration: const InputDecoration(
-                labelText: 'Output Borders (mm)',
-              ),
-              keyboardType: TextInputType.number,
-              onChanged: (value) =>
-                  widget.settings.setOutputBorders(double.parse(value)),
-            ),
+            const SizedBox(height: kSpacingM),
             DropdownButtonFormField<String>(
               value: widget.selectedPageFormat,
               decoration: const InputDecoration(
@@ -128,29 +120,32 @@ class _OutputTabViewState extends State<OutputTabView> {
                   ),
                 ],
               ),
+            const SizedBox(height: kSpacingM),
             CheckboxListTile(
-              title: const Text('Landscape'),
-              value: widget.isLandscape,
+              title: const Text('Print Cells'),
+              value: widget.printCells,
               onChanged: (bool? value) {
-                widget.onLandscapeChanged(value ?? false);
+                widget.onPrintCellsChanged(value ?? false);
               },
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
             ),
+            const SizedBox(height: kSpacingM),
             CheckboxListTile(
-              title: const Text('Center Image'),
-              value: widget.centerImage,
+              title: const Text('Print Borders'),
+              value: widget.printBorders,
               onChanged: (bool? value) {
-                widget.onCenterImageChanged(value ?? true);
+                widget.onPrintBordersChanged(value ?? false);
               },
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
             ),
+            const SizedBox(height: kSpacingM),
             CheckboxListTile(
-              title: const Text('Print background'),
-              value: widget.printBackground,
+              title: const Text('Print Numbers'),
+              value: widget.printNumbers,
               onChanged: (bool? value) {
-                widget.onPrintBackgroundChanged(value ?? false);
+                widget.onPrintNumbersChanged(value ?? false);
               },
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,

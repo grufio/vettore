@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vettore/constants/ui_constants.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/services/settings_service.dart';
@@ -34,6 +35,8 @@ class ConvertTabView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text('Colors'),
+            const SizedBox(height: kSpacingS),
             TextField(
               controller: maxObjectColorsController,
               decoration: const InputDecoration(
@@ -43,7 +46,17 @@ class ConvertTabView extends StatelessWidget {
               onChanged: (value) =>
                   settings.setMaxObjectColors(int.parse(value)),
             ),
-            const Divider(height: 32),
+            const SizedBox(height: kSpacingS),
+            TextButton.icon(
+              onPressed: onShowColorSettings,
+              icon: const Icon(Icons.palette_outlined),
+              label: Text(
+                project.isConverted
+                    ? 'Colors: ${project.uniqueColorCount ?? 0}'
+                    : 'Colors: N/A',
+              ),
+            ),
+            const Divider(height: kSpacingXl),
             const Text('Preview'),
             CheckboxListTile(
               title: const Text('Show Vectors'),
@@ -64,16 +77,6 @@ class ConvertTabView extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
             ),
             const Divider(),
-            TextButton.icon(
-              onPressed: onShowColorSettings,
-              icon: const Icon(Icons.palette_outlined),
-              label: Text(
-                project.isConverted
-                    ? 'Colors: ${project.uniqueColorCount ?? 0}'
-                    : 'Colors: N/A',
-              ),
-            ),
-            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: Consumer(

@@ -43,12 +43,11 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   late final TextEditingController _outputFontSizeController;
   late final TextEditingController _customPageWidthController;
   late final TextEditingController _customPageHeightController;
-  late final TextEditingController _outputBordersController;
-  bool _printBackground = false;
+  bool _printCells = true;
+  bool _printBorders = true;
+  bool _printNumbers = true;
   bool _isSaving = false;
   String _selectedPageFormat = 'A4';
-  bool _centerImage = true;
-  bool _isLandscape = false;
 
   TabController? _tabController;
 
@@ -82,13 +81,8 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     _customPageHeightController = TextEditingController(
       text: settings.customPageHeight.toString(),
     );
-    _outputBordersController = TextEditingController(
-      text: settings.outputBorders.toString(),
-    );
-    _printBackground = settings.printBackground;
+    _printCells = settings.printBackground;
     _selectedPageFormat = settings.pageFormat;
-    _centerImage = settings.centerImage;
-    _isLandscape = settings.isLandscape;
   }
 
   @override
@@ -100,7 +94,6 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     _outputFontSizeController.dispose();
     _customPageWidthController.dispose();
     _customPageHeightController.dispose();
-    _outputBordersController.dispose();
     super.dispose();
   }
 
@@ -128,7 +121,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       case 1: // Convert Tab
         return _showBackground;
       case 2: // PDF Tab
-        return _printBackground;
+        return _printCells;
       default:
         return false;
     }
@@ -180,6 +173,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
               showBackground: _isBackgroundVisible(),
               showVectors: _isVectorLayerVisible(),
               showNumbers: _isVectorLayerVisible(),
+              showBorders: _printBorders,
             ),
           ),
         ),
@@ -205,10 +199,6 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       pageFormat = _pageFormats[_selectedPageFormat]!;
     }
 
-    if (_isLandscape) {
-      pageFormat = pageFormat.landscape;
-    }
-
     final decodedObjects = jsonDecode(project.vectorObjects) as List;
     final displayObjects = decodedObjects
         .map((obj) =>
@@ -222,11 +212,11 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       imageSize: Size(project.imageWidth ?? 0.0, project.imageHeight ?? 0.0),
       objectOutputSize: double.parse(_objectOutputSizeController.text),
       fontSize: double.parse(_outputFontSizeController.text),
-      printBackground: _printBackground,
+      printCells: _printCells,
+      printBorders: _printBorders,
+      printNumbers: _printNumbers,
       originalImageData: project.imageData,
       pageFormat: pageFormat,
-      centerImage: _centerImage,
-      outputBorders: double.tryParse(_outputBordersController.text) ?? 10.0,
     );
     if (mounted) setState(() => _isSaving = false);
   }
@@ -364,7 +354,6 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                             objectOutputSizeController:
                                 _objectOutputSizeController,
                             outputFontSizeController: _outputFontSizeController,
-                            outputBordersController: _outputBordersController,
                             customPageWidthController:
                                 _customPageWidthController,
                             customPageHeightController:
@@ -380,25 +369,25 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                                 settings.setPageFormat(value);
                               });
                             },
-                            isLandscape: _isLandscape,
-                            onLandscapeChanged: (value) {
+                            printCells: _printCells,
+                            onPrintCellsChanged: (value) {
                               setState(() {
-                                _isLandscape = value;
-                                settings.setIsLandscape(value);
+                                _printCells = value;
+                                // TODO: save to settings
                               });
                             },
-                            centerImage: _centerImage,
-                            onCenterImageChanged: (value) {
+                            printBorders: _printBorders,
+                            onPrintBordersChanged: (value) {
                               setState(() {
-                                _centerImage = value;
-                                settings.setCenterImage(value);
+                                _printBorders = value;
+                                // TODO: save to settings
                               });
                             },
-                            printBackground: _printBackground,
-                            onPrintBackgroundChanged: (value) {
+                            printNumbers: _printNumbers,
+                            onPrintNumbersChanged: (value) {
                               setState(() {
-                                _printBackground = value;
-                                settings.setPrintBackground(value);
+                                _printNumbers = value;
+                                // TODO: save to settings
                               });
                             },
                           ),
@@ -424,6 +413,7 @@ class VectorPainter extends CustomPainter {
   final bool showNumbers;
   final bool showBackground;
   final bool showVectors;
+  final bool showBorders;
 
   VectorPainter({
     this.backgroundImage,
@@ -433,6 +423,7 @@ class VectorPainter extends CustomPainter {
     required this.showNumbers,
     required this.showBackground,
     required this.showVectors,
+    required this.showBorders,
   });
 
   @override
@@ -494,11 +485,13 @@ class VectorPainter extends CustomPainter {
           cellHeight,
         );
 
-        final borderPaint = Paint()
-          ..color = Colors.red
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1;
-        canvas.drawRect(rect, borderPaint);
+        if (showBorders) {
+          final borderPaint = Paint()
+            ..color = Colors.red
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1;
+          canvas.drawRect(rect, borderPaint);
+        }
 
         if (showNumbers) {
           final colorIndex = uniqueColors.indexOf(obj.color);
@@ -533,6 +526,7 @@ class VectorPainter extends CustomPainter {
         oldDelegate.fontSize != fontSize ||
         oldDelegate.showNumbers != showNumbers ||
         oldDelegate.showBackground != showBackground ||
-        oldDelegate.showVectors != showVectors;
+        oldDelegate.showVectors != showVectors ||
+        oldDelegate.showBorders != showBorders;
   }
 }

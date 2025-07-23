@@ -18,20 +18,18 @@ Future<void> generateVectorPdf({
   required Size imageSize,
   required double objectOutputSize,
   required double fontSize,
-  required bool printBackground,
+  required bool printCells,
+  required bool printBorders,
+  required bool printNumbers,
   required Uint8List originalImageData,
   required PdfPageFormat pageFormat,
-  required bool centerImage,
-  required double outputBorders,
 }) async {
   final pdf = pw.Document();
   final objectSizeInPoints = objectOutputSize * PdfPageFormat.mm;
-  final margin = outputBorders * PdfPageFormat.mm;
 
   pdf.addPage(
     pw.Page(
       pageFormat: pageFormat,
-      margin: pw.EdgeInsets.all(margin),
       build: (pw.Context context) {
         final totalDrawingWidth = imageSize.width * objectSizeInPoints;
         final totalDrawingHeight = imageSize.height * objectSizeInPoints;
@@ -41,51 +39,55 @@ Future<void> generateVectorPdf({
           height: totalDrawingHeight,
           child: pw.Stack(
             children: [
-              if (printBackground)
-                pw.Image(
-                  pw.MemoryImage(originalImageData),
-                  fit: pw.BoxFit.fill,
-                ),
-              // Draw the colored squares
-              ...vectorObjects.map(
-                (obj) => pw.Positioned(
-                  left: obj.x * objectSizeInPoints,
-                  top: obj.y * objectSizeInPoints,
-                  child: pw.Container(
-                    width: objectSizeInPoints,
-                    height: objectSizeInPoints,
-                    color: PdfColor.fromInt(obj.color.value),
-                  ),
-                ),
-              ),
-              // Draw the grid on top
-              pw.GridView(
-                crossAxisCount: imageSize.width.toInt(),
-                crossAxisSpacing: 0,
-                mainAxisSpacing: 0,
-                childAspectRatio: 1.0,
-                children: List.generate(
-                  (imageSize.width * imageSize.height).toInt(),
-                  (index) => pw.Container(
-                    width: objectSizeInPoints,
-                    height: objectSizeInPoints,
-                    decoration: pw.BoxDecoration(
-                      border: pw.Border.all(
-                        color: PdfColors.grey500,
-                        width: 0.5,
+              // Draw the colored squares and numbers
+              ...() {
+                final uniqueColors =
+                    vectorObjects.map((o) => o.color).toSet().toList();
+                return vectorObjects.map(
+                  (obj) {
+                    final colorIndex = uniqueColors.indexOf(obj.color);
+                    return pw.Positioned(
+                      left: obj.x * objectSizeInPoints,
+                      top: obj.y * objectSizeInPoints,
+                      child: pw.SizedBox(
+                        width: objectSizeInPoints,
+                        height: objectSizeInPoints,
+                        child: pw.Stack(
+                          alignment: pw.Alignment.center,
+                          children: [
+                            if (printCells)
+                              pw.Container(
+                                color: PdfColor.fromInt(obj.color.value),
+                              ),
+                            if (printBorders)
+                              pw.Container(
+                                decoration: pw.BoxDecoration(
+                                  border: pw.Border.all(
+                                    color: PdfColors.red,
+                                    width: 0.5,
+                                  ),
+                                ),
+                              ),
+                            if (printNumbers)
+                              pw.Text(
+                                '${colorIndex + 1}',
+                                style: pw.TextStyle(
+                                  color: PdfColors.red,
+                                  fontSize: fontSize,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                ),
-              ),
+                    );
+                  },
+                );
+              }(),
             ],
           ),
         );
 
-        if (centerImage) {
-          return pw.Center(child: content);
-        }
-        return content;
+        return pw.Center(child: content);
       },
     ),
   );
