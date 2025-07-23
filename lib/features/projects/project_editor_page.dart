@@ -172,7 +172,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
               fontSize: settings.outputFontSize.toDouble(),
               showBackground: _isBackgroundVisible(),
               showVectors: _isVectorLayerVisible(),
-              showNumbers: _isVectorLayerVisible(),
+              showNumbers: _printNumbers,
               showBorders: _printBorders,
             ),
           ),

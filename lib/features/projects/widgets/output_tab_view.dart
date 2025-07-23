@@ -130,7 +130,7 @@ class _OutputTabViewState extends State<OutputTabView> {
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
             ),
-            const SizedBox(height: kSpacingM),
+            const SizedBox(height: kSpacingXs),
             CheckboxListTile(
               title: const Text('Print Borders'),
               value: widget.printBorders,
@@ -140,7 +140,7 @@ class _OutputTabViewState extends State<OutputTabView> {
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
             ),
-            const SizedBox(height: kSpacingM),
+            const SizedBox(height: kSpacingXs),
             CheckboxListTile(
               title: const Text('Print Numbers'),
               value: widget.printNumbers,
@@ -150,7 +150,7 @@ class _OutputTabViewState extends State<OutputTabView> {
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: kSpacingM),
             if (widget.isSaving)
               const CircularProgressIndicator()
             else

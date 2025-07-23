@@ -33,60 +33,64 @@ Future<void> generateVectorPdf({
       build: (pw.Context context) {
         final totalDrawingWidth = imageSize.width * objectSizeInPoints;
         final totalDrawingHeight = imageSize.height * objectSizeInPoints;
+        final font = PdfFont.helvetica(context.document);
+        final uniqueColors = vectorObjects.map((o) => o.color).toSet().toList();
 
-        final content = pw.SizedBox(
-          width: totalDrawingWidth,
-          height: totalDrawingHeight,
-          child: pw.Stack(
-            children: [
-              // Draw the colored squares and numbers
-              ...() {
-                final uniqueColors =
-                    vectorObjects.map((o) => o.color).toSet().toList();
-                return vectorObjects.map(
-                  (obj) {
-                    final colorIndex = uniqueColors.indexOf(obj.color);
-                    return pw.Positioned(
-                      left: obj.x * objectSizeInPoints,
-                      top: obj.y * objectSizeInPoints,
-                      child: pw.SizedBox(
-                        width: objectSizeInPoints,
-                        height: objectSizeInPoints,
-                        child: pw.Stack(
-                          alignment: pw.Alignment.center,
-                          children: [
-                            if (printCells)
-                              pw.Container(
-                                color: PdfColor.fromInt(obj.color.value),
-                              ),
-                            if (printBorders)
-                              pw.Container(
-                                decoration: pw.BoxDecoration(
-                                  border: pw.Border.all(
-                                    color: PdfColors.red,
-                                    width: 0.5,
-                                  ),
-                                ),
-                              ),
-                            if (printNumbers)
-                              pw.Text(
-                                '${colorIndex + 1}',
-                                style: pw.TextStyle(
-                                  color: PdfColors.red,
-                                  fontSize: fontSize,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }(),
-            ],
-          ),
+        final content = pw.CustomPaint(
+          size: PdfPoint(totalDrawingWidth, totalDrawingHeight),
+          painter: (canvas, size) {
+            // Layer 1: Draw all cells first to prevent gaps
+            if (printCells) {
+              for (final obj in vectorObjects) {
+                final left = obj.x * objectSizeInPoints;
+                final top = (imageSize.height - 1 - obj.y) * objectSizeInPoints;
+                final rect =
+                    PdfRect(left, top, objectSizeInPoints, objectSizeInPoints);
+                final color = PdfColor.fromInt(obj.color.value);
+
+                canvas
+                  ..setFillColor(color)
+                  ..setStrokeColor(color)
+                  ..setLineWidth(0.1) // Hairline stroke
+                  ..drawRect(rect.x, rect.y, rect.width, rect.height)
+                  ..fillAndStrokePath();
+              }
+            }
+
+            // Layer 2: Draw all borders on top of the cells
+            if (printBorders) {
+              for (final obj in vectorObjects) {
+                final left = obj.x * objectSizeInPoints;
+                final top = (imageSize.height - 1 - obj.y) * objectSizeInPoints;
+                final rect =
+                    PdfRect(left, top, objectSizeInPoints, objectSizeInPoints);
+                canvas
+                  ..setStrokeColor(PdfColors.red)
+                  ..setLineWidth(0.5)
+                  ..drawRect(rect.x, rect.y, rect.width, rect.height)
+                  ..strokePath();
+              }
+            }
+
+            // Layer 3: Draw all numbers on top of everything
+            if (printNumbers) {
+              for (final obj in vectorObjects) {
+                final left = obj.x * objectSizeInPoints;
+                final top = (imageSize.height - 1 - obj.y) * objectSizeInPoints;
+                final colorIndex = uniqueColors.indexOf(obj.color);
+                final text = '${colorIndex + 1}';
+
+                final metrics = font.stringMetrics(text) * fontSize;
+                final x = left + (objectSizeInPoints - metrics.width) / 2;
+                final y = top + (objectSizeInPoints - metrics.height) / 2;
+
+                canvas
+                  ..setFillColor(PdfColors.red)
+                  ..drawString(font, fontSize, text, x, y);
+              }
+            }
+          },
         );
-
         return pw.Center(child: content);
       },
     ),
