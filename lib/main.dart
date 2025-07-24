@@ -5,6 +5,7 @@ import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/services/seeding_service.dart';
 import 'package:vettore/providers/application_providers.dart';
+import 'package:vettore/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,10 +31,7 @@ class VettoreApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Vettore',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: appTheme,
       home: const ProjectOverviewPage(),
     );
   }
