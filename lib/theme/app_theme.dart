@@ -9,6 +9,8 @@ import 'package:vettore/theme/app_theme_typography.dart';
 
 final ThemeData appTheme = ThemeData(
   useMaterial3: true,
+  fontFamily: 'Inter',
+  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
   colorScheme: kColorScheme,
   textTheme: kTextTheme,
 

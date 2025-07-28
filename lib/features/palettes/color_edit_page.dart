@@ -11,6 +11,7 @@ import 'package:vettore/providers/vendor_color_provider.dart';
 import 'package:vettore/providers/palette_detail_provider.dart';
 import 'package:vettore/repositories/palette_repository.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:vettore/widgets/grufio_text_field_simple.dart';
 
 class ColorEditPage extends ConsumerStatefulWidget {
   final PaletteColorWithComponents initialColor;
@@ -139,19 +140,20 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextFormField(
+                  GrufioTextFieldSimple(
                     controller: titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Color Name',
-                    ),
-                    autofocus: true,
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter a name.' : null,
+                    topLabel: 'Color Name',
+                    onChanged: (value) {
+                      // Update color name
+                    },
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
+                  GrufioTextFieldSimple(
                     controller: statusController,
-                    decoration: const InputDecoration(labelText: 'Status'),
+                    topLabel: 'Status',
+                    onChanged: (value) {
+                      // Update status
+                    },
                   ),
                 ],
               ),
@@ -424,12 +426,12 @@ class _ComponentDialogState extends ConsumerState<_ComponentDialog> {
                 }).toList(),
                 onChanged: _onColorNameSelected,
               ),
-              TextField(
+              GrufioTextFieldSimple(
                 controller: _percentageController,
-                decoration: const InputDecoration(labelText: 'Percentage'),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                topLabel: 'Percentage',
+                onChanged: (value) {
+                  // Update percentage
+                },
               ),
             ],
           ),

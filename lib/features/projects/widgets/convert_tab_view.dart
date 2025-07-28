@@ -4,6 +4,8 @@ import 'package:vettore/constants/ui_constants.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/services/settings_service.dart';
+import 'package:vettore/widgets/grufio_text_field_simple.dart';
+import 'package:vettore/widgets/grufio_checkbox.dart';
 
 class ConvertTabView extends StatelessWidget {
   final Project project;
@@ -35,16 +37,9 @@ class ConvertTabView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Colors'),
-            const SizedBox(height: kSpacingS),
-            TextField(
+            GrufioTextFieldSimple(
               controller: maxObjectColorsController,
-              decoration: const InputDecoration(
-                labelText: 'Max. Object Colors',
-              ),
-              keyboardType: TextInputType.number,
-              onChanged: (value) =>
-                  settings.setMaxObjectColors(int.parse(value)),
+              topLabel: 'Colors',
             ),
             const SizedBox(height: kSpacingS),
             TextButton.icon(
@@ -58,23 +53,20 @@ class ConvertTabView extends StatelessWidget {
             ),
             const Divider(height: kSpacingXl),
             const Text('Preview'),
-            CheckboxListTile(
-              title: const Text('Show Vectors'),
+            GrufioCheckbox(
+              title: 'Show Vectors',
               value: showVectors,
               onChanged: (bool? value) {
                 onShowVectorsChanged(value ?? true);
               },
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
             ),
-            CheckboxListTile(
-              title: const Text('Show Background'),
+            const SizedBox(height: 2.0),
+            GrufioCheckbox(
+              title: 'Show Background',
               value: showBackground,
               onChanged: (bool? value) {
                 onShowBackgroundChanged(value ?? true);
               },
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
             ),
             const Divider(),
             SizedBox(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 // Required for FilterQuality
+import 'package:vettore/widgets/grufio_text_field_simple.dart';
 
 // Using a record for a clear and type-safe return value.
 typedef ResizeResult = ({double percentage, FilterQuality filterQuality});
@@ -52,41 +53,12 @@ class _ResizeDialogState extends State<ResizeDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Resize Image'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            autofocus: true,
-            controller: _controller,
-            decoration: const InputDecoration(
-              labelText: 'Resize Percentage',
-              suffixText: '%',
-            ),
-            keyboardType: TextInputType.number,
-            onSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<FilterQuality>(
-            value: _selectedFilterQuality,
-            decoration: const InputDecoration(
-              labelText: 'Interpolation',
-              border: OutlineInputBorder(),
-            ),
-            items: _filterOptions.entries.map((entry) {
-              return DropdownMenuItem<FilterQuality>(
-                value: entry.value,
-                child: Text(entry.key),
-              );
-            }).toList(),
-            onChanged: (FilterQuality? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _selectedFilterQuality = newValue;
-                });
-              }
-            },
-          ),
-        ],
+      content: GrufioTextFieldSimple(
+        controller: _controller,
+        autofocus: true,
+        topLabel: 'Resize Percentage',
+        suffixText: '%',
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
       ),
       actions: [
         TextButton(

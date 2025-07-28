@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/features/palettes/palette_detail_page.dart';
 import 'package:vettore/providers/palette_list_provider.dart';
 import 'package:vettore/widgets/adaptive_dialog.dart';
+import 'package:vettore/widgets/grufio_text_field_simple.dart';
 
 /// A page that displays a list of all the user's color palettes.
 class PalettesOverview extends ConsumerWidget {
@@ -17,10 +18,9 @@ class PalettesOverview extends ConsumerWidget {
       builder: (BuildContext context) {
         return AdaptiveDialog(
           title: 'Add Palette',
-          content: TextField(
+          content: GrufioTextFieldSimple(
             controller: nameController,
-            decoration: const InputDecoration(hintText: 'Palette Name'),
-            autofocus: true,
+            hintText: "Palette Name",
           ),
           actions: <Widget>[
             TextButton(

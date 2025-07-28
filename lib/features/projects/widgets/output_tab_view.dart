@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:vettore/constants/ui_constants.dart';
 import 'package:vettore/services/settings_service.dart';
+import 'package:vettore/widgets/grufio_text_field_simple.dart';
+import 'package:vettore/widgets/grufio_dropdown_form_field.dart';
+import 'package:vettore/widgets/grufio_checkbox.dart';
 
 class OutputTabView extends StatefulWidget {
   final SettingsService settings;
@@ -55,31 +58,25 @@ class _OutputTabViewState extends State<OutputTabView> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            TextField(
+            GrufioTextFieldSimple(
               controller: widget.objectOutputSizeController,
-              decoration: const InputDecoration(
-                labelText: 'Object Output Size (mm)',
-              ),
+              topLabel: 'Object Output Size (mm)',
               keyboardType: TextInputType.number,
               onChanged: (value) =>
                   widget.settings.setObjectOutputSize(double.parse(value)),
             ),
             const SizedBox(height: kSpacingM),
-            TextField(
+            GrufioTextFieldSimple(
               controller: widget.outputFontSizeController,
-              decoration: const InputDecoration(
-                labelText: 'Font Size',
-              ),
+              topLabel: 'Font Size',
               keyboardType: TextInputType.number,
               onChanged: (value) =>
                   widget.settings.setOutputFontSize(int.parse(value)),
             ),
             const SizedBox(height: kSpacingM),
-            DropdownButtonFormField<String>(
+            GrufioDropdownFormField<String>(
+              topLabel: 'Page Format',
               value: widget.selectedPageFormat,
-              decoration: const InputDecoration(
-                labelText: 'Page Format',
-              ),
               items: widget.pageFormats.keys.map((String key) {
                 return DropdownMenuItem<String>(
                   value: key,
@@ -96,11 +93,9 @@ class _OutputTabViewState extends State<OutputTabView> {
               Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: GrufioTextFieldSimple(
                       controller: widget.customPageWidthController,
-                      decoration: const InputDecoration(
-                        labelText: 'Width (mm)',
-                      ),
+                      topLabel: 'Width (mm)',
                       keyboardType: TextInputType.number,
                       onChanged: (value) => widget.settings
                           .setCustomPageWidth(double.parse(value)),
@@ -108,11 +103,9 @@ class _OutputTabViewState extends State<OutputTabView> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextField(
+                    child: GrufioTextFieldSimple(
                       controller: widget.customPageHeightController,
-                      decoration: const InputDecoration(
-                        labelText: 'Height (mm)',
-                      ),
+                      topLabel: 'Height (mm)',
                       keyboardType: TextInputType.number,
                       onChanged: (value) => widget.settings
                           .setCustomPageHeight(double.parse(value)),
@@ -121,34 +114,28 @@ class _OutputTabViewState extends State<OutputTabView> {
                 ],
               ),
             const SizedBox(height: kSpacingM),
-            CheckboxListTile(
-              title: const Text('Print Cells'),
+            GrufioCheckbox(
+              title: 'Print Cells',
               value: widget.printCells,
               onChanged: (bool? value) {
                 widget.onPrintCellsChanged(value ?? false);
               },
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
             ),
-            const SizedBox(height: kSpacingXs),
-            CheckboxListTile(
-              title: const Text('Print Borders'),
+            const SizedBox(height: 2.0),
+            GrufioCheckbox(
+              title: 'Print Borders',
               value: widget.printBorders,
               onChanged: (bool? value) {
                 widget.onPrintBordersChanged(value ?? false);
               },
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
             ),
-            const SizedBox(height: kSpacingXs),
-            CheckboxListTile(
-              title: const Text('Print Numbers'),
+            const SizedBox(height: 2.0),
+            GrufioCheckbox(
+              title: 'Print Numbers',
               value: widget.printNumbers,
               onChanged: (bool? value) {
                 widget.onPrintNumbersChanged(value ?? false);
               },
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
             ),
             const SizedBox(height: kSpacingM),
             if (widget.isSaving)

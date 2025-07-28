@@ -29,7 +29,9 @@ const InputDecorationTheme kInputDecorationTheme = InputDecorationTheme(
     borderRadius: BorderRadius.all(Radius.circular(8.0)),
     borderSide: BorderSide(color: kPrimaryColor, width: 2.0),
   ),
-  contentPadding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+  // --- Sizing and Alignment ---
+  isDense: true, // Reduces vertical padding
+  contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
 );
 
 // --- Card Theme ---
