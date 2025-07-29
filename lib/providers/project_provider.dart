@@ -39,7 +39,10 @@ class ProjectLogic {
 
   ProjectLogic(this.ref, this.projectId);
 
-  Future<void> convertProject() async {
+  /// Runs the Python script to perform color quantization on the project's current image.
+  /// This updates the project's image data, palette, and color count, but does not
+  /// generate the vector grid.
+  Future<void> quantizeImage() async {
     final projectRepository = ref.read(projectRepositoryProvider);
     final paletteRepository = ref.read(paletteRepositoryProvider);
     final settings = ref.read(settingsServiceProvider);
@@ -47,7 +50,6 @@ class ProjectLogic {
     int paletteId = project.paletteId ?? -1;
 
     try {
-      // Step 1 of the new workflow: Handle legacy projects without a palette.
       if (project.paletteId == null) {
         final newPalette = PalettesCompanion.insert(
           name: '${project.name} Palette',
@@ -59,13 +61,13 @@ class ProjectLogic {
       final tempDir = await getTemporaryDirectory();
       final scriptPath = '${tempDir.path}/quantize.py';
       final scriptContent = await rootBundle.loadString('scripts/quantize.py');
-      final scriptFile = File(scriptPath);
-      await scriptFile.writeAsString(scriptContent);
+      await File(scriptPath).writeAsString(scriptContent);
 
       final inputPath = '${tempDir.path}/temp_in.png';
       final outputPath = '${tempDir.path}/temp_out.png';
-      final inputFile = File(inputPath);
-      await inputFile.writeAsBytes(project.imageData);
+      // Use the resized image data if available, otherwise fall back to the main image data.
+      await File(inputPath)
+          .writeAsBytes(project.resizedImageData ?? project.imageData);
 
       final result = await Process.run('python3', [
         scriptPath,
@@ -87,43 +89,76 @@ class ProjectLogic {
       final paletteList =
           (jsonDecode(paletteJson) as List).map((c) => c as List).toList();
 
-      await scriptFile.delete();
-      await inputFile.delete();
-      await File(outputPath).delete();
+      await Future.wait([
+        File(scriptPath).delete(),
+        File(inputPath).delete(),
+        File(outputPath).delete()
+      ]);
 
-      final resultData = await compute(_performPostProcessingIsolate, {
-        'imageData': newImageData,
-        'palette': paletteList,
-      });
-
-      final vectorObjects =
-          resultData['vectorObjects'] as List<IsolateVectorObject>;
-      final vectorObjectsJson = jsonEncode(vectorObjects);
-
-      // Step 2 & 3 of the new workflow: Update the existing palette with the new colors.
-      final newColors = (resultData['palette'] as List<Map<String, dynamic>>)
-          .map((c) => PaletteColorsCompanion.insert(
-                title: c['title']!,
-                color: c['color']!,
-                paletteId: paletteId, // Link to the existing palette
-              ))
-          .toList();
+      final newColors = paletteList.map((color) {
+        final r = color[0] as int;
+        final g = color[1] as int;
+        final b = color[2] as int;
+        final c = Color.fromARGB(255, r, g, b);
+        final hex =
+            '#${(c.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+        return PaletteColorsCompanion.insert(
+          title: hex,
+          color: c.value,
+          paletteId: paletteId,
+        );
+      }).toList();
 
       await paletteRepository.updatePaletteColors(paletteId, newColors);
 
-      // Update the project with the new conversion data
       final updatedProject = project.toCompanion(false).copyWith(
             imageData: Value(newImageData),
-            vectorObjects: Value(vectorObjectsJson),
-            imageWidth: Value(resultData['imageWidth']),
-            imageHeight: Value(resultData['imageHeight']),
-            isConverted: const Value(true),
-            uniqueColorCount: Value(resultData['uniqueColorCount']),
+            isConverted:
+                const Value(true), // Mark as converted for the grid step
+            vectorObjects: const Value('[]'), // Clear old grid data
+            uniqueColorCount: Value(paletteList.length),
             paletteId: Value(paletteId),
           );
       await projectRepository.updateProject(updatedProject);
     } catch (e) {
-      debugPrint('[ProjectLogic] Error during vector conversion: $e');
+      debugPrint('[ProjectLogic] Error during image quantization: $e');
+    }
+  }
+
+  /// Generates the vector grid from the currently converted image data.
+  /// This should only be called after `quantizeImage` has been successfully run.
+  Future<void> generateGrid() async {
+    final projectRepository = ref.read(projectRepositoryProvider);
+    final project = await projectRepository.getProject(projectId);
+
+    if (!project.isConverted) {
+      debugPrint(
+          '[ProjectLogic] Error: Cannot generate grid before image is converted.');
+      return;
+    }
+
+    try {
+      final img.Image? imageToConvert = img.decodeImage(project.imageData);
+      if (imageToConvert == null) {
+        throw Exception('Could not decode converted image.');
+      }
+
+      final List<IsolateVectorObject> vectorObjects = [];
+      for (final p in imageToConvert) {
+        final c =
+            Color.fromARGB(p.a.toInt(), p.r.toInt(), p.g.toInt(), p.b.toInt());
+        vectorObjects.add(IsolateVectorObject(p.x, p.y, c.value));
+      }
+      final vectorObjectsJson = jsonEncode(vectorObjects);
+
+      final updatedProject = project.toCompanion(false).copyWith(
+            vectorObjects: Value(vectorObjectsJson),
+            imageWidth: Value(imageToConvert.width.toDouble()),
+            imageHeight: Value(imageToConvert.height.toDouble()),
+          );
+      await projectRepository.updateProject(updatedProject);
+    } catch (e) {
+      debugPrint('[ProjectLogic] Error during grid generation: $e');
     }
   }
 
@@ -196,11 +231,12 @@ class ProjectLogic {
 
       final updatedProject = project.toCompanion(false).copyWith(
             imageData: Value(newImageData),
+            resizedImageData: Value(newImageData),
             imageWidth: Value(newWidth),
             imageHeight: Value(newHeight),
             filterQualityIndex: Value(filterQuality.index),
             isConverted: const Value(false),
-            vectorObjects: const Value('[]'), // Reset conversion data
+            vectorObjects: const Value('[]'),
             uniqueColorCount: Value(uniqueColorCount),
           );
       await projectRepository.updateProject(updatedProject);
@@ -234,6 +270,7 @@ class ProjectLogic {
 
     final updatedProject = project.toCompanion(false).copyWith(
           imageData: Value(project.originalImageData!),
+          resizedImageData: Value(project.originalImageData!),
           imageWidth: Value(project.originalImageWidth!),
           imageHeight: Value(project.originalImageHeight!),
           filterQualityIndex: const Value(1), // Default high quality
@@ -244,55 +281,4 @@ class ProjectLogic {
         );
     await projectRepository.updateProject(updatedProject);
   }
-}
-
-// --- ISOLATE FUNCTIONS ---
-
-Map<String, dynamic> _performPostProcessingIsolate(
-    Map<String, dynamic> params) {
-  final Uint8List imageData = params['imageData'];
-  final List<List<dynamic>> paletteList = params['palette'];
-
-  final img.Image? imageToConvert = img.decodeImage(imageData);
-
-  if (imageToConvert == null) {
-    throw Exception('Could not decode image');
-  }
-
-  // Create a map for quick color lookup
-  final paletteMap = <int, int>{};
-  for (int i = 0; i < paletteList.length; i++) {
-    final color = paletteList[i];
-    final r = color[0] as int;
-    final g = color[1] as int;
-    final b = color[2] as int;
-    final c = Color.fromARGB(255, r, g, b);
-    paletteMap[c.value] = i;
-  }
-
-  final List<IsolateVectorObject> vectorObjects = [];
-  for (final p in imageToConvert) {
-    final c =
-        Color.fromARGB(p.a.toInt(), p.r.toInt(), p.g.toInt(), p.b.toInt());
-    vectorObjects.add(IsolateVectorObject(p.x, p.y, c.value));
-  }
-
-  final List<Map<String, dynamic>> newPalette = [];
-  for (final color in paletteList) {
-    final r = color[0] as int;
-    final g = color[1] as int;
-    final b = color[2] as int;
-    final c = Color.fromARGB(255, r, g, b);
-    final hex =
-        '#${(c.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
-    newPalette.add({'title': hex, 'color': c.value});
-  }
-
-  return {
-    'vectorObjects': vectorObjects,
-    'imageWidth': imageToConvert.width.toDouble(),
-    'imageHeight': imageToConvert.height.toDouble(),
-    'uniqueColorCount': paletteList.length,
-    'palette': newPalette,
-  };
 }

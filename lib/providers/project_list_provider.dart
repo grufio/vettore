@@ -48,6 +48,8 @@ class ProjectListLogic {
           final count = colors.length;
           finalProjectCompanion = newProjectCompanion.copyWith(
             uniqueColorCount: Value(count),
+            originalImageData: Value(imageData),
+            resizedImageData: Value(imageData),
           );
         }
       }

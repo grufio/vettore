@@ -1,12 +1,8 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sqlite3/sqlite3.dart';
-import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'database.g.dart';
 
@@ -28,6 +24,7 @@ class Projects extends Table {
   RealColumn get imageHeight => real().nullable()();
   IntColumn get uniqueColorCount => integer().nullable()();
   BlobColumn get originalImageData => blob().nullable()();
+  BlobColumn get resizedImageData => blob().nullable()();
   RealColumn get originalImageWidth => real().nullable()();
   RealColumn get originalImageHeight => real().nullable()();
   IntColumn get filterQualityIndex =>
@@ -99,7 +96,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration {
@@ -140,6 +137,10 @@ class AppDatabase extends _$AppDatabase {
         if (from < 9) {
           // Version 9 adds the color density column.
           await m.addColumn(vendorColors, vendorColors.colorDensity);
+        }
+        if (from < 10) {
+          // Version 10 adds the resized image data cache.
+          await m.addColumn(projects, projects.resizedImageData);
         }
       },
     );

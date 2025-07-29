@@ -14,6 +14,7 @@ import 'package:vettore/widgets/color_settings_dialog.dart';
 import 'package:vettore/features/projects/widgets/image_tab_view.dart';
 import 'package:vettore/features/projects/widgets/convert_tab_view.dart';
 import 'package:vettore/features/projects/widgets/output_tab_view.dart';
+import 'package:vettore/features/projects/widgets/grid_tab_view.dart';
 
 class ProjectEditorPage extends ConsumerStatefulWidget {
   final int projectId;
@@ -66,7 +67,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   void initState() {
     super.initState();
     final settings = ref.read(settingsServiceProvider);
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController!.addListener(_handleTabSelection);
 
     _maxObjectColorsController = TextEditingController(
@@ -125,7 +126,12 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
 
     if (isImageTooLarge && _tabController!.indexIsChanging) {
       if (_tabController!.index != 0) {
-        _tabController!.index = 0;
+        // Allow returning to the first tab, but block moving to others
+        if (_tabController!.previousIndex != 0) {
+          _tabController!.index = _tabController!.previousIndex;
+        } else {
+          _tabController!.index = 0;
+        }
       }
     }
     // This setState will trigger a rebuild when the tab changes,
@@ -139,8 +145,10 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       case 0: // Image Tab
         return true;
       case 1: // Convert Tab
-        return _showBackground;
-      case 2: // PDF Tab
+        return true; // Always show the base image
+      case 2: // Grid Tab
+        return _showBackground; // Controlled by checkbox
+      case 3: // PDF Tab
         return _printCells;
       default:
         return false;
@@ -151,8 +159,10 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     if (_tabController == null) return false;
     switch (_tabController!.index) {
       case 1: // Convert Tab
-        return _showVectors;
-      case 2: // PDF Tab
+        return false; // Never show vectors on the convert tab
+      case 2: // Grid Tab
+        return _showVectors; // Controlled by checkbox
+      case 3: // PDF Tab
         return true; // Always show vectors in PDF preview
       default:
         return false;
@@ -333,6 +343,14 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                         ),
                         Tab(
                           icon: Icon(
+                            Icons.grid_on_outlined,
+                            color: isImageTooLarge
+                                ? Theme.of(context).disabledColor
+                                : null,
+                          ),
+                        ),
+                        Tab(
+                          icon: Icon(
                             Icons.picture_as_pdf_outlined,
                             color: isImageTooLarge
                                 ? Theme.of(context).disabledColor
@@ -360,9 +378,12 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                             klController: _klController,
                             kcController: _kcController,
                             khController: _khController,
+                            onShowColorSettings: _showColorSettingsDialog,
+                          ),
+                          GridTabView(
+                            project: project,
                             showVectors: _showVectors,
                             showBackground: _showBackground,
-                            onShowColorSettings: _showColorSettingsDialog,
                             onShowVectorsChanged: (value) {
                               setState(() {
                                 _showVectors = value;
