@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:vettore/constants/ui_constants.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/widgets/grufio_text_field_simple.dart';
@@ -23,6 +25,7 @@ class OutputTabView extends StatelessWidget {
   final Function(bool) onPrintBordersChanged;
   final bool printNumbers;
   final Function(bool) onPrintNumbersChanged;
+  final PdfViewerController pdfController;
 
   const OutputTabView({
     super.key,
@@ -43,6 +46,7 @@ class OutputTabView extends StatelessWidget {
     required this.onPrintBordersChanged,
     required this.printNumbers,
     required this.onPrintNumbersChanged,
+    required this.pdfController,
   });
 
   @override
@@ -52,6 +56,30 @@ class OutputTabView extends StatelessWidget {
         padding: const EdgeInsets.all(kSpacingM),
         child: Column(
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.zoom_in),
+                  onPressed: () =>
+                      pdfController.zoomLevel = pdfController.zoomLevel + 0.25,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.zoom_out),
+                  onPressed: () =>
+                      pdfController.zoomLevel = pdfController.zoomLevel - 0.25,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.fullscreen),
+                  onPressed: () => pdfController.zoomLevel = 0,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.fullscreen_exit),
+                  onPressed: () => pdfController.zoomLevel = 1.0,
+                ),
+              ],
+            ),
+            const Divider(),
             GrufioTextFieldSimple(
               controller: objectOutputSizeController,
               topLabel: 'Object Output Size (mm)',
@@ -148,19 +176,19 @@ class OutputTabView extends StatelessWidget {
               },
             ),
             const SizedBox(height: kSpacingM),
-            if (isSaving)
-              const CircularProgressIndicator()
-            else
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: canGenerate ? onGenerate : null,
-                  icon: const Icon(
-                    Icons.picture_as_pdf_outlined,
-                  ),
-                  label: const Text('Generate PDF'),
-                ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: canGenerate ? onGenerate : null,
+                icon: isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.preview_outlined),
+                label: Text(isSaving ? 'Generating...' : 'Update Preview'),
               ),
+            ),
           ],
         ),
       ),

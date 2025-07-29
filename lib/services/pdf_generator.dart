@@ -6,6 +6,8 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:vettore/data/database.dart';
 
 class PdfVectorObject {
   final int x, y;
@@ -13,7 +15,7 @@ class PdfVectorObject {
   PdfVectorObject({required this.x, required this.y, required this.color});
 }
 
-Future<void> generateVectorPdf({
+Future<Uint8List> generateVectorPdf({
   required List<PdfVectorObject> vectorObjects,
   required Size imageSize,
   required double objectOutputSize,
@@ -95,13 +97,6 @@ Future<void> generateVectorPdf({
       },
     ),
   );
-  try {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/vettore_output.pdf');
-    await file.writeAsBytes(await pdf.save());
-    await OpenFile.open(file.path);
-  } catch (e) {
-    // Handle error
-    debugPrint('Error generating or opening PDF: $e');
-  }
+
+  return pdf.save();
 }

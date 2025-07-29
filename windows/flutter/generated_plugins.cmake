@@ -9,6 +9,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
   printing
   sqlite3_flutter_libs
   super_native_extensions
+  syncfusion_pdfviewer_windows
+  url_launcher_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

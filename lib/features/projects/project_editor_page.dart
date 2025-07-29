@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdf/pdf.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/features/projects/widgets/resize_dialog.dart';
 import 'package:vettore/providers/project_provider.dart';
@@ -53,6 +54,8 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   bool _printNumbers = true;
   bool _isSaving = false;
   String _selectedPageFormat = 'A4';
+  Uint8List? _pdfData;
+  late final PdfViewerController _pdfController;
 
   TabController? _tabController;
 
@@ -69,6 +72,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     final settings = ref.read(settingsServiceProvider);
     _tabController = TabController(length: 4, vsync: this);
     _tabController!.addListener(_handleTabSelection);
+    _pdfController = PdfViewerController();
 
     _maxObjectColorsController = TextEditingController(
       text: settings.maxObjectColors.toString(),
@@ -173,7 +177,19 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       List<DisplayVectorObject> displayObjects, SettingsService settings) {
     final currentTabIndex = _tabController?.index ?? 0;
 
-    if (currentTabIndex == 0) {
+    if (currentTabIndex == 3) {
+      if (_pdfData != null) {
+        return Container(
+          decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
+          child: SfPdfViewer.memory(
+            _pdfData!,
+            controller: _pdfController,
+          ),
+        );
+      } else {
+        return const Center(child: Text('No preview generated.'));
+      }
+    } else if (currentTabIndex == 0) {
       // Viewer for Image Tab
       return InteractiveViewer(
         minScale: 1.0,
@@ -235,7 +251,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
             DisplayVectorObject(obj['x'], obj['y'], Color(obj['color'] as int)))
         .toList();
 
-    await generateVectorPdf(
+    final pdfBytes = await generateVectorPdf(
       vectorObjects: displayObjects
           .map((e) => PdfVectorObject(x: e.x, y: e.y, color: e.color))
           .toList(),
@@ -248,7 +264,12 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       originalImageData: project.imageData,
       pageFormat: pageFormat,
     );
-    if (mounted) setState(() => _isSaving = false);
+    if (mounted) {
+      setState(() {
+        _pdfData = pdfBytes;
+        _isSaving = false;
+      });
+    }
   }
 
   void _showColorSettingsDialog() {
@@ -293,12 +314,6 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
           if (project.imageData.isNotEmpty) {
             ui.instantiateImageCodec(project.imageData).then((codec) {
               return codec.getNextFrame();
-            }).then((frame) {
-              if (mounted) {
-                setState(() {
-                  _decodedImage = frame.image;
-                });
-              }
             });
           }
         }
@@ -436,6 +451,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                                 // TODO: save to settings
                               });
                             },
+                            pdfController: _pdfController,
                           ),
                         ],
                       ),

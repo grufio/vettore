@@ -53,6 +53,7 @@ dependencies:
   super_clipboard: ^0.8.6
   collection: ^1.18.0
   equatable: ^2.0.7
+  syncfusion_flutter_pdfviewer: ^26.1.41
 
 dev_dependencies:
   flutter_test:
