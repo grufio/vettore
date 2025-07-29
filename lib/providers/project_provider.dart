@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'dart:convert';
 import 'dart:io';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,11 +21,37 @@ class IsolateVectorObject {
   Map<String, dynamic> toJson() => {'x': x, 'y': y, 'color': color};
 }
 
+// A state class to hold the project data and its decoded image.
+class ProjectState extends Equatable {
+  final Project project;
+  final Image? decodedImage;
+
+  const ProjectState({required this.project, this.decodedImage});
+
+  @override
+  List<Object?> get props => [project, decodedImage];
+}
+
 // Provides a stream of a single project for the editor page.
 final projectStreamProvider =
-    StreamProvider.autoDispose.family<Project, int>((ref, projectId) {
+    StreamProvider.autoDispose.family<ProjectState, int>((ref, projectId) {
   final projectRepository = ref.watch(projectRepositoryProvider);
-  return projectRepository.watchProject(projectId);
+
+  // Return a new stream that transforms the Project stream into a ProjectState stream
+  return projectRepository.watchProject(projectId).asyncMap((project) async {
+    Image? decodedImage;
+    if (project.imageData.isNotEmpty) {
+      try {
+        final codec = await instantiateImageCodec(project.imageData);
+        final frame = await codec.getNextFrame();
+        decodedImage = frame.image;
+      } catch (e) {
+        debugPrint('Error decoding image for project $projectId: $e');
+        // The stream will continue, but with a null image.
+      }
+    }
+    return ProjectState(project: project, decodedImage: decodedImage);
+  });
 });
 
 // A provider for the business logic of the project editor.
@@ -111,8 +138,18 @@ class ProjectLogic {
 
       await paletteRepository.updatePaletteColors(paletteId, newColors);
 
+      // Decode the new image to get its actual dimensions
+      final img.Image? decodedQuantizedImage = img.decodeImage(newImageData);
+      if (decodedQuantizedImage == null) {
+        throw Exception('Could not decode the quantized image output.');
+      }
+
       final updatedProject = project.toCompanion(false).copyWith(
             imageData: Value(newImageData),
+            resizedImageData:
+                Value(newImageData), // Ensure the cache is updated
+            imageWidth: Value(decodedQuantizedImage.width.toDouble()),
+            imageHeight: Value(decodedQuantizedImage.height.toDouble()),
             isConverted:
                 const Value(true), // Mark as converted for the grid step
             vectorObjects: const Value('[]'), // Clear old grid data

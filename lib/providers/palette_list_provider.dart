@@ -10,6 +10,26 @@ final paletteListStreamProvider = StreamProvider<List<FullPalette>>((ref) {
   return paletteRepository.watchAllPalettes();
 });
 
+class CategorizedPalettes {
+  final List<FullPalette> customPalettes;
+  final List<FullPalette> imagePalettes;
+
+  const CategorizedPalettes({
+    this.customPalettes = const [],
+    this.imagePalettes = const [],
+  });
+}
+
+final categorizedPalettesProvider =
+    Provider.autoDispose<CategorizedPalettes>((ref) {
+  final palettes = ref.watch(paletteListStreamProvider).value ?? [];
+
+  return CategorizedPalettes(
+    customPalettes: palettes.where((p) => p.palette.isPredefined).toList(),
+    imagePalettes: palettes.where((p) => !p.palette.isPredefined).toList(),
+  );
+});
+
 final paletteListLogicProvider = Provider((ref) {
   return PaletteListLogic(ref);
 });
@@ -23,16 +43,8 @@ class PaletteListLogic {
     final paletteRepository = _ref.read(paletteRepositoryProvider);
     final newPalette = PalettesCompanion.insert(
       name: name,
-      isPredefined: const Value(false),
-    );
-    await paletteRepository.addPalette(newPalette, []);
-  }
-
-  Future<void> createNewPredefinedPalette(String name) async {
-    final paletteRepository = _ref.read(paletteRepositoryProvider);
-    final newPalette = PalettesCompanion.insert(
-      name: name,
-      isPredefined: const Value(true),
+      isPredefined:
+          const Value(true), // Corrected: Custom palettes are 'predefined'
     );
     await paletteRepository.addPalette(newPalette, []);
   }

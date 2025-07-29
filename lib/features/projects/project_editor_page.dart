@@ -37,8 +37,9 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   bool _showBackground = true;
 
   // State for the decoded image
-  ui.Image? _decodedImage;
-  Uint8List? _loadedImageData;
+  // REMOVED:
+  // ui.Image? _decodedImage;
+  // Uint8List? _loadedImageData;
 
   late final TextEditingController _maxObjectColorsController;
   late final TextEditingController _objectOutputSizeController;
@@ -49,11 +50,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   late final TextEditingController _klController;
   late final TextEditingController _kcController;
   late final TextEditingController _khController;
-  bool _printCells = true;
-  bool _printBorders = true;
-  bool _printNumbers = true;
   bool _isSaving = false;
-  String _selectedPageFormat = 'A4';
   Uint8List? _pdfData;
   late final PdfViewerController _pdfController;
 
@@ -102,8 +99,6 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     _khController = TextEditingController(
       text: settings.kh.toString(),
     );
-    _printCells = settings.printBackground;
-    _selectedPageFormat = settings.pageFormat;
   }
 
   @override
@@ -123,8 +118,10 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   }
 
   void _handleTabSelection() {
-    final project = ref.read(projectStreamProvider(widget.projectId)).value;
-    if (project == null) return;
+    final projectState =
+        ref.read(projectStreamProvider(widget.projectId)).value;
+    if (projectState == null) return;
+    final project = projectState.project;
     final isImageTooLarge =
         (project.imageWidth ?? 0) > 500 || (project.imageHeight ?? 0) > 500;
 
@@ -153,7 +150,8 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       case 2: // Grid Tab
         return _showBackground; // Controlled by checkbox
       case 3: // PDF Tab
-        return _printCells;
+        // Read directly from settings
+        return ref.read(settingsServiceProvider).printBackground;
       default:
         return false;
     }
@@ -173,7 +171,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     }
   }
 
-  Widget _buildCurrentView(Project project,
+  Widget _buildCurrentView(Project project, ui.Image? decodedImage,
       List<DisplayVectorObject> displayObjects, SettingsService settings) {
     final currentTabIndex = _tabController?.index ?? 0;
 
@@ -209,7 +207,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
           aspectRatio: (project.imageWidth ?? 1) / (project.imageHeight ?? 1),
           child: CustomPaint(
             painter: VectorPainter(
-              backgroundImage: _decodedImage,
+              backgroundImage: decodedImage,
               objects: displayObjects,
               imageSize: Size(
                 project.imageWidth ?? 1,
@@ -218,8 +216,8 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
               fontSize: settings.outputFontSize.toDouble(),
               showBackground: _isBackgroundVisible(),
               showVectors: _isVectorLayerVisible(),
-              showNumbers: _printNumbers,
-              showBorders: _printBorders,
+              showNumbers: settings.printNumbers,
+              showBorders: settings.printBorders,
             ),
           ),
         ),
@@ -228,13 +226,16 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   }
 
   Future<void> _handlePdfGeneration() async {
-    final project = ref.read(projectStreamProvider(widget.projectId)).value;
-    if (project == null) return;
+    final projectState =
+        ref.read(projectStreamProvider(widget.projectId)).value;
+    if (projectState == null) return;
+    final project = projectState.project;
+    final settings = ref.read(settingsServiceProvider);
 
     setState(() => _isSaving = true);
 
     PdfPageFormat pageFormat;
-    if (_selectedPageFormat == 'Custom') {
+    if (settings.pageFormat == 'Custom') {
       final width = double.tryParse(_customPageWidthController.text) ?? 210;
       final height = double.tryParse(_customPageHeightController.text) ?? 297;
       pageFormat = PdfPageFormat(
@@ -242,7 +243,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
         height * PdfPageFormat.mm,
       );
     } else {
-      pageFormat = _pageFormats[_selectedPageFormat]!;
+      pageFormat = _pageFormats[settings.pageFormat]!;
     }
 
     final decodedObjects = jsonDecode(project.vectorObjects) as List;
@@ -258,9 +259,9 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       imageSize: Size(project.imageWidth ?? 0.0, project.imageHeight ?? 0.0),
       objectOutputSize: double.parse(_objectOutputSizeController.text),
       fontSize: double.parse(_outputFontSizeController.text),
-      printCells: _printCells,
-      printBorders: _printBorders,
-      printNumbers: _printNumbers,
+      printCells: settings.printBackground,
+      printBorders: settings.printBorders,
+      printNumbers: settings.printNumbers,
       originalImageData: project.imageData,
       pageFormat: pageFormat,
     );
@@ -273,8 +274,14 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   }
 
   void _showColorSettingsDialog() {
-    final project = ref.read(projectStreamProvider(widget.projectId)).value;
-    if (project == null || !project.isConverted) {
+    final projectState =
+        ref.read(projectStreamProvider(widget.projectId)).value;
+    if (projectState == null) {
+      // Handle case where project data isn't loaded yet
+      return;
+    }
+    final project = projectState.project;
+    if (!project.isConverted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please convert the image first.')),
       );
@@ -306,17 +313,10 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       error: (err, stack) => Scaffold(
         body: Center(child: Text('Error: $err')),
       ),
-      data: (project) {
-        if (!listEquals(_loadedImageData, project.imageData)) {
-          _loadedImageData = project.imageData;
-          // Reset image and start decoding
-          _decodedImage = null;
-          if (project.imageData.isNotEmpty) {
-            ui.instantiateImageCodec(project.imageData).then((codec) {
-              return codec.getNextFrame();
-            });
-          }
-        }
+      data: (projectState) {
+        final project = projectState.project;
+        // REMOVED old image decoding logic
+        // if (!listEquals(_loadedImageData, project.imageData)) { ... }
 
         final List<DisplayVectorObject> displayObjects;
         if (project.isConverted && project.vectorObjects.isNotEmpty) {
@@ -337,7 +337,8 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
           body: Row(
             children: [
               Expanded(
-                child: _buildCurrentView(project, displayObjects, settings),
+                child: _buildCurrentView(project, projectState.decodedImage,
+                    displayObjects, settings),
               ),
               Container(
                 width: 300,
@@ -423,32 +424,36 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                             canGenerate: project.vectorObjects.isNotEmpty,
                             onGenerate: _handlePdfGeneration,
                             pageFormats: _pageFormats,
-                            selectedPageFormat: _selectedPageFormat,
+                            selectedPageFormat: settings.pageFormat,
                             onPageFormatChanged: (value) {
                               setState(() {
-                                _selectedPageFormat = value;
-                                settings.setPageFormat(value);
+                                ref
+                                    .read(settingsServiceProvider)
+                                    .setPageFormat(value);
                               });
                             },
-                            printCells: _printCells,
+                            printCells: settings.printBackground,
                             onPrintCellsChanged: (value) {
                               setState(() {
-                                _printCells = value;
-                                // TODO: save to settings
+                                ref
+                                    .read(settingsServiceProvider)
+                                    .setPrintBackground(value);
                               });
                             },
-                            printBorders: _printBorders,
+                            printBorders: settings.printBorders,
                             onPrintBordersChanged: (value) {
                               setState(() {
-                                _printBorders = value;
-                                // TODO: save to settings
+                                ref
+                                    .read(settingsServiceProvider)
+                                    .setPrintBorders(value);
                               });
                             },
-                            printNumbers: _printNumbers,
+                            printNumbers: settings.printNumbers,
                             onPrintNumbersChanged: (value) {
                               setState(() {
-                                _printNumbers = value;
-                                // TODO: save to settings
+                                ref
+                                    .read(settingsServiceProvider)
+                                    .setPrintNumbers(value);
                               });
                             },
                             pdfController: _pdfController,

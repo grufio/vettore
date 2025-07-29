@@ -36,7 +36,7 @@ class PalettesOverview extends ConsumerWidget {
                 if (nameController.text.isNotEmpty) {
                   await ref
                       .read(paletteListLogicProvider)
-                      .createNewPredefinedPalette(nameController.text);
+                      .createNewCustomPalette(nameController.text);
                   if (!context.mounted) return;
                   Navigator.of(context).pop();
                 }
@@ -51,21 +51,21 @@ class PalettesOverview extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palettesAsync = ref.watch(paletteListStreamProvider);
+    final categorized = ref.watch(categorizedPalettesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Palettes')),
       body: palettesAsync.when(
-        data: (palettes) {
-          if (palettes.isEmpty) {
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
+        data: (_) {
+          // Data is now sourced from the categorized provider
+          final customPalettes = categorized.customPalettes;
+          final imagePalettes = categorized.imagePalettes;
+
+          if (customPalettes.isEmpty && imagePalettes.isEmpty) {
             return const Center(child: Text('No palettes created yet.'));
           }
-
-          // Palettes from the '+' button have isPredefined = true
-          final customPalettes =
-              palettes.where((p) => p.palette.isPredefined).toList();
-          // Palettes from image conversion have isPredefined = false (the default)
-          final imagePalettes =
-              palettes.where((p) => !p.palette.isPredefined).toList();
 
           return ListView(
             padding: const EdgeInsets.all(8.0),
@@ -94,8 +94,6 @@ class PalettesOverview extends ConsumerWidget {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(context, ref),
