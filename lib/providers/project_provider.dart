@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:image/image.dart' as img;
 import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/application_providers.dart';
+import 'package:vettore/services/settings_service.dart';
 
 // A simple data class for vector objects that can be sent to isolates.
 class IsolateVectorObject {
@@ -38,13 +39,16 @@ class ProjectLogic {
   Future<void> convertProject() async {
     final projectRepository = ref.read(projectRepositoryProvider);
     final paletteRepository = ref.read(paletteRepositoryProvider);
+    final settings = ref.read(settingsServiceProvider);
     final project = await projectRepository.getProject(projectId);
 
     final isFirstConversion = !project.isConverted;
 
     try {
-      final result = await compute(
-          _performConversionIsolate, {'imageData': project.imageData});
+      final result = await compute(_performConversionIsolate, {
+        'imageData': project.imageData,
+        'numberOfColors': settings.maxObjectColors,
+      });
 
       final vectorObjects =
           result['vectorObjects'] as List<IsolateVectorObject>;
@@ -167,40 +171,56 @@ Map<String, dynamic> _performImageUpdate(Map<String, dynamic> params) {
 }
 
 Map<String, dynamic> _performConversionIsolate(Map<String, dynamic> params) {
-  final Uint8List imageData = params['imageData'];
-  final img.Image? imageToConvert = img.decodeImage(imageData);
+  try {
+    final Uint8List imageData = params['imageData'];
+    final int numberOfColors = params['numberOfColors'];
+    final img.Image? imageToConvert = img.decodeImage(imageData);
 
-  if (imageToConvert == null) throw Exception('Could not decode image');
-
-  final List<IsolateVectorObject> vectorObjects = [];
-  final Set<Color> uniqueColorsSet = {};
-
-  for (int y = 0; y < imageToConvert.height; y++) {
-    for (int x = 0; x < imageToConvert.width; x++) {
-      final pixel = imageToConvert.getPixel(x, y);
-      if (pixel.a > 0) {
-        final color = Color.fromARGB(
-            pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
-        uniqueColorsSet.add(color);
-        vectorObjects.add(IsolateVectorObject(x, y, color.value));
-      }
+    if (imageToConvert == null) {
+      throw Exception('Could not decode image');
     }
-  }
 
-  final uniqueColorList = uniqueColorsSet.toList();
-  final List<Map<String, dynamic>> newPalette = [];
-  for (int i = 0; i < uniqueColorList.length; i++) {
-    final color = uniqueColorList[i];
-    final hex =
-        '#${(color.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
-    newPalette.add({'title': hex, 'color': color.value});
-  }
+    // quantize function returns a new image that is indexed and has a palette.
+    final quantizedImage = img.quantize(imageToConvert,
+        numberOfColors: numberOfColors, method: img.QuantizeMethod.octree);
 
-  return {
-    'vectorObjects': vectorObjects,
-    'imageWidth': imageToConvert.width.toDouble(),
-    'imageHeight': imageToConvert.height.toDouble(),
-    'uniqueColorCount': uniqueColorsSet.length,
-    'palette': newPalette,
-  };
+    final palette = quantizedImage.palette;
+    if (palette == null) {
+      throw Exception('Quantization failed to produce a palette.');
+    }
+
+    final List<IsolateVectorObject> vectorObjects = [];
+    for (final p in quantizedImage) {
+      final index = p.index.toInt();
+      final r = palette.getRed(index).toInt();
+      final g = palette.getGreen(index).toInt();
+      final b = palette.getBlue(index).toInt();
+      final a = palette.getAlpha(index).toInt();
+      final c = Color.fromARGB(a, r, g, b);
+      vectorObjects.add(IsolateVectorObject(p.x, p.y, c.value));
+    }
+
+    final List<Map<String, dynamic>> newPalette = [];
+    for (int i = 0; i < palette.numColors; i++) {
+      final r = palette.getRed(i).toInt();
+      final g = palette.getGreen(i).toInt();
+      final b = palette.getBlue(i).toInt();
+      final a = palette.getAlpha(i).toInt();
+      final c = Color.fromARGB(a, r, g, b);
+      final hex =
+          '#${(c.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+      newPalette.add({'title': hex, 'color': c.value});
+    }
+
+    return {
+      'vectorObjects': vectorObjects,
+      'imageWidth': quantizedImage.width.toDouble(),
+      'imageHeight': quantizedImage.height.toDouble(),
+      'uniqueColorCount': palette.numColors,
+      'palette': newPalette,
+    };
+  } catch (e) {
+    debugPrint('[ProjectLogic] Error during vector conversion: $e');
+    rethrow;
+  }
 }
