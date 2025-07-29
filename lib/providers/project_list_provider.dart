@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image/image.dart' as img;
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/data/database.dart';
 
@@ -24,7 +28,32 @@ class ProjectListLogic {
 
     final newProjectCompanion = await projectService.createProjectFromFile();
     if (newProjectCompanion != null) {
-      await projectRepository.addProject(newProjectCompanion);
+      // Create a companion for the new, empty palette that will be linked.
+      final newPaletteCompanion = PalettesCompanion.insert(
+        name: '${newProjectCompanion.name.value} Palette',
+        thumbnail: Value(newProjectCompanion.thumbnailData.value),
+      );
+
+      final imageData = newProjectCompanion.imageData.value;
+      ProjectsCompanion finalProjectCompanion = newProjectCompanion;
+
+      if (imageData.isNotEmpty) {
+        final image = img.decodeImage(imageData);
+        if (image != null) {
+          final colors = <int>{};
+          for (final p in image) {
+            colors.add(img.rgbaToUint32(
+                p.r.toInt(), p.g.toInt(), p.b.toInt(), p.a.toInt()));
+          }
+          final count = colors.length;
+          finalProjectCompanion = newProjectCompanion.copyWith(
+            uniqueColorCount: Value(count),
+          );
+        }
+      }
+      // Call the new repository method to create both in a transaction.
+      await projectRepository.addProjectWithPalette(
+          finalProjectCompanion, newPaletteCompanion);
     }
   }
 

@@ -17,7 +17,7 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [
-        databaseProvider.overrideWithValue(database),
+        appDatabaseProvider.overrideWithValue(database),
       ],
       child: const VettoreApp(),
     ),

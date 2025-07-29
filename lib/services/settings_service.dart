@@ -17,6 +17,10 @@ const String _printBackgroundKey = 'printBackground';
 const String _pageFormatKey = 'pageFormat';
 const String _centerImageKey = 'centerImage';
 const String _isLandscapeKey = 'isLandscape';
+const String _colorSeparationKey = 'colorSeparation';
+const String _klKey = 'kl';
+const String _kcKey = 'kc';
+const String _khKey = 'kh';
 
 final settingsServiceProvider = Provider<SettingsService>((ref) {
   final box = Hive.box(_settingsBoxName);
@@ -71,6 +75,19 @@ class SettingsService extends ChangeNotifier {
   double get objectOutputSize => _getNumericValue(_objectOutputSizeKey, 10.0);
   Future<void> setObjectOutputSize(double value) =>
       _box.put(_objectOutputSizeKey, value);
+
+  double get colorSeparation => _getNumericValue(_colorSeparationKey, 5.0);
+  Future<void> setColorSeparation(double value) =>
+      _box.put(_colorSeparationKey, value);
+
+  double get kl => _getNumericValue(_klKey, 1.0);
+  Future<void> setKl(double value) => _box.put(_klKey, value);
+
+  double get kc => _getNumericValue(_kcKey, 1.0);
+  Future<void> setKc(double value) => _box.put(_kcKey, value);
+
+  double get kh => _getNumericValue(_khKey, 1.0);
+  Future<void> setKh(double value) => _box.put(_khKey, value);
 
   int get outputFontSize => _getNumericValue(_outputFontSizeKey, 10);
   Future<void> setOutputFontSize(int value) =>

@@ -16,6 +16,10 @@ class ConvertTabView extends StatelessWidget {
   final bool showVectors;
   final bool showBackground;
   final TextEditingController maxObjectColorsController;
+  final TextEditingController colorSeparationController;
+  final TextEditingController klController;
+  final TextEditingController kcController;
+  final TextEditingController khController;
 
   const ConvertTabView({
     super.key,
@@ -27,6 +31,10 @@ class ConvertTabView extends StatelessWidget {
     required this.showVectors,
     required this.showBackground,
     required this.maxObjectColorsController,
+    required this.colorSeparationController,
+    required this.klController,
+    required this.kcController,
+    required this.khController,
   });
 
   @override
@@ -46,10 +54,54 @@ class ConvertTabView extends StatelessWidget {
               onPressed: onShowColorSettings,
               icon: const Icon(Icons.palette_outlined),
               label: Text(
-                project.isConverted
-                    ? 'Colors: ${project.uniqueColorCount ?? 0}'
+                project.uniqueColorCount != null
+                    ? 'Colors: ${project.uniqueColorCount}'
                     : 'Colors: N/A',
               ),
+            ),
+            const Divider(height: kSpacingXl),
+            GrufioTextFieldSimple(
+              controller: colorSeparationController,
+              topLabel: 'Color Separation',
+              onChanged: (value) {
+                final val = double.tryParse(value);
+                if (val != null) {
+                  settings.setColorSeparation(val);
+                }
+              },
+            ),
+            const SizedBox(height: kSpacingS),
+            GrufioTextFieldSimple(
+              controller: klController,
+              topLabel: 'Lightness (Kl)',
+              onChanged: (value) {
+                final val = double.tryParse(value);
+                if (val != null) {
+                  settings.setKl(val);
+                }
+              },
+            ),
+            const SizedBox(height: kSpacingS),
+            GrufioTextFieldSimple(
+              controller: kcController,
+              topLabel: 'Chroma (Kc)',
+              onChanged: (value) {
+                final val = double.tryParse(value);
+                if (val != null) {
+                  settings.setKc(val);
+                }
+              },
+            ),
+            const SizedBox(height: kSpacingS),
+            GrufioTextFieldSimple(
+              controller: khController,
+              topLabel: 'Hue (Kh)',
+              onChanged: (value) {
+                final val = double.tryParse(value);
+                if (val != null) {
+                  settings.setKh(val);
+                }
+              },
             ),
             const Divider(height: kSpacingXl),
             const Text('Preview'),
@@ -75,6 +127,10 @@ class ConvertTabView extends StatelessWidget {
                 builder: (context, ref, child) {
                   return ElevatedButton.icon(
                     onPressed: () {
+                      final maxColors =
+                          int.tryParse(maxObjectColorsController.text) ?? 256;
+                      settings.setMaxObjectColors(maxColors);
+
                       if (project.isConverted) {
                         showDialog(
                           context: context,

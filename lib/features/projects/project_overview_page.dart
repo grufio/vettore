@@ -19,7 +19,7 @@ class ProjectOverviewPage extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: const Text('Delete Project'),
         content: const Text(
-          'Are you sure you want to delete this project? This action cannot be undone.',
+          'This will permanently delete the project, its converted data, and its color palette.',
         ),
         actions: [
           TextButton(
@@ -51,6 +51,17 @@ class ProjectOverviewPage extends ConsumerWidget {
         title: const Text('Projects'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.layers),
+            tooltip: 'Palettes',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const PalettesOverview(),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.library_books),
             tooltip: 'Libraries',
             onPressed: () {
@@ -70,16 +81,6 @@ class ProjectOverviewPage extends ConsumerWidget {
                 builder: (context) => const SettingsDialog(),
               );
             },
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const PalettesOverview(),
-                ),
-              );
-            },
-            child: const Text('Palettes'),
           ),
         ],
       ),

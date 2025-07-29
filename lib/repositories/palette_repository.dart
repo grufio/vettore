@@ -1,20 +1,28 @@
 import 'package:vettore/data/database.dart';
 import 'package:drift/drift.dart';
 import 'package:collection/collection.dart';
+import 'package:equatable/equatable.dart';
 
 // A data class to hold a palette and its colors
-class FullPalette {
+class FullPalette extends Equatable {
   final Palette palette;
   final List<PaletteColorWithComponents> colors;
 
-  FullPalette({required this.palette, required this.colors});
+  const FullPalette({required this.palette, required this.colors});
+
+  @override
+  List<Object?> get props => [palette, colors];
 }
 
-class PaletteColorWithComponents {
+class PaletteColorWithComponents extends Equatable {
   final PaletteColor color;
   final List<ColorComponent> components;
 
-  PaletteColorWithComponents({required this.color, required this.components});
+  const PaletteColorWithComponents(
+      {required this.color, required this.components});
+
+  @override
+  List<Object?> get props => [color, components];
 }
 
 // An intermediate class to hold the raw results of our join query.
@@ -100,13 +108,65 @@ class PaletteRepository {
     });
   }
 
+  // Updates the colors for a given palette, replacing all old colors.
+  Future<void> updatePaletteColors(
+      int paletteId, List<PaletteColorsCompanion> newColors) {
+    return _db.transaction(() async {
+      // First, delete all existing colors (and their components) for the palette.
+      final colorsInPalette = await (_db.select(_db.paletteColors)
+            ..where((c) => c.paletteId.equals(paletteId)))
+          .get();
+      final colorIds = colorsInPalette.map((c) => c.id).toList();
+
+      if (colorIds.isNotEmpty) {
+        await (_db.delete(_db.colorComponents)
+              ..where((comp) => comp.paletteColorId.isIn(colorIds)))
+            .go();
+        await (_db.delete(_db.paletteColors)
+              ..where((c) => c.paletteId.equals(paletteId)))
+            .go();
+      }
+
+      // Then, insert the new colors.
+      for (final color in newColors) {
+        await _db.into(_db.paletteColors).insert(color);
+      }
+    });
+  }
+
   // Delete a palette and all its associated colors
   Future<void> deletePalette(int id) {
+    print('[DeletePalette] Starting transaction for palette ID: $id');
     return _db.transaction(() async {
+      // First, get the IDs of all colors in the palette
+      print('[DeletePalette] Getting color IDs for palette $id...');
+      final colorsInPalette = await (_db.select(_db.paletteColors)
+            ..where((c) => c.paletteId.equals(id)))
+          .get();
+      final colorIds = colorsInPalette.map((c) => c.id).toList();
+      print('[DeletePalette] Found ${colorIds.length} colors.');
+
+      // If there are colors, delete their components first
+      if (colorIds.isNotEmpty) {
+        print(
+            '[DeletePalette] Deleting components for color IDs: $colorIds...');
+        await (_db.delete(_db.colorComponents)
+              ..where((comp) => comp.paletteColorId.isIn(colorIds)))
+            .go();
+        print('[DeletePalette] Components deleted.');
+      }
+
+      // Then delete the colors themselves
+      print('[DeletePalette] Deleting colors for palette ID: $id...');
       await (_db.delete(_db.paletteColors)
             ..where((c) => c.paletteId.equals(id)))
           .go();
+      print('[DeletePalette] Colors deleted.');
+
+      // Finally, delete the palette
+      print('[DeletePalette] Deleting palette with ID: $id...');
       await (_db.delete(_db.palettes)..where((p) => p.id.equals(id))).go();
+      print('[DeletePalette] Palette deleted. Transaction complete.');
     });
   }
 

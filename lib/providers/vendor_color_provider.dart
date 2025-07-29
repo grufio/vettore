@@ -4,6 +4,6 @@ import 'package:vettore/providers/application_providers.dart';
 
 final vendorColorsProvider =
     FutureProvider.autoDispose<List<VendorColorWithVariants>>((ref) async {
-  final db = ref.watch(databaseProvider);
+  final db = ref.watch(appDatabaseProvider);
   return db.allVendorColorsWithVariants;
 });

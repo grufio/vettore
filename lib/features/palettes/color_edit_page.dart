@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:vettore/services/ai_service.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/widgets/import_recipe_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,8 +37,6 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   final _titleFocusNode = FocusNode();
   final _statusFocusNode = FocusNode();
 
-  late final AIService _aiService;
-
   @override
   void initState() {
     super.initState();
@@ -50,7 +47,6 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
     _currentColor = Color(widget.initialColor.color.color);
     _components =
         widget.initialColor.components.map((c) => c.toCompanion(true)).toList();
-    _aiService = AIService(settingsService: ref.read(settingsServiceProvider));
   }
 
   @override
@@ -67,44 +63,10 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
       context: context,
       builder: (context) => ImportRecipeDialog(
         onImageImported: (imageData) async {
-          await _importFromImage(imageData);
+          // await _importFromImage(imageData);
         },
       ),
     );
-  }
-
-  Future<void> _importFromImage(Uint8List imageData) async {
-    final vendorColors = await ref.read(vendorColorsProvider.future);
-    final result = await _aiService.importRecipeFromImage(imageData);
-
-    final componentsData = result['components'] as List<dynamic>? ?? [];
-
-    final newComponents = <ColorComponentsCompanion>[];
-    for (final item in componentsData) {
-      final name = item['name'] as String?;
-      final percentage = item['percentage'] as num?;
-
-      if (name != null && percentage != null) {
-        // Find the corresponding vendor color variant by name (case-insensitive)
-        final vendorColor = vendorColors.firstWhere(
-          (vc) => vc.color.name.toLowerCase() == name.toLowerCase(),
-          orElse: () =>
-              throw Exception('Vendor color not found for name: "$name"'),
-        );
-        final variant = vendorColor.variants.first;
-
-        newComponents.add(
-          ColorComponentsCompanion(
-            vendorColorId: drift.Value(vendorColor.color.id),
-            percentage: drift.Value(percentage.toDouble()),
-          ),
-        );
-      }
-    }
-
-    setState(() {
-      _components = newComponents;
-    });
   }
 
   void _save() {
@@ -318,11 +280,6 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
             icon: const Icon(Icons.settings),
             tooltip: 'Color Settings',
             onPressed: _showColorSettingsDialog,
-          ),
-          IconButton(
-            icon: const Icon(Icons.import_export),
-            tooltip: 'Import Recipe',
-            onPressed: isApiEnabled ? _showImportDialog : null,
           ),
         ],
       ),

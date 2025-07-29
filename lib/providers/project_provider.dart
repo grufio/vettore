@@ -1,9 +1,12 @@
 import 'dart:ui';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/services/settings_service.dart';
@@ -41,54 +44,84 @@ class ProjectLogic {
     final paletteRepository = ref.read(paletteRepositoryProvider);
     final settings = ref.read(settingsServiceProvider);
     final project = await projectRepository.getProject(projectId);
-
-    final isFirstConversion = !project.isConverted;
+    int paletteId = project.paletteId ?? -1;
 
     try {
-      final result = await compute(_performConversionIsolate, {
-        'imageData': project.imageData,
-        'numberOfColors': settings.maxObjectColors,
-      });
-
-      final vectorObjects =
-          result['vectorObjects'] as List<IsolateVectorObject>;
-      final vectorObjectsJson = jsonEncode(vectorObjects);
-
-      if (isFirstConversion) {
+      // Step 1 of the new workflow: Handle legacy projects without a palette.
+      if (project.paletteId == null) {
         final newPalette = PalettesCompanion.insert(
           name: '${project.name} Palette',
           thumbnail: Value(project.thumbnailData),
         );
-        final colors = (result['palette'] as List<Map<String, dynamic>>)
-            .map((c) => PaletteColorsCompanion.insert(
-                  title: c['title']!,
-                  color: c['color']!,
-                  paletteId: -1, // This will be set later
-                ))
-            .toList();
-
-        final newPaletteKey =
-            await paletteRepository.addPalette(newPalette, colors);
-
-        final updatedProject = project.toCompanion(false).copyWith(
-              vectorObjects: Value(vectorObjectsJson),
-              imageWidth: Value(result['imageWidth']),
-              imageHeight: Value(result['imageHeight']),
-              isConverted: const Value(true),
-              uniqueColorCount: Value(result['uniqueColorCount']),
-              paletteId: Value(newPaletteKey),
-            );
-        await projectRepository.updateProject(updatedProject);
-      } else {
-        final updatedProject = project.toCompanion(false).copyWith(
-              vectorObjects: Value(vectorObjectsJson),
-              imageWidth: Value(result['imageWidth']),
-              imageHeight: Value(result['imageHeight']),
-              isConverted: const Value(true),
-              uniqueColorCount: Value(result['uniqueColorCount']),
-            );
-        await projectRepository.updateProject(updatedProject);
+        paletteId = await paletteRepository.addPalette(newPalette, []);
       }
+
+      final tempDir = await getTemporaryDirectory();
+      final scriptPath = '${tempDir.path}/quantize.py';
+      final scriptContent = await rootBundle.loadString('scripts/quantize.py');
+      final scriptFile = File(scriptPath);
+      await scriptFile.writeAsString(scriptContent);
+
+      final inputPath = '${tempDir.path}/temp_in.png';
+      final outputPath = '${tempDir.path}/temp_out.png';
+      final inputFile = File(inputPath);
+      await inputFile.writeAsBytes(project.imageData);
+
+      final result = await Process.run('python3', [
+        scriptPath,
+        inputPath,
+        outputPath,
+        settings.maxObjectColors.toString(),
+        settings.colorSeparation.toString(),
+        settings.kl.toString(),
+        settings.kc.toString(),
+        settings.kh.toString(),
+      ]);
+
+      if (result.exitCode != 0) {
+        throw Exception('Python script failed: ${result.stderr}');
+      }
+
+      final newImageData = await File(outputPath).readAsBytes();
+      final paletteJson = result.stdout as String;
+      final paletteList =
+          (jsonDecode(paletteJson) as List).map((c) => c as List).toList();
+
+      await scriptFile.delete();
+      await inputFile.delete();
+      await File(outputPath).delete();
+
+      final resultData = await compute(_performPostProcessingIsolate, {
+        'imageData': newImageData,
+        'palette': paletteList,
+      });
+
+      final vectorObjects =
+          resultData['vectorObjects'] as List<IsolateVectorObject>;
+      final vectorObjectsJson = jsonEncode(vectorObjects);
+
+      // Step 2 & 3 of the new workflow: Update the existing palette with the new colors.
+      final newColors = (resultData['palette'] as List<Map<String, dynamic>>)
+          .map((c) => PaletteColorsCompanion.insert(
+                title: c['title']!,
+                color: c['color']!,
+                paletteId: paletteId, // Link to the existing palette
+              ))
+          .toList();
+
+      await paletteRepository.updatePaletteColors(paletteId, newColors);
+
+      // Update the project with the new conversion data
+      final updatedProject = project.toCompanion(false).copyWith(
+            imageData: Value(newImageData),
+            vectorObjects: Value(vectorObjectsJson),
+            imageWidth: Value(resultData['imageWidth']),
+            imageHeight: Value(resultData['imageHeight']),
+            isConverted: const Value(true),
+            uniqueColorCount: Value(resultData['uniqueColorCount']),
+            paletteId: Value(paletteId),
+          );
+      await projectRepository.updateProject(updatedProject);
     } catch (e) {
       debugPrint('[ProjectLogic] Error during vector conversion: $e');
     }
@@ -99,21 +132,76 @@ class ProjectLogic {
     final projectRepository = ref.read(projectRepositoryProvider);
     final project = await projectRepository.getProject(projectId);
 
+    if (project.originalImageData == null) {
+      debugPrint('[ProjectLogic] Error: Original image data is null.');
+      return;
+    }
+
     try {
-      final result = await compute(_performImageUpdate, {
-        'imageData': project.originalImageData!,
-        'scalePercent': scalePercent,
-        'filterQuality': filterQuality,
-      });
+      final tempDir = await getTemporaryDirectory();
+
+      // 1. Write the script from assets to a temp file
+      final scriptPath = '${tempDir.path}/resize.py';
+      final scriptContent = await rootBundle.loadString('scripts/resize.py');
+      final scriptFile = File(scriptPath);
+      await scriptFile.writeAsString(scriptContent);
+
+      // 2. Write the original image to a temp input file
+      final inputPath = '${tempDir.path}/resize_in.png';
+      final inputFile = File(inputPath);
+      await inputFile.writeAsBytes(project.originalImageData!);
+
+      // 3. Define the output path
+      final outputPath = '${tempDir.path}/resize_out.png';
+
+      // 4. Determine interpolation
+      final interpolation =
+          filterQuality == FilterQuality.high ? 'cubic' : 'nearest';
+
+      // 5. Execute the script
+      final result = await Process.run('python3', [
+        scriptPath,
+        inputPath,
+        outputPath,
+        scalePercent.toString(),
+        interpolation,
+      ]);
+
+      if (result.exitCode != 0) {
+        throw Exception('Python resize script failed: ${result.stderr}');
+      }
+
+      // 6. Read the results
+      final newImageData = await File(outputPath).readAsBytes();
+      final dimensionsJson = jsonDecode(result.stdout as String);
+      final newWidth = (dimensionsJson['width'] as int).toDouble();
+      final newHeight = (dimensionsJson['height'] as int).toDouble();
+
+      // 7. Clean up temp files
+      await scriptFile.delete();
+      await inputFile.delete();
+      await File(outputPath).delete();
+
+      // This part remains similar: calculate unique colors and update the DB
+      int uniqueColorCount = 0;
+      final image = img.decodeImage(newImageData);
+      if (image != null) {
+        final colors = <int>{};
+        for (final p in image) {
+          colors.add(img.rgbaToUint32(
+              p.r.toInt(), p.g.toInt(), p.b.toInt(), p.a.toInt()));
+        }
+        uniqueColorCount = colors.length;
+      }
 
       final updatedProject = project.toCompanion(false).copyWith(
-            imageData: Value(result['imageData'] as Uint8List),
-            imageWidth: Value(result['width'] as double),
-            imageHeight: Value(result['height'] as double),
+            imageData: Value(newImageData),
+            imageWidth: Value(newWidth),
+            imageHeight: Value(newHeight),
             filterQualityIndex: Value(filterQuality.index),
             isConverted: const Value(false),
             vectorObjects: const Value('[]'), // Reset conversion data
-            uniqueColorCount: const Value(0),
+            uniqueColorCount: Value(uniqueColorCount),
           );
       await projectRepository.updateProject(updatedProject);
     } catch (e) {
@@ -123,7 +211,26 @@ class ProjectLogic {
 
   Future<void> resetImage() async {
     final projectRepository = ref.read(projectRepositoryProvider);
+    final paletteRepository = ref.read(paletteRepositoryProvider);
     final project = await projectRepository.getProject(projectId);
+
+    // If the project has an associated palette, delete it.
+    if (project.paletteId != null) {
+      await paletteRepository.deletePalette(project.paletteId!);
+    }
+
+    int uniqueColorCount = 0;
+    if (project.originalImageData != null) {
+      final image = img.decodeImage(project.originalImageData!);
+      if (image != null) {
+        final colors = <int>{};
+        for (final p in image) {
+          colors.add(img.rgbaToUint32(
+              p.r.toInt(), p.g.toInt(), p.b.toInt(), p.a.toInt()));
+        }
+        uniqueColorCount = colors.length;
+      }
+    }
 
     final updatedProject = project.toCompanion(false).copyWith(
           imageData: Value(project.originalImageData!),
@@ -132,7 +239,8 @@ class ProjectLogic {
           filterQualityIndex: const Value(1), // Default high quality
           isConverted: const Value(false),
           vectorObjects: const Value('[]'),
-          uniqueColorCount: const Value(0),
+          uniqueColorCount: Value(uniqueColorCount),
+          paletteId: const Value(null),
         );
     await projectRepository.updateProject(updatedProject);
   }
@@ -140,87 +248,51 @@ class ProjectLogic {
 
 // --- ISOLATE FUNCTIONS ---
 
-Map<String, dynamic> _performImageUpdate(Map<String, dynamic> params) {
+Map<String, dynamic> _performPostProcessingIsolate(
+    Map<String, dynamic> params) {
   final Uint8List imageData = params['imageData'];
-  final double scalePercent = params['scalePercent'];
-  final FilterQuality filterQuality = params['filterQuality'];
+  final List<List<dynamic>> paletteList = params['palette'];
 
-  final originalImage = img.decodeImage(imageData);
-  if (originalImage == null) throw Exception('Could not decode image.');
+  final img.Image? imageToConvert = img.decodeImage(imageData);
 
-  final newWidth = (originalImage.width * scalePercent / 100).round();
-  final newHeight = (originalImage.height * scalePercent / 100).round();
+  if (imageToConvert == null) {
+    throw Exception('Could not decode image');
+  }
 
-  final interpolation = switch (filterQuality) {
-    FilterQuality.high => img.Interpolation.cubic,
-    _ => img.Interpolation.nearest,
-  };
+  // Create a map for quick color lookup
+  final paletteMap = <int, int>{};
+  for (int i = 0; i < paletteList.length; i++) {
+    final color = paletteList[i];
+    final r = color[0] as int;
+    final g = color[1] as int;
+    final b = color[2] as int;
+    final c = Color.fromARGB(255, r, g, b);
+    paletteMap[c.value] = i;
+  }
 
-  final resizedImage = img.copyResize(
-    originalImage,
-    width: newWidth > 0 ? newWidth : 1,
-    height: newHeight > 0 ? newHeight : 1,
-    interpolation: interpolation,
-  );
+  final List<IsolateVectorObject> vectorObjects = [];
+  for (final p in imageToConvert) {
+    final c =
+        Color.fromARGB(p.a.toInt(), p.r.toInt(), p.g.toInt(), p.b.toInt());
+    vectorObjects.add(IsolateVectorObject(p.x, p.y, c.value));
+  }
+
+  final List<Map<String, dynamic>> newPalette = [];
+  for (final color in paletteList) {
+    final r = color[0] as int;
+    final g = color[1] as int;
+    final b = color[2] as int;
+    final c = Color.fromARGB(255, r, g, b);
+    final hex =
+        '#${(c.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+    newPalette.add({'title': hex, 'color': c.value});
+  }
 
   return {
-    'imageData': Uint8List.fromList(img.encodePng(resizedImage)),
-    'width': resizedImage.width.toDouble(),
-    'height': resizedImage.height.toDouble(),
+    'vectorObjects': vectorObjects,
+    'imageWidth': imageToConvert.width.toDouble(),
+    'imageHeight': imageToConvert.height.toDouble(),
+    'uniqueColorCount': paletteList.length,
+    'palette': newPalette,
   };
-}
-
-Map<String, dynamic> _performConversionIsolate(Map<String, dynamic> params) {
-  try {
-    final Uint8List imageData = params['imageData'];
-    final int numberOfColors = params['numberOfColors'];
-    final img.Image? imageToConvert = img.decodeImage(imageData);
-
-    if (imageToConvert == null) {
-      throw Exception('Could not decode image');
-    }
-
-    // quantize function returns a new image that is indexed and has a palette.
-    final quantizedImage = img.quantize(imageToConvert,
-        numberOfColors: numberOfColors, method: img.QuantizeMethod.octree);
-
-    final palette = quantizedImage.palette;
-    if (palette == null) {
-      throw Exception('Quantization failed to produce a palette.');
-    }
-
-    final List<IsolateVectorObject> vectorObjects = [];
-    for (final p in quantizedImage) {
-      final index = p.index.toInt();
-      final r = palette.getRed(index).toInt();
-      final g = palette.getGreen(index).toInt();
-      final b = palette.getBlue(index).toInt();
-      final a = palette.getAlpha(index).toInt();
-      final c = Color.fromARGB(a, r, g, b);
-      vectorObjects.add(IsolateVectorObject(p.x, p.y, c.value));
-    }
-
-    final List<Map<String, dynamic>> newPalette = [];
-    for (int i = 0; i < palette.numColors; i++) {
-      final r = palette.getRed(i).toInt();
-      final g = palette.getGreen(i).toInt();
-      final b = palette.getBlue(i).toInt();
-      final a = palette.getAlpha(i).toInt();
-      final c = Color.fromARGB(a, r, g, b);
-      final hex =
-          '#${(c.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
-      newPalette.add({'title': hex, 'color': c.value});
-    }
-
-    return {
-      'vectorObjects': vectorObjects,
-      'imageWidth': quantizedImage.width.toDouble(),
-      'imageHeight': quantizedImage.height.toDouble(),
-      'uniqueColorCount': palette.numColors,
-      'palette': newPalette,
-    };
-  } catch (e) {
-    debugPrint('[ProjectLogic] Error during vector conversion: $e');
-    rethrow;
-  }
 }

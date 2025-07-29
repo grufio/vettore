@@ -59,7 +59,8 @@ class PalettesOverview extends ConsumerWidget {
       builder: (BuildContext context) {
         return AdaptiveDialog(
           title: 'Delete Palette',
-          content: Text('Are you sure you want to delete "$paletteName"?'),
+          content: Text(
+              'This will reset the associated project and its conversion data. You will need to convert it again.'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),

@@ -52,6 +52,7 @@ dependencies:
   desktop_drop: ^0.4.4
   super_clipboard: ^0.8.6
   collection: ^1.18.0
+  equatable: ^2.0.7
 
 dev_dependencies:
   flutter_test:
@@ -84,6 +85,8 @@ flutter:
   assets:
     - assets/images/libraries/schmincke/norma/
     - lib/input/norma_pro_color_codes.csv
+    - scripts/quantize.py
+    - scripts/resize.py
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

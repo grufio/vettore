@@ -1,4 +1,5 @@
 import 'package:vettore/data/database.dart';
+import 'package:drift/drift.dart';
 
 class ProjectRepository {
   final AppDatabase _db;
@@ -27,9 +28,26 @@ class ProjectRepository {
         .getSingle();
   }
 
+  // Find a project by its palette ID
+  Future<Project?> findProjectByPaletteId(int paletteId) {
+    return (_db.select(_db.projects)
+          ..where((p) => p.paletteId.equals(paletteId)))
+        .getSingleOrNull();
+  }
+
   // Add a new project
   Future<int> addProject(ProjectsCompanion project) {
     return _db.into(_db.projects).insert(project);
+  }
+
+  // Add a new project and its associated empty palette in a transaction
+  Future<void> addProjectWithPalette(
+      ProjectsCompanion project, PalettesCompanion palette) async {
+    return _db.transaction(() async {
+      final paletteId = await _db.into(_db.palettes).insert(palette);
+      final projectWithPalette = project.copyWith(paletteId: Value(paletteId));
+      await _db.into(_db.projects).insert(projectWithPalette);
+    });
   }
 
   // Delete a project by its ID

@@ -43,6 +43,10 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   late final TextEditingController _outputFontSizeController;
   late final TextEditingController _customPageWidthController;
   late final TextEditingController _customPageHeightController;
+  late final TextEditingController _colorSeparationController;
+  late final TextEditingController _klController;
+  late final TextEditingController _kcController;
+  late final TextEditingController _khController;
   bool _printCells = true;
   bool _printBorders = true;
   bool _printNumbers = true;
@@ -81,6 +85,18 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     _customPageHeightController = TextEditingController(
       text: settings.customPageHeight.toString(),
     );
+    _colorSeparationController = TextEditingController(
+      text: settings.colorSeparation.toString(),
+    );
+    _klController = TextEditingController(
+      text: settings.kl.toString(),
+    );
+    _kcController = TextEditingController(
+      text: settings.kc.toString(),
+    );
+    _khController = TextEditingController(
+      text: settings.kh.toString(),
+    );
     _printCells = settings.printBackground;
     _selectedPageFormat = settings.pageFormat;
   }
@@ -94,6 +110,10 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     _outputFontSizeController.dispose();
     _customPageWidthController.dispose();
     _customPageHeightController.dispose();
+    _colorSeparationController.dispose();
+    _klController.dispose();
+    _kcController.dispose();
+    _khController.dispose();
     super.dispose();
   }
 
@@ -335,6 +355,11 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                             settings: settings,
                             maxObjectColorsController:
                                 _maxObjectColorsController,
+                            colorSeparationController:
+                                _colorSeparationController,
+                            klController: _klController,
+                            kcController: _kcController,
+                            khController: _khController,
                             showVectors: _showVectors,
                             showBackground: _showBackground,
                             onShowColorSettings: _showColorSettingsDialog,

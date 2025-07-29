@@ -1,38 +1,33 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/data/database.dart';
+import 'package:vettore/repositories/palette_repository.dart';
 import 'package:vettore/repositories/project_repository.dart';
 import 'package:vettore/services/project_service.dart';
-import 'package:vettore/repositories/palette_repository.dart';
+import 'package:vettore/services/settings_service.dart';
 
 //-
+// Database Provider
 //-
-//-         CORE DATA PROVIDERS
-//-
-//-
-
-// The single instance of our database
-final databaseProvider = Provider<AppDatabase>((ref) {
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return AppDatabase();
 });
 
-// The single instance of our project repository
+//-
+// Repository Providers
+//-
 final projectRepositoryProvider = Provider<ProjectRepository>((ref) {
-  final db = ref.watch(databaseProvider);
+  final db = ref.watch(appDatabaseProvider);
   return ProjectRepository(db);
 });
 
-// The single instance of our palette repository
 final paletteRepositoryProvider = Provider<PaletteRepository>((ref) {
-  final db = ref.watch(databaseProvider);
+  final db = ref.watch(appDatabaseProvider);
   return PaletteRepository(db);
 });
 
 //-
+// Service Providers
 //-
-//-         SERVICE PROVIDERS
-//-
-//-
-
 final projectServiceProvider = Provider<ProjectService>((ref) {
   return ProjectService();
 });
