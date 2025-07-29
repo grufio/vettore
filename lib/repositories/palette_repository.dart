@@ -215,4 +215,24 @@ class PaletteRepository {
           ..where((c) => c.paletteColorId.equals(paletteColorId)))
         .watch();
   }
+
+  // Find a vendor color by its name (case-insensitive)
+  Future<VendorColor?> findVendorColorByName(String name) {
+    return (_db.select(_db.vendorColors)
+          ..where((c) => c.name.lower().equals(name.toLowerCase())))
+        .getSingleOrNull();
+  }
+
+  // Create a new palette color with a list of components in a transaction
+  Future<void> addColorWithComponents(
+      PaletteColorsCompanion color, List<ColorComponentsCompanion> components) {
+    return _db.transaction(() async {
+      final colorId = await _db.into(_db.paletteColors).insert(color);
+      for (final component in components) {
+        await _db
+            .into(_db.colorComponents)
+            .insert(component.copyWith(paletteColorId: Value(colorId)));
+      }
+    });
+  }
 }

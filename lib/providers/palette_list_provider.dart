@@ -1,3 +1,7 @@
+import 'dart:typed_data';
+
+import 'package:drift/drift.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/application_providers.dart';
@@ -39,6 +43,78 @@ class PaletteListLogic {
     } else {
       // If no project is found (orphaned palette), just delete the palette.
       await paletteRepository.deletePalette(id);
+    }
+  }
+
+  Future<void> createPaletteFromAiRecipe(
+      Uint8List imageData, String paletteName) async {
+    final aiService = _ref.read(aiServiceProvider);
+    final paletteRepository = _ref.read(paletteRepositoryProvider);
+
+    // 1. Get the recipe from the AI service
+    final recipeData = await aiService.importRecipeFromImage(imageData);
+    final componentsData = recipeData['components'] as List<dynamic>? ?? [];
+
+    if (componentsData.isEmpty) {
+      throw Exception('AI could not find any color components in the image.');
+    }
+
+    // 2. Create the new palette
+    final newPalette = PalettesCompanion.insert(name: paletteName);
+    final paletteId = await paletteRepository.addPalette(newPalette, []);
+
+    // 3. Process each color component from the recipe
+    for (final colorData in componentsData) {
+      final colorName = colorData['name'] as String?;
+      if (colorName == null) continue;
+
+      final colorComponentsList = <ColorComponentsCompanion>[];
+      double totalPercentage = 0;
+
+      // Assuming `colorData['components']` is the list of vendor colors
+      final subComponents = colorData['components'] as List<dynamic>? ?? [];
+
+      for (final componentData in subComponents) {
+        final vendorColorName = componentData['name'] as String?;
+        final percentage = (componentData['percentage'] as num?)?.toDouble();
+
+        if (vendorColorName == null || percentage == null) continue;
+
+        final vendorColor =
+            await paletteRepository.findVendorColorByName(vendorColorName);
+        if (vendorColor != null) {
+          colorComponentsList.add(
+            ColorComponentsCompanion.insert(
+              paletteColorId: -1, // Dummy ID, will be replaced in repo
+              vendorColorId: vendorColor.id,
+              percentage: percentage,
+            ),
+          );
+          totalPercentage += percentage;
+        }
+      }
+
+      if (colorComponentsList.isNotEmpty) {
+        // Normalize percentages if they don't add up to 100
+        if (totalPercentage != 100.0 && totalPercentage > 0) {
+          for (int i = 0; i < colorComponentsList.length; i++) {
+            final oldComp = colorComponentsList[i];
+            colorComponentsList[i] = oldComp.copyWith(
+              percentage:
+                  Value((oldComp.percentage.value / totalPercentage) * 100.0),
+            );
+          }
+        }
+
+        // TODO: Calculate the mixed color
+        final newColor = PaletteColorsCompanion.insert(
+          paletteId: paletteId,
+          title: colorName,
+          color: Colors.grey.value, // Placeholder color
+        );
+        await paletteRepository.addColorWithComponents(
+            newColor, colorComponentsList);
+      }
     }
   }
 }

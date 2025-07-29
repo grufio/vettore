@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/data/database.dart';
@@ -73,5 +75,63 @@ class PaletteDetailLogic {
 
   Future<void> deleteComponent(int componentId) async {
     await _paletteRepository.deleteComponent(componentId);
+  }
+
+  Future<void> importAiRecipe(
+      int paletteId, int colorId, Uint8List imageData) async {
+    final aiService = _ref.read(aiServiceProvider);
+
+    try {
+      // 1. Get the recipe from the AI service
+      final recipeData = await aiService.importRecipeFromImage(imageData);
+      final componentsData = recipeData['components'] as List<dynamic>;
+
+      final newComponents = <ColorComponentsCompanion>[];
+      for (final componentData in componentsData) {
+        final vendorColorName = componentData['name'] as String?;
+        final percentage = (componentData['percentage'] as num?)?.toDouble();
+
+        if (vendorColorName == null || percentage == null) continue;
+
+        final vendorColor =
+            await _paletteRepository.findVendorColorByName(vendorColorName);
+        if (vendorColor != null) {
+          newComponents.add(
+            ColorComponentsCompanion.insert(
+              paletteColorId: colorId,
+              vendorColorId: vendorColor.id,
+              percentage: percentage,
+            ),
+          );
+        }
+      }
+
+      if (newComponents.isEmpty) {
+        throw Exception(
+            'Could not match any of the AI-detected colors to the vendor library.');
+      }
+
+      // 2. Get the full, existing color object to satisfy the `replace` operation.
+      final fullPalette =
+          await _ref.read(paletteDetailStreamProvider(paletteId).future);
+      final existingColor =
+          fullPalette.colors.firstWhere((c) => c.color.id == colorId);
+
+      // 3. Create a complete companion for the update.
+      final colorToUpdate = PaletteColorsCompanion(
+        id: Value(colorId),
+        paletteId: Value(existingColor.color.paletteId),
+        title: Value(existingColor.color.title),
+        color: Value(existingColor.color.color),
+        status: Value(existingColor.color.status),
+      );
+
+      // 4. Replace the old components with the new ones.
+      await _paletteRepository.updateColorWithComponents(
+          colorToUpdate, newComponents);
+    } catch (e) {
+      // Rethrow the exception to be caught by the UI layer
+      rethrow;
+    }
   }
 }

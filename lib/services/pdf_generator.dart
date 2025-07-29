@@ -13,7 +13,7 @@ class PdfVectorObject {
   PdfVectorObject({required this.x, required this.y, required this.color});
 }
 
-Future<void> generateVectorPdf({
+Future<Uint8List> generateVectorPdf({
   required List<PdfVectorObject> vectorObjects,
   required Size imageSize,
   required double objectOutputSize,
@@ -95,13 +95,5 @@ Future<void> generateVectorPdf({
       },
     ),
   );
-  try {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/vettore_output.pdf');
-    await file.writeAsBytes(await pdf.save());
-    await OpenFile.open(file.path);
-  } catch (e) {
-    // Handle error
-    debugPrint('Error generating or opening PDF: $e');
-  }
+  return pdf.save();
 }

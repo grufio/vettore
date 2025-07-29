@@ -4,6 +4,7 @@ import 'package:vettore/repositories/palette_repository.dart';
 import 'package:vettore/repositories/project_repository.dart';
 import 'package:vettore/services/project_service.dart';
 import 'package:vettore/services/settings_service.dart';
+import 'package:vettore/services/ai_service.dart';
 
 //-
 // Database Provider
@@ -30,4 +31,9 @@ final paletteRepositoryProvider = Provider<PaletteRepository>((ref) {
 //-
 final projectServiceProvider = Provider<ProjectService>((ref) {
   return ProjectService();
+});
+
+final aiServiceProvider = Provider<AIService>((ref) {
+  final settingsService = ref.watch(settingsServiceProvider);
+  return AIService(settingsService: settingsService);
 });

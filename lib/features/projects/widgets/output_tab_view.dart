@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:vettore/constants/ui_constants.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/widgets/grufio_text_field_simple.dart';
@@ -7,6 +8,7 @@ import 'package:vettore/widgets/grufio_checkbox.dart';
 
 class OutputTabView extends StatelessWidget {
   final SettingsService settings;
+  final PdfViewerController pdfController;
   final TextEditingController objectOutputSizeController;
   final TextEditingController outputFontSizeController;
   final TextEditingController customPageWidthController;
@@ -27,6 +29,7 @@ class OutputTabView extends StatelessWidget {
   const OutputTabView({
     super.key,
     required this.settings,
+    required this.pdfController,
     required this.objectOutputSizeController,
     required this.outputFontSizeController,
     required this.customPageWidthController,
@@ -52,6 +55,32 @@ class OutputTabView extends StatelessWidget {
         padding: const EdgeInsets.all(kSpacingM),
         child: Column(
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.zoom_in),
+                  onPressed: () =>
+                      pdfController.zoomLevel = pdfController.zoomLevel + 0.25,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.zoom_out),
+                  onPressed: () =>
+                      pdfController.zoomLevel = pdfController.zoomLevel - 0.25,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.fullscreen),
+                  onPressed: () =>
+                      pdfController.zoomLevel = 0, // 0 means fit to screen
+                ),
+                IconButton(
+                  icon: const Icon(Icons.fullscreen_exit),
+                  onPressed: () =>
+                      pdfController.zoomLevel = 1.0, // 1.0 is actual size
+                ),
+              ],
+            ),
+            const Divider(),
             GrufioTextFieldSimple(
               controller: objectOutputSizeController,
               topLabel: 'Object Output Size (mm)',
@@ -156,9 +185,9 @@ class OutputTabView extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: canGenerate ? onGenerate : null,
                   icon: const Icon(
-                    Icons.picture_as_pdf_outlined,
+                    Icons.preview_outlined,
                   ),
-                  label: const Text('Generate PDF'),
+                  label: const Text('Update Preview'),
                 ),
               ),
           ],

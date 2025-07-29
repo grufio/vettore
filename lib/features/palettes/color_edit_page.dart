@@ -58,12 +58,34 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
     super.dispose();
   }
 
+  Future<void> _importFromImage(Uint8List imageData) async {
+    try {
+      await ref
+          .read(paletteDetailLogicProvider(widget.initialColor.color.paletteId))
+          .importAiRecipe(widget.initialColor.color.paletteId,
+              widget.initialColor.color.id, imageData);
+      if (mounted) {
+        Navigator.of(context).pop(); // Close the import dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Recipe imported successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Close the import dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error importing recipe: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   void _showImportDialog() {
     showDialog(
       context: context,
       builder: (context) => ImportRecipeDialog(
         onImageImported: (imageData) async {
-          // await _importFromImage(imageData);
+          await _importFromImage(imageData);
         },
       ),
     );
@@ -276,6 +298,12 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
       appBar: AppBar(
         title: Text(widget.initialColor.color.title),
         actions: [
+          if (isApiEnabled)
+            IconButton(
+              icon: const Icon(Icons.cloud_upload_outlined),
+              tooltip: 'Import AI Recipe',
+              onPressed: _showImportDialog,
+            ),
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Color Settings',

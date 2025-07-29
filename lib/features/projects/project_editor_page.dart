@@ -15,6 +15,7 @@ import 'package:vettore/features/projects/widgets/image_tab_view.dart';
 import 'package:vettore/features/projects/widgets/convert_tab_view.dart';
 import 'package:vettore/features/projects/widgets/output_tab_view.dart';
 import 'package:vettore/features/projects/widgets/grid_tab_view.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class ProjectEditorPage extends ConsumerStatefulWidget {
   final int projectId;
@@ -34,10 +35,12 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     with SingleTickerProviderStateMixin {
   bool _showVectors = true;
   bool _showBackground = true;
+  late final PdfViewerController _pdfController;
 
   // State for the decoded image
   ui.Image? _decodedImage;
   Uint8List? _loadedImageData;
+  Uint8List? _pdfData;
 
   late final TextEditingController _maxObjectColorsController;
   late final TextEditingController _objectOutputSizeController;
@@ -66,6 +69,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   @override
   void initState() {
     super.initState();
+    _pdfController = PdfViewerController();
     final settings = ref.read(settingsServiceProvider);
     _tabController = TabController(length: 4, vsync: this);
     _tabController!.addListener(_handleTabSelection);
@@ -173,7 +177,25 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       List<DisplayVectorObject> displayObjects, SettingsService settings) {
     final currentTabIndex = _tabController?.index ?? 0;
 
-    if (currentTabIndex == 0) {
+    if (currentTabIndex == 3) {
+      if (_pdfData != null) {
+        // Viewer for PDF Tab with data
+        return Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+          ),
+          child: SfPdfViewer.memory(
+            _pdfData!,
+            controller: _pdfController,
+          ),
+        );
+      } else {
+        // Placeholder for PDF Tab without data
+        return const Center(
+          child: Text('No preview generated'),
+        );
+      }
+    } else if (currentTabIndex == 0) {
       // Viewer for Image Tab
       return InteractiveViewer(
         minScale: 1.0,
@@ -235,7 +257,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
             DisplayVectorObject(obj['x'], obj['y'], Color(obj['color'] as int)))
         .toList();
 
-    await generateVectorPdf(
+    final pdfBytes = await generateVectorPdf(
       vectorObjects: displayObjects
           .map((e) => PdfVectorObject(x: e.x, y: e.y, color: e.color))
           .toList(),
@@ -248,7 +270,12 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       originalImageData: project.imageData,
       pageFormat: pageFormat,
     );
-    if (mounted) setState(() => _isSaving = false);
+    if (mounted) {
+      setState(() {
+        _pdfData = pdfBytes;
+        _isSaving = false;
+      });
+    }
   }
 
   void _showColorSettingsDialog() {
@@ -397,6 +424,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                           ),
                           OutputTabView(
                             settings: settings,
+                            pdfController: _pdfController,
                             objectOutputSizeController:
                                 _objectOutputSizeController,
                             outputFontSizeController: _outputFontSizeController,
