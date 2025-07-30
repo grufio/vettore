@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:vettore/constants/ui_constants.dart';
 import 'package:vettore/services/settings_service.dart';
@@ -56,30 +55,6 @@ class OutputTabView extends StatelessWidget {
         padding: const EdgeInsets.all(kSpacingM),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.zoom_in),
-                  onPressed: () =>
-                      pdfController.zoomLevel = pdfController.zoomLevel + 0.25,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.zoom_out),
-                  onPressed: () =>
-                      pdfController.zoomLevel = pdfController.zoomLevel - 0.25,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.fullscreen),
-                  onPressed: () => pdfController.zoomLevel = 0,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.fullscreen_exit),
-                  onPressed: () => pdfController.zoomLevel = 1.0,
-                ),
-              ],
-            ),
-            const Divider(),
             GrufioTextFieldSimple(
               controller: objectOutputSizeController,
               topLabel: 'Object Output Size (mm)',

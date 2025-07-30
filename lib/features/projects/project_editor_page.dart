@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdf/pdf.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:vettore/data/database.dart';
-import 'package:vettore/features/projects/widgets/resize_dialog.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/services/pdf_generator.dart';
 import 'package:vettore/services/settings_service.dart';
@@ -16,6 +15,8 @@ import 'package:vettore/features/projects/widgets/image_tab_view.dart';
 import 'package:vettore/features/projects/widgets/convert_tab_view.dart';
 import 'package:vettore/features/projects/widgets/output_tab_view.dart';
 import 'package:vettore/features/projects/widgets/grid_tab_view.dart';
+import 'package:vettore/widgets/grufio_section.dart';
+import 'package:vettore/widgets/grufio_tabs.dart';
 
 class ProjectEditorPage extends ConsumerStatefulWidget {
   final int projectId;
@@ -31,15 +32,14 @@ class DisplayVectorObject {
   DisplayVectorObject(this.x, this.y, this.color);
 }
 
-class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
-    with SingleTickerProviderStateMixin {
+final pdfDataProvider = StateProvider<Uint8List?>((ref) => null);
+
+class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage> {
+  int _currentTabIndex = 0;
   bool _showVectors = true;
   bool _showBackground = true;
-
-  // State for the decoded image
-  // REMOVED:
-  // ui.Image? _decodedImage;
-  // Uint8List? _loadedImageData;
+  bool _showBorders = false;
+  bool _showNumbers = false;
 
   late final TextEditingController _maxObjectColorsController;
   late final TextEditingController _objectOutputSizeController;
@@ -51,10 +51,7 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   late final TextEditingController _kcController;
   late final TextEditingController _khController;
   bool _isSaving = false;
-  Uint8List? _pdfData;
   late final PdfViewerController _pdfController;
-
-  TabController? _tabController;
 
   final Map<String, PdfPageFormat?> _pageFormats = {
     'A4': PdfPageFormat.a4,
@@ -67,44 +64,27 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
   void initState() {
     super.initState();
     final settings = ref.read(settingsServiceProvider);
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController!.addListener(_handleTabSelection);
     _pdfController = PdfViewerController();
 
-    _maxObjectColorsController = TextEditingController(
-      text: settings.maxObjectColors.toString(),
-    );
-
-    _objectOutputSizeController = TextEditingController(
-      text: settings.objectOutputSize.toString(),
-    );
-    _outputFontSizeController = TextEditingController(
-      text: settings.outputFontSize.toString(),
-    );
-    _customPageWidthController = TextEditingController(
-      text: settings.customPageWidth.toString(),
-    );
-    _customPageHeightController = TextEditingController(
-      text: settings.customPageHeight.toString(),
-    );
-    _colorSeparationController = TextEditingController(
-      text: settings.colorSeparation.toString(),
-    );
-    _klController = TextEditingController(
-      text: settings.kl.toString(),
-    );
-    _kcController = TextEditingController(
-      text: settings.kc.toString(),
-    );
-    _khController = TextEditingController(
-      text: settings.kh.toString(),
-    );
+    _maxObjectColorsController =
+        TextEditingController(text: settings.maxObjectColors.toString());
+    _objectOutputSizeController =
+        TextEditingController(text: settings.objectOutputSize.toString());
+    _outputFontSizeController =
+        TextEditingController(text: settings.outputFontSize.toString());
+    _customPageWidthController =
+        TextEditingController(text: settings.customPageWidth.toString());
+    _customPageHeightController =
+        TextEditingController(text: settings.customPageHeight.toString());
+    _colorSeparationController =
+        TextEditingController(text: settings.colorSeparation.toString());
+    _klController = TextEditingController(text: settings.kl.toString());
+    _kcController = TextEditingController(text: settings.kc.toString());
+    _khController = TextEditingController(text: settings.kh.toString());
   }
 
   @override
   void dispose() {
-    _tabController!.removeListener(_handleTabSelection);
-    _tabController!.dispose();
     _maxObjectColorsController.dispose();
     _objectOutputSizeController.dispose();
     _outputFontSizeController.dispose();
@@ -117,77 +97,67 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
     super.dispose();
   }
 
-  void _handleTabSelection() {
-    final projectState =
-        ref.read(projectStreamProvider(widget.projectId)).value;
-    if (projectState == null) return;
-    final project = projectState.project;
-    final isImageTooLarge =
-        (project.imageWidth ?? 0) > 500 || (project.imageHeight ?? 0) > 500;
-
-    if (isImageTooLarge && _tabController!.indexIsChanging) {
-      if (_tabController!.index != 0) {
-        // Allow returning to the first tab, but block moving to others
-        if (_tabController!.previousIndex != 0) {
-          _tabController!.index = _tabController!.previousIndex;
-        } else {
-          _tabController!.index = 0;
-        }
-      }
-    }
-    // This setState will trigger a rebuild when the tab changes,
-    // which is needed to update the painter's visibility flags.
-    setState(() {});
-  }
-
-  bool _isBackgroundVisible() {
-    if (_tabController == null) return false;
-    switch (_tabController!.index) {
-      case 0: // Image Tab
-        return true;
-      case 1: // Convert Tab
-        return true; // Always show the base image
-      case 2: // Grid Tab
-        return _showBackground; // Controlled by checkbox
-      case 3: // PDF Tab
-        // Read directly from settings
-        return ref.read(settingsServiceProvider).printBackground;
-      default:
-        return false;
-    }
-  }
-
-  bool _isVectorLayerVisible() {
-    if (_tabController == null) return false;
-    switch (_tabController!.index) {
-      case 1: // Convert Tab
-        return false; // Never show vectors on the convert tab
-      case 2: // Grid Tab
-        return _showVectors; // Controlled by checkbox
-      case 3: // PDF Tab
-        return true; // Always show vectors in PDF preview
-      default:
-        return false;
-    }
-  }
-
   Widget _buildCurrentView(Project project, ui.Image? decodedImage,
       List<DisplayVectorObject> displayObjects, SettingsService settings) {
-    final currentTabIndex = _tabController?.index ?? 0;
+    final pdfData = ref.watch(pdfDataProvider);
 
-    if (currentTabIndex == 3) {
-      if (_pdfData != null) {
-        return Container(
-          decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-          child: SfPdfViewer.memory(
-            _pdfData!,
-            controller: _pdfController,
-          ),
+    if (_currentTabIndex == 3) {
+      if (pdfData != null) {
+        return Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
+              child: SfPdfViewer.memory(
+                pdfData,
+                controller: _pdfController,
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 20.0),
+                child: Material(
+                  elevation: 4.0,
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.zoom_in),
+                          onPressed: () => _pdfController.zoomLevel =
+                              _pdfController.zoomLevel + 0.25,
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.zoom_out),
+                          onPressed: () => _pdfController.zoomLevel =
+                              _pdfController.zoomLevel - 0.25,
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.fullscreen),
+                          onPressed: () => _pdfController.zoomLevel = 0,
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.fullscreen_exit),
+                          onPressed: () => _pdfController.zoomLevel = 1.0,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       } else {
         return const Center(child: Text('No preview generated.'));
       }
-    } else if (currentTabIndex == 0) {
+    } else if (_currentTabIndex == 0) {
       // Viewer for Image Tab
       return InteractiveViewer(
         minScale: 1.0,
@@ -214,10 +184,12 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                 project.imageHeight ?? 1,
               ),
               fontSize: settings.outputFontSize.toDouble(),
-              showBackground: _isBackgroundVisible(),
-              showVectors: _isVectorLayerVisible(),
-              showNumbers: settings.printNumbers,
-              showBorders: settings.printBorders,
+              showBackground: _currentTabIndex == 2 ? _showBackground : true,
+              showVectors: _currentTabIndex == 1
+                  ? false
+                  : (_currentTabIndex == 2 ? _showVectors : true),
+              showNumbers: _currentTabIndex == 2 ? _showNumbers : false,
+              showBorders: _currentTabIndex == 2 ? _showBorders : false,
             ),
           ),
         ),
@@ -266,8 +238,8 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       pageFormat: pageFormat,
     );
     if (mounted) {
+      ref.read(pdfDataProvider.notifier).state = pdfBytes;
       setState(() {
-        _pdfData = pdfBytes;
         _isSaving = false;
       });
     }
@@ -315,9 +287,6 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
       ),
       data: (projectState) {
         final project = projectState.project;
-        // REMOVED old image decoding logic
-        // if (!listEquals(_loadedImageData, project.imageData)) { ... }
-
         final List<DisplayVectorObject> displayObjects;
         if (project.isConverted && project.vectorObjects.isNotEmpty) {
           final decoded = jsonDecode(project.vectorObjects) as List;
@@ -332,6 +301,75 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
         final bool isImageTooLarge =
             (project.imageWidth ?? 0) > 500 || (project.imageHeight ?? 0) > 500;
 
+        // Define the tab views
+        final tabViews = [
+          ImageTabView(
+            project: project,
+            isImageTooLarge: isImageTooLarge,
+          ),
+          ConvertTabView(
+            project: project,
+            settings: settings,
+            maxObjectColorsController: _maxObjectColorsController,
+            colorSeparationController: _colorSeparationController,
+            klController: _klController,
+            kcController: _kcController,
+            khController: _khController,
+            onShowColorSettings: _showColorSettingsDialog,
+          ),
+          GridTabView(
+            project: project,
+            showVectors: _showVectors,
+            showBackground: _showBackground,
+            showBorders: _showBorders,
+            showNumbers: _showNumbers,
+            onShowVectorsChanged: (value) =>
+                setState(() => _showVectors = value),
+            onShowBackgroundChanged: (value) =>
+                setState(() => _showBackground = value),
+            onShowBordersChanged: (value) =>
+                setState(() => _showBorders = value),
+            onShowNumbersChanged: (value) =>
+                setState(() => _showNumbers = value),
+          ),
+          OutputTabView(
+            settings: settings,
+            objectOutputSizeController: _objectOutputSizeController,
+            outputFontSizeController: _outputFontSizeController,
+            customPageWidthController: _customPageWidthController,
+            customPageHeightController: _customPageHeightController,
+            isSaving: _isSaving,
+            canGenerate: project.vectorObjects.isNotEmpty,
+            onGenerate: _handlePdfGeneration,
+            pageFormats: _pageFormats,
+            selectedPageFormat: settings.pageFormat,
+            onPageFormatChanged: (value) {
+              setState(() {
+                ref.read(settingsServiceProvider).setPageFormat(value);
+              });
+            },
+            printCells: settings.printBackground,
+            onPrintCellsChanged: (value) {
+              setState(() {
+                ref.read(settingsServiceProvider).setPrintBackground(value);
+              });
+            },
+            printBorders: settings.printBorders,
+            onPrintBordersChanged: (value) {
+              setState(() {
+                ref.read(settingsServiceProvider).setPrintBorders(value);
+              });
+            },
+            printNumbers: settings.printNumbers,
+            onPrintNumbersChanged: (value) {
+              setState(() {
+                ref.read(settingsServiceProvider).setPrintNumbers(value);
+              });
+            },
+            pdfController: _pdfController,
+          ),
+        ];
+
         return Scaffold(
           appBar: AppBar(title: Text(project.name)),
           body: Row(
@@ -345,121 +383,24 @@ class _ProjectEditorPageState extends ConsumerState<ProjectEditorPage>
                 color: Theme.of(context).colorScheme.surfaceContainer,
                 child: Column(
                   children: [
-                    TabBar(
-                      controller: _tabController,
-                      tabs: [
-                        const Tab(icon: Icon(Icons.image_outlined)),
-                        Tab(
-                          icon: Icon(
-                            Icons.transform_outlined,
-                            color: isImageTooLarge
-                                ? Theme.of(context).disabledColor
-                                : null,
-                          ),
-                        ),
-                        Tab(
-                          icon: Icon(
-                            Icons.grid_on_outlined,
-                            color: isImageTooLarge
-                                ? Theme.of(context).disabledColor
-                                : null,
-                          ),
-                        ),
-                        Tab(
-                          icon: Icon(
-                            Icons.picture_as_pdf_outlined,
-                            color: isImageTooLarge
-                                ? Theme.of(context).disabledColor
-                                : null,
-                          ),
-                        ),
-                      ],
+                    GrufioSection(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
+                      child: GrufioTabs(
+                        tabTitles: const ['Image', 'Convert', 'Grid', 'Output'],
+                        onTabSelected: (index) {
+                          if (isImageTooLarge && index != 0) {
+                            return;
+                          }
+                          setState(() {
+                            _currentTabIndex = index;
+                          });
+                        },
+                        selectedIndex: _currentTabIndex,
+                      ),
                     ),
                     Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          ImageTabView(
-                            project: project,
-                            isImageTooLarge: isImageTooLarge,
-                          ),
-                          ConvertTabView(
-                            project: project,
-                            settings: settings,
-                            maxObjectColorsController:
-                                _maxObjectColorsController,
-                            colorSeparationController:
-                                _colorSeparationController,
-                            klController: _klController,
-                            kcController: _kcController,
-                            khController: _khController,
-                            onShowColorSettings: _showColorSettingsDialog,
-                          ),
-                          GridTabView(
-                            project: project,
-                            showVectors: _showVectors,
-                            showBackground: _showBackground,
-                            onShowVectorsChanged: (value) {
-                              setState(() {
-                                _showVectors = value;
-                              });
-                            },
-                            onShowBackgroundChanged: (value) {
-                              setState(() {
-                                _showBackground = value;
-                              });
-                            },
-                          ),
-                          OutputTabView(
-                            settings: settings,
-                            objectOutputSizeController:
-                                _objectOutputSizeController,
-                            outputFontSizeController: _outputFontSizeController,
-                            customPageWidthController:
-                                _customPageWidthController,
-                            customPageHeightController:
-                                _customPageHeightController,
-                            isSaving: _isSaving,
-                            canGenerate: project.vectorObjects.isNotEmpty,
-                            onGenerate: _handlePdfGeneration,
-                            pageFormats: _pageFormats,
-                            selectedPageFormat: settings.pageFormat,
-                            onPageFormatChanged: (value) {
-                              setState(() {
-                                ref
-                                    .read(settingsServiceProvider)
-                                    .setPageFormat(value);
-                              });
-                            },
-                            printCells: settings.printBackground,
-                            onPrintCellsChanged: (value) {
-                              setState(() {
-                                ref
-                                    .read(settingsServiceProvider)
-                                    .setPrintBackground(value);
-                              });
-                            },
-                            printBorders: settings.printBorders,
-                            onPrintBordersChanged: (value) {
-                              setState(() {
-                                ref
-                                    .read(settingsServiceProvider)
-                                    .setPrintBorders(value);
-                              });
-                            },
-                            printNumbers: settings.printNumbers,
-                            onPrintNumbersChanged: (value) {
-                              setState(() {
-                                ref
-                                    .read(settingsServiceProvider)
-                                    .setPrintNumbers(value);
-                              });
-                            },
-                            pdfController: _pdfController,
-                          ),
-                        ],
-                      ),
+                      child: tabViews[_currentTabIndex],
                     ),
                   ],
                 ),
@@ -538,11 +479,44 @@ class VectorPainter extends CustomPainter {
       );
     }
 
-    // Layer 2: Vectors and Numbers (drawn within the same dstRect)
+    // Layer 2: Vectors
     if (showVectors && objects.isNotEmpty) {
       final cellWidth = dstRect.width / imageWidth;
       final cellHeight = dstRect.height / imageHeight;
+      for (final obj in objects) {
+        final rect = Rect.fromLTWH(
+          dstRect.left + (obj.x * cellWidth),
+          dstRect.top + (obj.y * cellHeight),
+          cellWidth,
+          cellHeight,
+        );
+        canvas.drawRect(rect, Paint()..color = obj.color);
+      }
+    }
 
+    // Layer 3: Borders
+    if (showBorders && objects.isNotEmpty) {
+      final cellWidth = dstRect.width / imageWidth;
+      final cellHeight = dstRect.height / imageHeight;
+      final borderPaint = Paint()
+        ..color = Colors.red
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1;
+      for (final obj in objects) {
+        final rect = Rect.fromLTWH(
+          dstRect.left + (obj.x * cellWidth),
+          dstRect.top + (obj.y * cellHeight),
+          cellWidth,
+          cellHeight,
+        );
+        canvas.drawRect(rect, borderPaint);
+      }
+    }
+
+    // Layer 4: Numbers
+    if (showNumbers && objects.isNotEmpty) {
+      final cellWidth = dstRect.width / imageWidth;
+      final cellHeight = dstRect.height / imageHeight;
       final uniqueColors = objects.map((o) => o.color).toSet().toList();
       for (final obj in objects) {
         final rect = Rect.fromLTWH(
@@ -551,36 +525,25 @@ class VectorPainter extends CustomPainter {
           cellWidth,
           cellHeight,
         );
-
-        if (showBorders) {
-          final borderPaint = Paint()
-            ..color = Colors.red
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1;
-          canvas.drawRect(rect, borderPaint);
-        }
-
-        if (showNumbers) {
-          final colorIndex = uniqueColors.indexOf(obj.color);
-          final textSpan = TextSpan(
-            text: '${colorIndex + 1}',
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: fontSize,
-            ),
-          );
-          final textPainter = TextPainter(
-            text: textSpan,
-            textAlign: TextAlign.center,
-            textDirection: ui.TextDirection.ltr,
-          );
-          textPainter.layout(minWidth: 0, maxWidth: cellWidth);
-          final textOffset = Offset(
-            rect.center.dx - textPainter.width / 2,
-            rect.center.dy - textPainter.height / 2,
-          );
-          textPainter.paint(canvas, textOffset);
-        }
+        final colorIndex = uniqueColors.indexOf(obj.color);
+        final textSpan = TextSpan(
+          text: '${colorIndex + 1}',
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: fontSize,
+          ),
+        );
+        final textPainter = TextPainter(
+          text: textSpan,
+          textAlign: TextAlign.center,
+          textDirection: ui.TextDirection.ltr,
+        );
+        textPainter.layout(minWidth: 0, maxWidth: cellWidth);
+        final textOffset = Offset(
+          rect.center.dx - textPainter.width / 2,
+          rect.center.dy - textPainter.height / 2,
+        );
+        textPainter.paint(canvas, textOffset);
       }
     }
   }

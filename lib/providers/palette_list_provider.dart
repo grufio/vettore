@@ -1,15 +1,13 @@
-import 'dart:typed_data';
-
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/data/database.dart';
-import 'package:drift/drift.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/repositories/palette_repository.dart';
 
-final paletteListStreamProvider = StreamProvider<List<FullPalette>>((ref) {
+final paletteListStreamProvider =
+    StreamProvider.autoDispose<List<FullPalette>>((ref) {
   final paletteRepository = ref.watch(paletteRepositoryProvider);
   return paletteRepository.watchAllPalettes();
 });

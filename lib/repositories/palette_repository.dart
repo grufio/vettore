@@ -42,48 +42,27 @@ class PaletteRepository {
   // A stream that watches for changes to all palettes and their nested data.
   // This now uses a single, efficient join query.
   Stream<List<FullPalette>> watchAllPalettes() {
-    final query = _db.select(_db.palettes).join([
-      leftOuterJoin(_db.paletteColors,
-          _db.paletteColors.paletteId.equalsExp(_db.palettes.id)),
-      leftOuterJoin(_db.colorComponents,
-          _db.colorComponents.paletteColorId.equalsExp(_db.paletteColors.id)),
-    ]);
+    final query = _db.select(_db.palettes);
 
-    return query.watch().map((rows) {
-      final groupedByPalette = <Palette, List<_FullPaletteRow>>{};
-      for (final row in rows) {
-        final palette = row.readTable(_db.palettes);
-        final color = row.readTableOrNull(_db.paletteColors);
-        final component = row.readTableOrNull(_db.colorComponents);
+    return query.watch().asyncMap((palettes) async {
+      final fullPalettes = <FullPalette>[];
+      for (final palette in palettes) {
+        final colorsQuery = _db.select(_db.paletteColors)
+          ..where((c) => c.paletteId.equals(palette.id));
+        final colors = await colorsQuery.get();
 
-        if (color != null) {
-          final paletteRow = _FullPaletteRow(palette, color, component);
-          (groupedByPalette[palette] ??= []).add(paletteRow);
-        } else {
-          // Ensure palettes with no colors are still included
-          groupedByPalette.putIfAbsent(palette, () => []);
+        final colorsWithComponents = <PaletteColorWithComponents>[];
+        for (final color in colors) {
+          final componentsQuery = _db.select(_db.colorComponents)
+            ..where((comp) => comp.paletteColorId.equals(color.id));
+          final components = await componentsQuery.get();
+          colorsWithComponents.add(
+              PaletteColorWithComponents(color: color, components: components));
         }
+        fullPalettes
+            .add(FullPalette(palette: palette, colors: colorsWithComponents));
       }
-
-      return groupedByPalette.entries.map((entry) {
-        final palette = entry.key;
-        final rows = entry.value;
-
-        final groupedByColor = groupBy(rows, (row) => row.color);
-
-        final colorsWithComponents = groupedByColor.entries.map((colorEntry) {
-          final color = colorEntry.key;
-          final colorRows = colorEntry.value;
-          final components = colorRows
-              .map((r) => r.component)
-              .whereType<ColorComponent>()
-              .toList();
-          return PaletteColorWithComponents(
-              color: color, components: components);
-        }).toList();
-
-        return FullPalette(palette: palette, colors: colorsWithComponents);
-      }).toList();
+      return fullPalettes;
     });
   }
 

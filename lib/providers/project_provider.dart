@@ -46,7 +46,6 @@ final projectStreamProvider =
         final frame = await codec.getNextFrame();
         decodedImage = frame.image;
       } catch (e) {
-        debugPrint('Error decoding image for project $projectId: $e');
         // The stream will continue, but with a null image.
       }
     }
@@ -158,7 +157,8 @@ class ProjectLogic {
           );
       await projectRepository.updateProject(updatedProject);
     } catch (e) {
-      debugPrint('[ProjectLogic] Error during image quantization: $e');
+      // Re-throw the exception to be caught by the UI layer if needed.
+      rethrow;
     }
   }
 
@@ -169,8 +169,6 @@ class ProjectLogic {
     final project = await projectRepository.getProject(projectId);
 
     if (!project.isConverted) {
-      debugPrint(
-          '[ProjectLogic] Error: Cannot generate grid before image is converted.');
       return;
     }
 
@@ -195,7 +193,7 @@ class ProjectLogic {
           );
       await projectRepository.updateProject(updatedProject);
     } catch (e) {
-      debugPrint('[ProjectLogic] Error during grid generation: $e');
+      rethrow;
     }
   }
 
@@ -205,7 +203,6 @@ class ProjectLogic {
     final project = await projectRepository.getProject(projectId);
 
     if (project.originalImageData == null) {
-      debugPrint('[ProjectLogic] Error: Original image data is null.');
       return;
     }
 
@@ -278,7 +275,7 @@ class ProjectLogic {
           );
       await projectRepository.updateProject(updatedProject);
     } catch (e) {
-      debugPrint('[ProjectLogic] Error during image update: $e');
+      rethrow;
     }
   }
 
