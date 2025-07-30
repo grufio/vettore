@@ -79,6 +79,15 @@ class ColorComponents extends Table {
   RealColumn get percentage => real()();
 }
 
+// Settings Table
+class Settings extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
 //-
 //-
 //-         DATABASE CLASS
@@ -91,13 +100,14 @@ class ColorComponents extends Table {
   PaletteColors,
   VendorColors,
   VendorColorVariants,
-  ColorComponents
+  ColorComponents,
+  Settings
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration {
@@ -146,6 +156,10 @@ class AppDatabase extends _$AppDatabase {
         if (from < 11) {
           // Version 11 adds the isPredefined flag to palettes.
           await m.addColumn(palettes, palettes.isPredefined);
+        }
+        if (from < 12) {
+          // Version 12 adds the settings table.
+          await m.createTable(settings);
         }
       },
     );

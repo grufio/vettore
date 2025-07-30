@@ -9,15 +9,19 @@ import 'package:vettore/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SettingsService.init();
 
   final database = AppDatabase();
+
+  final settingsService = SettingsService(database);
+  await settingsService.init();
+
   await SeedingService(database).seedVendorColors();
 
   runApp(
     ProviderScope(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
+        settingsServiceProvider.overrideWithValue(settingsService),
       ],
       child: const VettoreApp(),
     ),

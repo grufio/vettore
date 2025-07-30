@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter/foundation.dart';
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-const String _settingsBoxName = 'settings';
+import 'package:vettore/data/database.dart';
 
 // Keys for settings
 const String _apiKeyKey = 'gemini_api_key';
@@ -25,106 +24,124 @@ const String _printBordersKey = 'printBorders';
 const String _printNumbersKey = 'printNumbers';
 
 final settingsServiceProvider = Provider<SettingsService>((ref) {
-  final box = Hive.box(_settingsBoxName);
-  return SettingsService(box);
+  // This provider is overridden in main.dart after the service is initialized.
+  throw UnimplementedError('SettingsService must be initialized and provided');
 });
 
 class SettingsService extends ChangeNotifier {
-  final Box _box;
+  final AppDatabase _db;
+  final Map<String, String> _cache = {};
 
-  SettingsService(this._box) {
-    _box.listenable().addListener(() {
-      notifyListeners();
-    });
-  }
+  SettingsService(this._db);
 
-  static Future<void> init() async {
-    await Hive.initFlutter();
-    await Hive.openBox(_settingsBoxName);
-  }
-
-  // Gemini API Settings
-  String? get geminiApiKey => _box.get(_apiKeyKey);
-  Future<void> setGeminiApiKey(String key) => _box.put(_apiKeyKey, key);
-
-  bool get isGeminiApiEnabled => _box.get(_apiEnabledKey, defaultValue: false);
-  Future<void> setGeminiApiEnabled(bool isEnabled) =>
-      _box.put(_apiEnabledKey, isEnabled);
-
-  // Helper to safely parse values that might have been stored as strings
-  T _getNumericValue<T>(String key, T defaultValue) {
-    final value = _box.get(key);
-    if (value is T) {
-      return value;
+  /// Must be called once at startup.
+  /// Loads all settings from the database into a memory cache.
+  Future<void> init() async {
+    final allSettings = await _db.select(_db.settings).get();
+    _cache.clear();
+    for (final setting in allSettings) {
+      _cache[setting.key] = setting.value;
     }
-    if (value is String) {
-      if (T == int) {
-        return int.tryParse(value) as T? ?? defaultValue;
-      }
-      if (T == double) {
-        return double.tryParse(value) as T? ?? defaultValue;
-      }
+    // No need to notify listeners here, as this is called before the UI is built.
+  }
+
+  Future<void> _setSetting(String key, dynamic value) async {
+    final stringValue = value.toString();
+    await (_db.into(_db.settings).insertOnConflictUpdate(
+          SettingsCompanion.insert(key: key, value: stringValue),
+        ));
+    _cache[key] = stringValue;
+    notifyListeners();
+  }
+
+  T _getParsedValue<T>(String key, T defaultValue) {
+    final value = _cache[key];
+    if (value == null) return defaultValue;
+
+    if (T == int) {
+      return int.tryParse(value) as T? ?? defaultValue;
+    }
+    if (T == double) {
+      return double.tryParse(value) as T? ?? defaultValue;
+    }
+    if (T == bool) {
+      return (value.toLowerCase() == 'true') as T;
+    }
+    if (T == String) {
+      return value as T;
     }
     return defaultValue;
   }
 
+  // Gemini API Settings
+  String? get geminiApiKey => _cache[_apiKeyKey];
+  Future<void> setGeminiApiKey(String key) => _setSetting(_apiKeyKey, key);
+
+  bool get isGeminiApiEnabled => _getParsedValue(_apiEnabledKey, false);
+  Future<void> setGeminiApiEnabled(bool isEnabled) =>
+      _setSetting(_apiEnabledKey, isEnabled);
+
   // Conversion Settings
-  int get maxObjectColors => _getNumericValue(_maxObjectColorsKey, 40);
+  int get maxObjectColors => _getParsedValue(_maxObjectColorsKey, 40);
   Future<void> setMaxObjectColors(int value) =>
-      _box.put(_maxObjectColorsKey, value);
+      _setSetting(_maxObjectColorsKey, value);
 
   // PDF Output Settings
-  double get objectOutputSize => _getNumericValue(_objectOutputSizeKey, 10.0);
+  double get objectOutputSize => _getParsedValue(_objectOutputSizeKey, 10.0);
   Future<void> setObjectOutputSize(double value) =>
-      _box.put(_objectOutputSizeKey, value);
+      _setSetting(_objectOutputSizeKey, value);
 
-  double get colorSeparation => _getNumericValue(_colorSeparationKey, 5.0);
+  double get colorSeparation => _getParsedValue(_colorSeparationKey, 5.0);
   Future<void> setColorSeparation(double value) =>
-      _box.put(_colorSeparationKey, value);
+      _setSetting(_colorSeparationKey, value);
 
-  double get kl => _getNumericValue(_klKey, 1.0);
-  Future<void> setKl(double value) => _box.put(_klKey, value);
+  double get kl => _getParsedValue(_klKey, 1.0);
+  Future<void> setKl(double value) => _setSetting(_klKey, value);
 
-  double get kc => _getNumericValue(_kcKey, 1.0);
-  Future<void> setKc(double value) => _box.put(_kcKey, value);
+  double get kc => _getParsedValue(_kcKey, 1.0);
+  Future<void> setKc(double value) => _setSetting(_kcKey, value);
 
-  double get kh => _getNumericValue(_khKey, 1.0);
-  Future<void> setKh(double value) => _box.put(_khKey, value);
+  double get kh => _getParsedValue(_khKey, 1.0);
+  Future<void> setKh(double value) => _setSetting(_khKey, value);
 
-  int get outputFontSize => _getNumericValue(_outputFontSizeKey, 10);
+  int get outputFontSize => _getParsedValue(_outputFontSizeKey, 10);
   Future<void> setOutputFontSize(int value) =>
-      _box.put(_outputFontSizeKey, value);
+      _setSetting(_outputFontSizeKey, value);
 
-  double get outputBorders => _getNumericValue(_outputBordersKey, 10.0);
+  double get outputBorders => _getParsedValue(_outputBordersKey, 10.0);
   Future<void> setOutputBorders(double value) =>
-      _box.put(_outputBordersKey, value);
+      _setSetting(_outputBordersKey, value);
 
   // Page Format Settings
-  String get pageFormat => _box.get(_pageFormatKey, defaultValue: 'A4');
-  Future<void> setPageFormat(String value) => _box.put(_pageFormatKey, value);
+  String get pageFormat => _getParsedValue(_pageFormatKey, 'A4');
+  Future<void> setPageFormat(String value) =>
+      _setSetting(_pageFormatKey, value);
 
-  double get customPageWidth => _getNumericValue(_customPageWidthKey, 210.0);
+  double get customPageWidth => _getParsedValue(_customPageWidthKey, 210.0);
   Future<void> setCustomPageWidth(double value) =>
-      _box.put(_customPageWidthKey, value);
+      _setSetting(_customPageWidthKey, value);
 
-  double get customPageHeight => _getNumericValue(_customPageHeightKey, 297.0);
+  double get customPageHeight => _getParsedValue(_customPageHeightKey, 297.0);
   Future<void> setCustomPageHeight(double value) =>
-      _box.put(_customPageHeightKey, value);
+      _setSetting(_customPageHeightKey, value);
 
-  bool get isLandscape => _box.get(_isLandscapeKey, defaultValue: false);
-  Future<void> setIsLandscape(bool value) => _box.put(_isLandscapeKey, value);
+  bool get isLandscape => _getParsedValue(_isLandscapeKey, false);
+  Future<void> setIsLandscape(bool value) =>
+      _setSetting(_isLandscapeKey, value);
 
-  bool get centerImage => _box.get(_centerImageKey, defaultValue: true);
-  Future<void> setCenterImage(bool value) => _box.put(_centerImageKey, value);
+  bool get centerImage => _getParsedValue(_centerImageKey, true);
+  Future<void> setCenterImage(bool value) =>
+      _setSetting(_centerImageKey, value);
 
-  bool get printBackground =>
-      _box.get(_printBackgroundKey, defaultValue: false);
+  bool get printBackground => _getParsedValue(_printBackgroundKey, false);
   Future<void> setPrintBackground(bool value) =>
-      _box.put(_printBackgroundKey, value);
+      _setSetting(_printBackgroundKey, value);
 
-  bool get printBorders => _box.get(_printBordersKey, defaultValue: true);
-  Future<void> setPrintBorders(bool value) => _box.put(_printBordersKey, value);
+  bool get printBorders => _getParsedValue(_printBordersKey, true);
+  Future<void> setPrintBorders(bool value) =>
+      _setSetting(_printBordersKey, value);
 
-  bool get printNumbers => _box.get(_printNumbersKey, defaultValue: true);
-  Future<void> setPrintNumbers(bool value) => _box.put(_printNumbersKey, value);
+  bool get printNumbers => _getParsedValue(_printNumbersKey, true);
+  Future<void> setPrintNumbers(bool value) =>
+      _setSetting(_printNumbersKey, value);
 }

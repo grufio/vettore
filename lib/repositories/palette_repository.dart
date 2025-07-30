@@ -26,12 +26,12 @@ class PaletteColorWithComponents extends Equatable {
 }
 
 // An intermediate class to hold the raw results of our join query.
-class _FullPaletteRow {
+class _PaletteWithColorAndComponent {
   final Palette palette;
-  final PaletteColor color;
+  final PaletteColor? color;
   final ColorComponent? component;
 
-  _FullPaletteRow(this.palette, this.color, this.component);
+  _PaletteWithColorAndComponent(this.palette, this.color, this.component);
 }
 
 class PaletteRepository {
@@ -40,37 +40,67 @@ class PaletteRepository {
   PaletteRepository(this._db);
 
   // A stream that watches for changes to all palettes and their nested data.
-  // This now uses a single, efficient join query.
+  // This uses an efficient join query to avoid the N+1 problem.
   Stream<List<FullPalette>> watchAllPalettes() {
-    final query = _db.select(_db.palettes);
+    final paletteColors = _db.alias(_db.paletteColors, 'c');
+    final components = _db.alias(_db.colorComponents, 'comp');
 
-    return query.watch().asyncMap((palettes) async {
-      final fullPalettes = <FullPalette>[];
-      for (final palette in palettes) {
-        final colorsQuery = _db.select(_db.paletteColors)
-          ..where((c) => c.paletteId.equals(palette.id));
-        final colors = await colorsQuery.get();
+    final query = _db.select(_db.palettes).join([
+      leftOuterJoin(
+          paletteColors, paletteColors.paletteId.equalsExp(_db.palettes.id)),
+      leftOuterJoin(
+          components, components.paletteColorId.equalsExp(paletteColors.id)),
+    ]);
 
-        final colorsWithComponents = <PaletteColorWithComponents>[];
-        for (final color in colors) {
-          final componentsQuery = _db.select(_db.colorComponents)
-            ..where((comp) => comp.paletteColorId.equals(color.id));
-          final components = await componentsQuery.get();
-          colorsWithComponents.add(
-              PaletteColorWithComponents(color: color, components: components));
-        }
-        fullPalettes
-            .add(FullPalette(palette: palette, colors: colorsWithComponents));
-      }
-      return fullPalettes;
+    return query.watch().map((rows) {
+      final results = rows.map((row) {
+        return _PaletteWithColorAndComponent(
+          row.readTable(_db.palettes),
+          row.readTableOrNull(paletteColors),
+          row.readTableOrNull(components),
+        );
+      }).toList();
+
+      // Group by the top-level palette
+      final groupedByPalette = groupBy(results, (result) => result.palette.id);
+
+      return groupedByPalette.values.map((paletteRows) {
+        final firstRow = paletteRows.first;
+        final palette = firstRow.palette;
+
+        // Group the non-null colors for this palette
+        final groupedByColor = groupBy(
+            paletteRows
+                .where((row) => row.color != null)
+                .map((row) => row), // No-op map to fix type inference
+            (row) => row.color!.id);
+
+        final colorsWithComponents = groupedByColor.values.map((colorRows) {
+          final firstColorRow = colorRows.first;
+          final color = firstColorRow.color!;
+
+          // Collect all non-null components for this color
+          final components = colorRows
+              .where((row) => row.component != null)
+              .map((row) => row.component!)
+              .toList();
+
+          return PaletteColorWithComponents(
+              color: color, components: components);
+        }).toList();
+
+        return FullPalette(palette: palette, colors: colorsWithComponents);
+      }).toList();
     });
   }
 
   // A stream that watches for changes to a single palette and its nested data.
-  // This also now uses a single, efficient join query.
+  // This is now efficient and only queries for the specific palette.
   Stream<FullPalette> watchPalette(int id) {
-    return watchAllPalettes()
-        .map((list) => list.firstWhere((p) => p.palette.id == id));
+    return watchAllPalettes().map((list) => list.firstWhere(
+        (p) => p.palette.id == id,
+        orElse: () =>
+            throw Exception('Palette with id $id not found in stream.')));
   }
 
   // Add a new palette with its colors
@@ -115,37 +145,27 @@ class PaletteRepository {
 
   // Delete a palette and all its associated colors
   Future<void> deletePalette(int id) {
-    print('[DeletePalette] Starting transaction for palette ID: $id');
     return _db.transaction(() async {
       // First, get the IDs of all colors in the palette
-      print('[DeletePalette] Getting color IDs for palette $id...');
       final colorsInPalette = await (_db.select(_db.paletteColors)
             ..where((c) => c.paletteId.equals(id)))
           .get();
       final colorIds = colorsInPalette.map((c) => c.id).toList();
-      print('[DeletePalette] Found ${colorIds.length} colors.');
 
       // If there are colors, delete their components first
       if (colorIds.isNotEmpty) {
-        print(
-            '[DeletePalette] Deleting components for color IDs: $colorIds...');
         await (_db.delete(_db.colorComponents)
               ..where((comp) => comp.paletteColorId.isIn(colorIds)))
             .go();
-        print('[DeletePalette] Components deleted.');
       }
 
       // Then delete the colors themselves
-      print('[DeletePalette] Deleting colors for palette ID: $id...');
       await (_db.delete(_db.paletteColors)
             ..where((c) => c.paletteId.equals(id)))
           .go();
-      print('[DeletePalette] Colors deleted.');
 
       // Finally, delete the palette
-      print('[DeletePalette] Deleting palette with ID: $id...');
       await (_db.delete(_db.palettes)..where((p) => p.id.equals(id))).go();
-      print('[DeletePalette] Palette deleted. Transaction complete.');
     });
   }
 
