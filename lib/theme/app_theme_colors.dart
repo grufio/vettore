@@ -9,6 +9,7 @@ const Color kSecondaryColor = Color(0xFF4CAF50); // A vibrant, clear green
 const Color kBackgroundColor = Color(0xFFF5F5F5); // A light, clean grey
 const Color kSurfaceColor = Colors.white;
 const Color kErrorColor = Color(0xFFB00020); // Standard Material error red
+const Color kDividerColor = Color(0xFFDCDCDC); // For borders and dividers
 
 const Color kOnPrimaryColor = Colors.white;
 const Color kOnSecondaryColor = Colors.white;
@@ -24,12 +25,10 @@ const ColorScheme kColorScheme = ColorScheme(
   primary: kPrimaryColor,
   secondary: kSecondaryColor,
   surface: kSurfaceColor,
-  background: kBackgroundColor,
   error: kErrorColor,
   onPrimary: kOnPrimaryColor,
   onSecondary: kOnSecondaryColor,
   onSurface: kOnSurfaceColor,
-  onBackground: kOnBackgroundColor,
   onError: kOnErrorColor,
   brightness: Brightness.light,
 );

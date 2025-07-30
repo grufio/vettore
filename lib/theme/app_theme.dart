@@ -21,6 +21,7 @@ final ThemeData appTheme = ThemeData(
 
   // Global Properties
   scaffoldBackgroundColor: kBackgroundColor,
+  dividerColor: kDividerColor,
   appBarTheme: const AppBarTheme(
     backgroundColor: kPrimaryColor,
     foregroundColor: kOnPrimaryColor,

@@ -35,4 +35,10 @@ const TextTheme kTextTheme = TextTheme(
     fontWeight: FontWeight.bold,
     color: kOnPrimaryColor,
   ),
+  // For small labels or section titles
+  labelSmall: TextStyle(
+    fontSize: 12.0,
+    fontWeight: FontWeight.bold,
+    color: kOnBackgroundColor,
+  ),
 );

@@ -14,14 +14,15 @@ class GrufioSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: padding ??
           const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Color(0xFFDCDCDC),
+            color: theme.dividerColor,
             width: 1.0,
           ),
         ),
@@ -33,12 +34,7 @@ class GrufioSection extends StatelessWidget {
           if (title != null) ...[
             Text(
               title!,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                color: Colors.black,
-              ),
+              style: theme.textTheme.labelSmall,
             ),
             const SizedBox(height: 8),
           ],
