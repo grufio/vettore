@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/vendor_color_provider.dart';
 
 class ColorLibraryDetailPage extends ConsumerWidget {
@@ -67,6 +66,11 @@ class ColorLibraryDetailPage extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
+                            if (color.colorDensity != null)
+                              Text(
+                                'Density: ${color.colorDensity!.toStringAsFixed(2)} g/ml',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
                             ...colorWithVariants.variants.map((variant) {
                               return Text(
                                 '${variant.size}ml - Stock: ${variant.stock}',

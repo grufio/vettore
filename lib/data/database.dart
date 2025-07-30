@@ -40,6 +40,7 @@ class Palettes extends Table {
   RealColumn get sizeInMl => real().withDefault(const Constant(60.0))();
   RealColumn get factor => real().withDefault(const Constant(1.5))();
   BlobColumn get thumbnail => blob().nullable()();
+  BoolColumn get isPredefined => boolean().withDefault(const Constant(false))();
 }
 
 // Palette Color Table
@@ -96,7 +97,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration {
@@ -141,6 +142,10 @@ class AppDatabase extends _$AppDatabase {
         if (from < 10) {
           // Version 10 adds the resized image data cache.
           await m.addColumn(projects, projects.resizedImageData);
+        }
+        if (from < 11) {
+          // Version 11 adds the isPredefined flag to palettes.
+          await m.addColumn(palettes, palettes.isPredefined);
         }
       },
     );

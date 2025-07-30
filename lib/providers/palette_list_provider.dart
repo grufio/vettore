@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/data/database.dart';
+import 'package:drift/drift.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/repositories/palette_repository.dart';
@@ -22,10 +23,12 @@ class PaletteListLogic {
 
   PaletteListLogic(this._ref);
 
-  Future<void> createNewPalette(String name) async {
+  Future<void> createNewCustomPalette(String name) async {
     final paletteRepository = _ref.read(paletteRepositoryProvider);
     final newPalette = PalettesCompanion.insert(
       name: name,
+      isPredefined:
+          const Value(true), // Corrected: Custom palettes are 'predefined'
     );
     await paletteRepository.addPalette(newPalette, []);
   }

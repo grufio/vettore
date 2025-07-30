@@ -32,6 +32,7 @@ class ProjectListLogic {
       final newPaletteCompanion = PalettesCompanion.insert(
         name: '${newProjectCompanion.name.value} Palette',
         thumbnail: Value(newProjectCompanion.thumbnailData.value),
+        isPredefined: const Value(false), // Explicitly an "Image Palette"
       );
 
       final imageData = newProjectCompanion.imageData.value;

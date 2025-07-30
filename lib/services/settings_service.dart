@@ -21,6 +21,8 @@ const String _colorSeparationKey = 'colorSeparation';
 const String _klKey = 'kl';
 const String _kcKey = 'kc';
 const String _khKey = 'kh';
+const String _printBordersKey = 'printBorders';
+const String _printNumbersKey = 'printNumbers';
 
 final settingsServiceProvider = Provider<SettingsService>((ref) {
   final box = Hive.box(_settingsBoxName);
@@ -119,4 +121,10 @@ class SettingsService extends ChangeNotifier {
       _box.get(_printBackgroundKey, defaultValue: false);
   Future<void> setPrintBackground(bool value) =>
       _box.put(_printBackgroundKey, value);
+
+  bool get printBorders => _box.get(_printBordersKey, defaultValue: true);
+  Future<void> setPrintBorders(bool value) => _box.put(_printBordersKey, value);
+
+  bool get printNumbers => _box.get(_printNumbersKey, defaultValue: true);
+  Future<void> setPrintNumbers(bool value) => _box.put(_printNumbersKey, value);
 }
