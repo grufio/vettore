@@ -51,17 +51,17 @@ class PalettesOverview extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palettesAsync = ref.watch(paletteListStreamProvider);
-    final categorized = ref.watch(categorizedPalettesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Palettes')),
       body: palettesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
-        data: (_) {
-          // Data is now sourced from the categorized provider
-          final customPalettes = categorized.customPalettes;
-          final imagePalettes = categorized.imagePalettes;
+        data: (palettes) {
+          final customPalettes =
+              palettes.where((p) => p.palette.isPredefined).toList();
+          final imagePalettes =
+              palettes.where((p) => !p.palette.isPredefined).toList();
 
           if (customPalettes.isEmpty && imagePalettes.isEmpty) {
             return const Center(child: Text('No palettes created yet.'));

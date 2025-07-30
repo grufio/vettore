@@ -10,26 +10,6 @@ final paletteListStreamProvider = StreamProvider<List<FullPalette>>((ref) {
   return paletteRepository.watchAllPalettes();
 });
 
-class CategorizedPalettes {
-  final List<FullPalette> customPalettes;
-  final List<FullPalette> imagePalettes;
-
-  const CategorizedPalettes({
-    this.customPalettes = const [],
-    this.imagePalettes = const [],
-  });
-}
-
-final categorizedPalettesProvider =
-    Provider.autoDispose<CategorizedPalettes>((ref) {
-  final palettes = ref.watch(paletteListStreamProvider).value ?? [];
-
-  return CategorizedPalettes(
-    customPalettes: palettes.where((p) => p.palette.isPredefined).toList(),
-    imagePalettes: palettes.where((p) => !p.palette.isPredefined).toList(),
-  );
-});
-
 final paletteListLogicProvider = Provider((ref) {
   return PaletteListLogic(ref);
 });
