@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vettore/constants/ui_constants.dart';
+import 'package:vettore/theme/app_theme_typography.dart';
 
 class GrufioTextFieldSimple extends StatelessWidget {
   const GrufioTextFieldSimple({
@@ -32,27 +33,8 @@ class GrufioTextFieldSimple extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // This decoration is now built from scratch inside the component,
-    // ensuring a consistent, self-contained style.
-    final decoration = InputDecoration(
-      hintText: hintText,
-      suffixText: suffixText,
-      floatingLabelBehavior: FloatingLabelBehavior.always,
-      border: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(0.0)),
-      ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(0.0)),
-        borderSide: BorderSide(color: Colors.grey),
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(0.0)),
-        borderSide: BorderSide(width: 2.0), // Uses theme's primary color
-      ),
-      isDense: true,
-      contentPadding:
-          const EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
-    );
+    final theme = Theme.of(context);
+    final appTextStyles = theme.extension<AppTextStyles>()!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,17 +42,19 @@ class GrufioTextFieldSimple extends StatelessWidget {
         if (topLabel != null) ...[
           Text(
             topLabel!,
-            style: const TextStyle(
-              fontSize: 10.0,
-              fontWeight: FontWeight.normal,
-            ),
+            style: appTextStyles.bodyS,
           ),
           const SizedBox(height: kSpacingXs),
         ],
         TextField(
           key: key,
           controller: controller,
-          decoration: decoration,
+          // By providing a new InputDecoration, it will automatically
+          // be decorated by the global inputDecorationTheme.
+          decoration: InputDecoration(
+            hintText: hintText,
+            suffixText: suffixText,
+          ),
           keyboardType: keyboardType,
           onChanged: onChanged,
           onSubmitted: onSubmitted,
@@ -78,7 +62,7 @@ class GrufioTextFieldSimple extends StatelessWidget {
           textAlign: textAlign,
           focusNode: focusNode,
           inputFormatters: inputFormatters,
-          style: const TextStyle(fontSize: 12.0),
+          style: appTextStyles.bodyM,
         ),
       ],
     );

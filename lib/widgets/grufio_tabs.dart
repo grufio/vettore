@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vettore/theme/app_theme_typography.dart';
 
 class GrufioTabs extends StatelessWidget {
   final List<String> tabTitles;
@@ -14,6 +15,9 @@ class GrufioTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appTextStyles = theme.extension<AppTextStyles>()!;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -26,18 +30,17 @@ class GrufioTabs extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
               decoration: BoxDecoration(
                 color: selectedIndex == index
-                    ? Colors.grey[200]
+                    ? theme.highlightColor
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(4.0),
               ),
               child: Text(
                 tabTitles[index],
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
+                style: appTextStyles.bodyM.copyWith(
                   fontWeight: FontWeight.bold,
-                  color:
-                      selectedIndex == index ? Colors.black : Colors.grey[600],
+                  color: selectedIndex == index
+                      ? theme.colorScheme.primary
+                      : theme.unselectedWidgetColor,
                 ),
               ),
             ),

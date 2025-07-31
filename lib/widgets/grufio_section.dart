@@ -34,7 +34,7 @@ class GrufioSection extends StatelessWidget {
           if (title != null) ...[
             Text(
               title!,
-              style: theme.textTheme.labelSmall,
+              style: theme.textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
           ],

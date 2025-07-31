@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vettore/constants/ui_constants.dart';
+import 'package:vettore/theme/app_theme_typography.dart';
 
 class GrufioDropdownFormField<T> extends StatelessWidget {
   const GrufioDropdownFormField({
@@ -17,23 +18,8 @@ class GrufioDropdownFormField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final decoration = InputDecoration(
-      border: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(0.0)),
-        borderSide: BorderSide(color: Colors.grey),
-      ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(0.0)),
-        borderSide: BorderSide(color: Colors.grey),
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(0.0)),
-        borderSide: BorderSide(width: 2.0, color: Colors.blue), // Example color
-      ),
-      isDense: true,
-      contentPadding:
-          const EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
-    );
+    final theme = Theme.of(context);
+    final appTextStyles = theme.extension<AppTextStyles>()!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,10 +27,7 @@ class GrufioDropdownFormField<T> extends StatelessWidget {
         if (topLabel != null) ...[
           Text(
             topLabel!,
-            style: const TextStyle(
-              fontSize: 10.0,
-              fontWeight: FontWeight.normal,
-            ),
+            style: appTextStyles.bodyS,
           ),
           const SizedBox(height: kSpacingXs),
         ],
@@ -52,8 +35,10 @@ class GrufioDropdownFormField<T> extends StatelessWidget {
           value: value,
           items: items,
           onChanged: onChanged,
-          decoration: decoration,
-          style: const TextStyle(fontSize: 12.0, color: Colors.black),
+          // By passing a new InputDecoration, it will automatically
+          // be decorated by the global inputDecorationTheme.
+          decoration: const InputDecoration(),
+          style: appTextStyles.bodyM,
         ),
       ],
     );

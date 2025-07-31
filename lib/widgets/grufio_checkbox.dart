@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vettore/theme/app_theme_typography.dart';
 
 class GrufioCheckbox extends StatelessWidget {
   const GrufioCheckbox({
@@ -14,6 +15,9 @@ class GrufioCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appTextStyles = theme.extension<AppTextStyles>()!;
+
     return InkWell(
       onTap: () {
         onChanged(!value);
@@ -23,14 +27,13 @@ class GrufioCheckbox extends StatelessWidget {
           Icon(
             value ? Icons.check_box : Icons.check_box_outline_blank,
             size: 16.0,
-            color: value
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).unselectedWidgetColor,
+            color:
+                value ? theme.colorScheme.primary : theme.unselectedWidgetColor,
           ),
           const SizedBox(width: 8),
           Text(
             title,
-            style: const TextStyle(fontSize: 12.0),
+            style: appTextStyles.bodyM,
           ),
         ],
       ),

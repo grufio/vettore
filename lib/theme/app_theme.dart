@@ -12,7 +12,10 @@ final ThemeData appTheme = ThemeData(
   fontFamily: 'Inter',
   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
   colorScheme: kColorScheme,
-  textTheme: kTextTheme,
+
+  extensions: const [
+    appTextStyles,
+  ],
 
   // Component Themes
   elevatedButtonTheme: kElevatedButtonTheme,
