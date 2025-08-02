@@ -16,7 +16,7 @@ import 'package:vettore/features/projects/widgets/convert_tab_view.dart';
 import 'package:vettore/features/projects/widgets/output_tab_view.dart';
 import 'package:vettore/features/projects/widgets/grid_tab_view.dart';
 import 'package:vettore/widgets/grufio_section.dart';
-import 'package:vettore/widgets/grufio_tabs.dart';
+import 'package:vettore/widgets/grufio_tabs_sidebar.dart';
 
 class ProjectEditorPage extends ConsumerStatefulWidget {
   final int projectId;
