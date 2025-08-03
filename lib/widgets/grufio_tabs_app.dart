@@ -154,31 +154,19 @@ class _GrufioTabState extends State<GrufioTab> {
   }
 }
 
-class GrufioTitleBar extends TitleBar {
+class GrufioToolBar extends ToolBar {
   final List<GrufioTabData> tabs;
   final int activeIndex;
   final ValueChanged<int> onTabSelected;
   final ValueChanged<int>? onTabClosed;
 
-  GrufioTitleBar({
+  GrufioToolBar({
     super.key,
     required this.tabs,
     required this.activeIndex,
     required this.onTabSelected,
     this.onTabClosed,
   }) : super(
-          height: 40.0,
-          padding: const EdgeInsets.only(left: 70),
-          alignment: Alignment.centerLeft,
-          decoration: const BoxDecoration(
-            color: kBackgroundColor,
-            border: Border(
-              bottom: BorderSide(
-                color: kBordersColor,
-                width: _kTabBorderWidth,
-              ),
-            ),
-          ),
           title: Row(
             children: [
               ...List.generate(tabs.length, (index) {
@@ -192,10 +180,14 @@ class GrufioTitleBar extends TitleBar {
                   width: tabData.width,
                   showLeftBorder: index == 0,
                   onTap: () => onTabSelected(index),
-                  onClose: isClosable ? () => onTabClosed!(index) : null,
+                  onClose: isClosable ? () => onTabClosed(index) : null,
                 );
               }),
             ],
           ),
+          titleWidth: 400.0,
+          actions: const [
+            ToolBarSpacer(),
+          ],
         );
 }

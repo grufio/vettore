@@ -40,13 +40,13 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   @override
   Widget build(BuildContext context) {
     return MacosWindow(
-      titleBar: GrufioTitleBar(
-        tabs: _tabs,
-        activeIndex: _activeIndex,
-        onTabSelected: _handleTabSelected,
-        onTabClosed: _handleTabClosed,
-      ),
       child: MacosScaffold(
+        toolBar: GrufioToolBar(
+          tabs: _tabs,
+          activeIndex: _activeIndex,
+          onTabSelected: _handleTabSelected,
+          onTabClosed: _handleTabClosed,
+        ),
         children: [
           ContentArea(
             builder: (context, scrollController) {
