@@ -54,6 +54,8 @@ dependencies:
   syncfusion_flutter_pdfviewer: ^26.1.41
   vector_graphics: ^1.1.11+1
   flutter_svg: ^2.2.0
+  macos_ui: ^2.2.0
+  macos_window_utils: ^1.8.4
 
 dev_dependencies:
   flutter_test:
