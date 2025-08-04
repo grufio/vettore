@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:macos_ui/macos_ui.dart';
+import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
@@ -169,7 +170,7 @@ class GrufioToolBar extends ToolBar {
     this.onTabClosed,
     required this.isFullscreen,
   }) : super(
-          title: Row(
+          leading: Row(
             children: [
               if (!isFullscreen) const SizedBox(width: 70),
               ...List.generate(tabs.length, (index) {

@@ -74,17 +74,15 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final toolbar = GrufioToolBar(
-      tabs: _tabs,
-      activeIndex: _activeIndex,
-      onTabSelected: _handleTabSelected,
-      onTabClosed: _handleTabClosed,
-      isFullscreen: _isFullscreen,
-    );
-
     return MacosWindow(
       child: MacosScaffold(
-        toolBar: toolbar,
+        toolBar: GrufioToolBar(
+          tabs: _tabs,
+          activeIndex: _activeIndex,
+          onTabSelected: _handleTabSelected,
+          onTabClosed: _handleTabClosed,
+          isFullscreen: _isFullscreen,
+        ),
         children: [
           ContentArea(
             builder: (context, scrollController) {
