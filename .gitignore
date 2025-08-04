@@ -25,9 +25,7 @@
 # Other
 **/doc/api/
 
-# Generated code
-*.g.dart
-*.freezed.dart
+
 
 # VS Code
 .vscode/
@@ -89,5 +87,3 @@ melos.yaml
 melos.lock
 melos_local.yaml
 
-# Local database file
-db.sqlite
