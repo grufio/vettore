@@ -159,6 +159,7 @@ class GrufioToolBar extends ToolBar {
   final int activeIndex;
   final ValueChanged<int> onTabSelected;
   final ValueChanged<int>? onTabClosed;
+  final bool isFullscreen;
 
   GrufioToolBar({
     super.key,
@@ -166,9 +167,11 @@ class GrufioToolBar extends ToolBar {
     required this.activeIndex,
     required this.onTabSelected,
     this.onTabClosed,
+    required this.isFullscreen,
   }) : super(
           title: Row(
             children: [
+              if (!isFullscreen) const SizedBox(width: 70),
               ...List.generate(tabs.length, (index) {
                 final tabData = tabs[index];
                 final bool isClosable =

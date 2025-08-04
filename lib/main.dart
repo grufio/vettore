@@ -17,7 +17,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // This is required to be able to manipulate the window.
-  await WindowManipulator.initialize();
+  await WindowManipulator.initialize(enableWindowDelegate: true);
 
   // Make the title bar transparent.
   await WindowManipulator.makeTitlebarTransparent();
@@ -36,6 +36,14 @@ Future<void> main() async {
   );
 
   runApp(const MyApp());
+
+  final options = NSAppPresentationOptions.from({
+    NSAppPresentationOption.fullScreen,
+    NSAppPresentationOption.autoHideToolbar,
+    NSAppPresentationOption.autoHideMenuBar,
+    NSAppPresentationOption.autoHideDock,
+  });
+  options.applyAsFullScreenPresentationOptions();
 
   // After the app has started, we can reposition the window controls.
   // We add a small delay to ensure the window is ready.
