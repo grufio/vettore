@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:macos_ui/macos_ui.dart';
-import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
@@ -153,45 +152,4 @@ class _GrufioTabState extends State<GrufioTab> {
       ),
     );
   }
-}
-
-class GrufioToolBar extends ToolBar {
-  final List<GrufioTabData> tabs;
-  final int activeIndex;
-  final ValueChanged<int> onTabSelected;
-  final ValueChanged<int>? onTabClosed;
-  final bool isFullscreen;
-
-  GrufioToolBar({
-    super.key,
-    required this.tabs,
-    required this.activeIndex,
-    required this.onTabSelected,
-    this.onTabClosed,
-    required this.isFullscreen,
-  }) : super(
-          leading: Row(
-            children: [
-              if (!isFullscreen) const SizedBox(width: 70),
-              ...List.generate(tabs.length, (index) {
-                final tabData = tabs[index];
-                final bool isClosable =
-                    onTabClosed != null && tabData.label != null;
-                return GrufioTab(
-                  isActive: activeIndex == index,
-                  iconPath: tabData.iconPath,
-                  label: tabData.label,
-                  width: tabData.width,
-                  showLeftBorder: index == 0,
-                  onTap: () => onTabSelected(index),
-                  onClose: isClosable ? () => onTabClosed(index) : null,
-                );
-              }),
-            ],
-          ),
-          titleWidth: 400.0,
-          actions: const [
-            ToolBarSpacer(),
-          ],
-        );
 }
