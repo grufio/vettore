@@ -28,7 +28,7 @@ Future<void> main() async {
     for (final color in allColors) {
       final name = color.name.padRight(longestName);
       final density = color.colorDensity?.toStringAsFixed(4) ?? 'N/A';
-      print('  ${name}  |  Density: ${density} g/ml');
+      print('  $name  |  Density: $density g/ml');
     }
 
     print('\nVerification complete.');

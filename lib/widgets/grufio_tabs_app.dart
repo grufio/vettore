@@ -1,8 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:macos_ui/macos_ui.dart';
-import 'package:macos_window_utils/macos_window_utils.dart';
-import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 // --- Constants for Tab Dimensions and Styles ---
@@ -19,18 +16,22 @@ const double _kCloseButtonSize = 20.0;
 const double _kCloseButtonIconSize = 16.0;
 const double _kCloseButtonBorderRadius = 4.0;
 
-// --- Colors ---
-const Color _kContentColor = Colors.black;
-const Color _kContentColorInactive = Colors.black54;
-final Color _kTabHoverColor = Colors.grey.withOpacity(0.15);
-final Color _kCloseButtonHoverColor = Colors.grey.withOpacity(0.2);
-const Color _kTabActiveColor = Colors.white;
+// --- Colors from theme
+const Color _kContentColor = kTabTextColor;
+const Color _kContentColorInactive = kTabTextColorInactive; // font inactive
+const Color _kContentColorHover = kTabTextColor; // hover text/icon
+const Color _kTabHoverColor = kTabBackgroundHover;
+const Color _kCloseButtonHoverColor = kTabCloseHoverBackground;
+const Color _kTabActiveColor = kTabBackgroundActive; // active tab background
+const Color _kTabInactiveBgColor =
+    kTabBackgroundInactive; // background inactive
 
 class GrufioTab extends StatefulWidget {
   final String iconPath;
   final String? label;
   final bool isActive;
   final bool showLeftBorder;
+  final bool showRightBorder;
   final VoidCallback onTap;
   final VoidCallback? onClose;
   final double? width;
@@ -44,6 +45,7 @@ class GrufioTab extends StatefulWidget {
     this.onClose,
     this.width,
     this.showLeftBorder = false,
+    this.showRightBorder = true,
   });
 
   @override
@@ -65,16 +67,20 @@ class _GrufioTabState extends State<GrufioTab> {
           width: _kCloseButtonSize,
           height: _kCloseButtonSize,
           decoration: BoxDecoration(
-            color: _isCloseButtonHovered
-                ? _kCloseButtonHoverColor
-                : Colors.transparent,
+            color:
+                _isCloseButtonHovered ? _kCloseButtonHoverColor : kTransparent,
             borderRadius: BorderRadius.circular(_kCloseButtonBorderRadius),
           ),
-          child: Icon(
-            Icons.close,
-            size: _kCloseButtonIconSize,
-            color:
-                _isCloseButtonHovered ? _kContentColor : _kContentColorInactive,
+          child: SvgPicture.asset(
+            'assets/icons/16/close--filled.svg',
+            width: _kCloseButtonIconSize,
+            height: _kCloseButtonIconSize,
+            colorFilter: ColorFilter.mode(
+              _isCloseButtonHovered
+                  ? _kContentColorHover
+                  : _kContentColorInactive,
+              BlendMode.srcIn,
+            ),
           ),
         ),
       ),
@@ -84,9 +90,9 @@ class _GrufioTabState extends State<GrufioTab> {
   @override
   Widget build(BuildContext context) {
     final bool isClosable = widget.onClose != null;
-    final Color contentColor = (widget.isActive || _isHovered)
-        ? _kContentColor
-        : _kContentColorInactive;
+    final Color contentColor = _isHovered
+        ? _kContentColorHover
+        : (widget.isActive ? _kContentColor : _kContentColorInactive);
 
     final iconWidget = SvgPicture.asset(
       widget.iconPath,
@@ -127,71 +133,36 @@ class _GrufioTabState extends State<GrufioTab> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: Container(
-          width: widget.width,
-          height: _kTabHeight,
-          padding: widget.label == null
-              ? EdgeInsets.zero
-              : const EdgeInsets.symmetric(horizontal: _kTabHorizontalPadding),
-          decoration: BoxDecoration(
-            color: widget.isActive
-                ? _kTabActiveColor
-                : (_isHovered ? _kTabHoverColor : Colors.transparent),
-            border: Border(
-              left: widget.showLeftBorder
-                  ? const BorderSide(
-                      color: kBordersColor, width: _kTabBorderWidth)
-                  : BorderSide.none,
-              right: const BorderSide(
-                color: kBordersColor,
-                width: _kTabBorderWidth,
+        child: ColoredBox(
+          color: _kTabInactiveBgColor, // ensure tab strip background F0F0F0
+          child: Container(
+            width: widget.width,
+            height: _kTabHeight,
+            padding: widget.label == null
+                ? EdgeInsets.zero
+                : const EdgeInsets.symmetric(
+                    horizontal: _kTabHorizontalPadding),
+            decoration: BoxDecoration(
+              color: widget.isActive
+                  ? _kTabActiveColor
+                  : (_isHovered ? _kTabHoverColor : _kTabInactiveBgColor),
+              border: Border(
+                left: widget.showLeftBorder
+                    ? const BorderSide(
+                        color: kBordersColor, width: _kTabBorderWidth)
+                    : BorderSide.none,
+                right: widget.showRightBorder
+                    ? const BorderSide(
+                        color: kBordersColor,
+                        width: _kTabBorderWidth,
+                      )
+                    : BorderSide.none,
               ),
             ),
+            child: child,
           ),
-          child: child,
         ),
       ),
     );
   }
-}
-
-class GrufioToolBar extends ToolBar {
-  final List<GrufioTabData> tabs;
-  final int activeIndex;
-  final ValueChanged<int> onTabSelected;
-  final ValueChanged<int>? onTabClosed;
-  final bool isFullscreen;
-
-  GrufioToolBar({
-    super.key,
-    required this.tabs,
-    required this.activeIndex,
-    required this.onTabSelected,
-    this.onTabClosed,
-    required this.isFullscreen,
-  }) : super(
-          leading: Row(
-            children: [
-              if (!isFullscreen) const SizedBox(width: 70),
-              ...List.generate(tabs.length, (index) {
-                final tabData = tabs[index];
-                final bool isClosable =
-                    onTabClosed != null && tabData.label != null;
-                return GrufioTab(
-                  isActive: activeIndex == index,
-                  iconPath: tabData.iconPath,
-                  label: tabData.label,
-                  width: tabData.width,
-                  showLeftBorder: index == 0,
-                  onTap: () => onTabSelected(index),
-                  onClose: isClosable ? () => onTabClosed(index) : null,
-                );
-              }),
-            ],
-          ),
-          titleWidth: 400.0,
-          actions: const [
-            ToolBarSpacer(),
-          ],
-        );
 }

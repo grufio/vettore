@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/widgets/import_recipe_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -381,7 +380,7 @@ class _ComponentDialogState extends ConsumerState<_ComponentDialog> {
         _colorNames = vendorColors.map((c) => c.color.name).toSet().toList()
           ..sort();
 
-        void _onColorNameSelected(String? name) {
+        void onColorNameSelected(String? name) {
           if (name == null) return;
           setState(() {
             _selectedColorName = name;
@@ -409,7 +408,7 @@ class _ComponentDialogState extends ConsumerState<_ComponentDialog> {
                     child: Text(name),
                   );
                 }).toList(),
-                onChanged: _onColorNameSelected,
+                onChanged: onColorNameSelected,
               ),
               GrufioTextFieldSimple(
                 controller: _percentageController,

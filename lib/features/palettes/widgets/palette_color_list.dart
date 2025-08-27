@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/data/database.dart';
 import 'package:vettore/repositories/palette_repository.dart';
 
 class PaletteColorList extends ConsumerWidget {
