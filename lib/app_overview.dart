@@ -9,6 +9,7 @@ import 'dart:io' show Platform;
 
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/widgets/grufio_tabs_app.dart' show GrufioTab;
+import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 const double _kToolbarHeight = 40.0;
@@ -114,31 +115,12 @@ class _AppOverviewPageState extends State<AppOverviewPage>
         child: Column(
           children: [
             // ─────────── Titlebar region (custom frame) ───────────
-            WindowTitleBarBox(
-              child: Container(
-                height: _kToolbarHeight,
-                decoration: BoxDecoration(
-                  color: kHeaderBackgroundColor,
-                  border: Border(
-                      bottom: BorderSide(color: kHeaderDividerColor, width: 1)),
-                ),
-                padding: EdgeInsets.only(left: _isFullscreen ? 0 : 72),
-                child: Row(
-                  children: [
-                    // Tabs left
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: GrufioTabsApp(
-                        tabs: _tabs,
-                        activeIndex: _activeIndex,
-                        onTabSelected: _onTabSelected,
-                      ),
-                    ),
-                    // Drag zone right
-                    Expanded(child: MoveWindow()),
-                  ],
-                ),
-              ),
+            AppHeaderBar(
+              tabs: _tabs,
+              activeIndex: _activeIndex,
+              onTabSelected: _onTabSelected,
+              height: _kToolbarHeight,
+              leftPaddingWhenWindowed: 72,
             ),
 
             // ─────────── Content region ───────────
