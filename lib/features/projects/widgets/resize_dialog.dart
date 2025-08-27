@@ -14,7 +14,7 @@ class ResizeDialog extends StatefulWidget {
 
 class _ResizeDialogState extends State<ResizeDialog> {
   late final TextEditingController _controller;
-  FilterQuality _selectedFilterQuality = FilterQuality.high; // Default
+  final FilterQuality _selectedFilterQuality = FilterQuality.high; // Default
 
   final Map<String, FilterQuality> _filterOptions = {
     'Bikubisch (Glatt)': FilterQuality.high,

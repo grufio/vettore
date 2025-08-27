@@ -160,7 +160,7 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
                 paletteId: widget.paletteId,
                 title: 'New Color',
                 color: Colors.black.value,
-                status: drift.Value('new'),
+                status: const drift.Value('new'),
               );
 
               await ref

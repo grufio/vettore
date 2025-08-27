@@ -1,33 +1,44 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:macos_ui/macos_ui.dart';
-import 'app_overview.dart';
+import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'dart:io' show Platform;
 
-/// This method initializes macos_window_utils and styles the window.
-Future<void> _configureMacosWindowUtils() async {
-  const config = MacosWindowUtilsConfig();
-  await config.apply();
-}
+import 'app_overview.dart';
+import 'theme/app_theme_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (!kIsWeb && Platform.isMacOS) {
-    await _configureMacosWindowUtils();
-  }
-
   runApp(const MyApp());
+
+  // Only perform desktop window setup on macOS.
+  if (Platform.isMacOS) {
+    doWhenWindowReady(() {
+      appWindow.minSize = const Size(400, 300);
+      appWindow.alignment = Alignment.center;
+      appWindow.show();
+    });
+  }
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return const MacosApp(
-      debugShowCheckedModeBanner: false,
-      home: AppOverviewPage(),
+    if (Platform.isMacOS) {
+      return MacosApp(
+        debugShowCheckedModeBanner: false,
+        theme: appTheme,
+        color: kBackgroundColor,
+        home: const AppOverviewPage(),
+      );
+    }
+
+    // On non-macOS (e.g., iOS), use a minimal WidgetsApp to render content
+    // without importing Material or Cupertino themes.
+    return WidgetsApp(
+      color: kBackgroundColor,
+      builder: (context, _) => const AppOverviewPage(),
     );
   }
 }

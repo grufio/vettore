@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:macos_ui/macos_ui.dart';
-import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 // --- Constants for Tab Dimensions and Styles ---
@@ -18,12 +16,14 @@ const double _kCloseButtonSize = 20.0;
 const double _kCloseButtonIconSize = 16.0;
 const double _kCloseButtonBorderRadius = 4.0;
 
-// --- Colors ---
-const Color _kContentColor = Colors.black;
-const Color _kContentColorInactive = Colors.black54;
-final Color _kTabHoverColor = Colors.grey.withOpacity(0.15);
-final Color _kCloseButtonHoverColor = Colors.grey.withOpacity(0.2);
-const Color _kTabActiveColor = Colors.white;
+// --- Colors (no Material)
+const Color _kContentColor = kOnBackgroundColor;
+const Color _kContentColorInactive = Color(0xFF7D7D7D); // font inactive
+const Color _kContentColorHover = Color(0xFF000000); // hover text/icon
+const Color _kTabHoverColor = Color(0xFFDCDCDC);
+const Color _kCloseButtonHoverColor = Color(0x33000000);
+const Color _kTabActiveColor = kSurfaceColor; // active tab background = white
+const Color _kTabInactiveBgColor = Color(0xFFF0F0F0); // background inactive
 
 class GrufioTab extends StatefulWidget {
   final String iconPath;
@@ -66,14 +66,19 @@ class _GrufioTabState extends State<GrufioTab> {
           decoration: BoxDecoration(
             color: _isCloseButtonHovered
                 ? _kCloseButtonHoverColor
-                : Colors.transparent,
+                : const Color(0x00000000),
             borderRadius: BorderRadius.circular(_kCloseButtonBorderRadius),
           ),
-          child: Icon(
-            Icons.close,
-            size: _kCloseButtonIconSize,
-            color:
-                _isCloseButtonHovered ? _kContentColor : _kContentColorInactive,
+          child: SvgPicture.asset(
+            'assets/icons/16/close--filled.svg',
+            width: _kCloseButtonIconSize,
+            height: _kCloseButtonIconSize,
+            colorFilter: ColorFilter.mode(
+              _isCloseButtonHovered
+                  ? _kContentColorHover
+                  : _kContentColorInactive,
+              BlendMode.srcIn,
+            ),
           ),
         ),
       ),
@@ -83,9 +88,9 @@ class _GrufioTabState extends State<GrufioTab> {
   @override
   Widget build(BuildContext context) {
     final bool isClosable = widget.onClose != null;
-    final Color contentColor = (widget.isActive || _isHovered)
-        ? _kContentColor
-        : _kContentColorInactive;
+    final Color contentColor = _isHovered
+        ? _kContentColorHover
+        : (widget.isActive ? _kContentColor : _kContentColorInactive);
 
     final iconWidget = SvgPicture.asset(
       widget.iconPath,
@@ -126,28 +131,32 @@ class _GrufioTabState extends State<GrufioTab> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: Container(
-          width: widget.width,
-          height: _kTabHeight,
-          padding: widget.label == null
-              ? EdgeInsets.zero
-              : const EdgeInsets.symmetric(horizontal: _kTabHorizontalPadding),
-          decoration: BoxDecoration(
-            color: widget.isActive
-                ? _kTabActiveColor
-                : (_isHovered ? _kTabHoverColor : Colors.transparent),
-            border: Border(
-              left: widget.showLeftBorder
-                  ? const BorderSide(
-                      color: kBordersColor, width: _kTabBorderWidth)
-                  : BorderSide.none,
-              right: const BorderSide(
-                color: kBordersColor,
-                width: _kTabBorderWidth,
+        child: ColoredBox(
+          color: _kTabInactiveBgColor, // ensure tab strip background F0F0F0
+          child: Container(
+            width: widget.width,
+            height: _kTabHeight,
+            padding: widget.label == null
+                ? EdgeInsets.zero
+                : const EdgeInsets.symmetric(
+                    horizontal: _kTabHorizontalPadding),
+            decoration: BoxDecoration(
+              color: widget.isActive
+                  ? _kTabActiveColor
+                  : (_isHovered ? _kTabHoverColor : _kTabInactiveBgColor),
+              border: Border(
+                left: widget.showLeftBorder
+                    ? const BorderSide(
+                        color: kBordersColor, width: _kTabBorderWidth)
+                    : BorderSide.none,
+                right: const BorderSide(
+                  color: kBordersColor,
+                  width: _kTabBorderWidth,
+                ),
               ),
             ),
+            child: child,
           ),
-          child: child,
         ),
       ),
     );

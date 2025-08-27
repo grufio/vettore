@@ -28,7 +28,7 @@ Future<void> main() async {
     for (final color in allColors) {
       final name = color.name.padRight(longestName);
       final weight = color.weightInGrams?.toStringAsFixed(2) ?? 'N/A';
-      print('  ${name}  |  Weight: ${weight}g');
+      print('  $name  |  Weight: ${weight}g');
     }
 
     print('\nVerification complete.');

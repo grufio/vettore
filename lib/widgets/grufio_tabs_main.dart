@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/theme/app_theme_colors.dart';
 
 // --- Constants for Tab Dimensions and Styles ---
 const double _kTabHeight = 40.0;
@@ -9,11 +10,13 @@ const double _kTabSpacing = 8.0;
 const double _kTabFontSize = 12.0;
 const String _kTabFontFamily = 'Inter';
 
-// --- Colors ---
-const Color _kContentColor = Colors.black;
-const Color _kContentColorInactive = Colors.black54;
-final Color _kTabHoverColor = Colors.grey.withOpacity(0.15);
-const Color _kTabActiveColor = Colors.white;
+// --- Colors --- (use app palette)
+const Color _kContentColor = kOnBackgroundColor;
+const Color _kContentColorInactive = Color(0xFF7D7D7D);
+const Color _kContentColorHover = Color(0xFF000000);
+const Color _kTabHoverColor = Color(0xFFDCDCDC);
+const Color _kTabActiveColor = kSurfaceColor;
+const Color _kTabInactiveBgColor = Color(0xFFF0F0F0);
 
 class GrufioTabContent extends StatefulWidget {
   final String iconPath;
@@ -40,9 +43,9 @@ class _GrufioTabContentState extends State<GrufioTabContent> {
   Widget build(BuildContext context) {
     // The `isActive` state is passed from the parent `MacosTabView`.
     // The `_isHovered` state is managed locally.
-    final Color contentColor = (widget.isActive || _isHovered)
-        ? _kContentColor
-        : _kContentColorInactive;
+    final Color contentColor = _isHovered
+        ? _kContentColorHover
+        : (widget.isActive ? _kContentColor : _kContentColorInactive);
 
     final iconWidget = SvgPicture.asset(
       widget.iconPath,
@@ -83,7 +86,7 @@ class _GrufioTabContentState extends State<GrufioTabContent> {
         decoration: BoxDecoration(
           color: widget.isActive
               ? _kTabActiveColor
-              : (_isHovered ? _kTabHoverColor : Colors.transparent),
+              : (_isHovered ? _kTabHoverColor : _kTabInactiveBgColor),
         ),
         child: child,
       ),
