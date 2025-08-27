@@ -36,7 +36,8 @@ class GrufioTabsApp extends StatelessWidget {
           label: t.label,
           width: t.width,
           isActive: i == activeIndex,
-          showLeftBorder: i > 0,
+          showLeftBorder: i == 0, // home: left border
+          showRightBorder: true, // all tabs: right border (home has both)
           onTap: () => onTabSelected(i),
         );
       }),
@@ -69,40 +70,28 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
           children: [
             // ─────────── Titlebar region (custom frame) ───────────
             WindowTitleBarBox(
-              child: TitlebarSafeArea(
-                child: Container(
+              child: Container(
+                height: _kToolbarHeight,
+                decoration: BoxDecoration(
                   color: const Color(0xFFF0F0F0),
-                  child: ToolBar(
-                    height: _kToolbarHeight,
-                    titleWidth: double.infinity,
-                    leading: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        MinimizeWindowButton(),
-                        MaximizeWindowButton(),
-                        CloseWindowButton(),
-                      ],
+                  border: Border(
+                      bottom: BorderSide(color: kBordersColor, width: 1)),
+                ),
+                padding: const EdgeInsets.only(left: 72),
+                child: Row(
+                  children: [
+                    // Tabs left
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: GrufioTabsApp(
+                        tabs: _tabs,
+                        activeIndex: _activeIndex,
+                        onTabSelected: _onTabSelected,
+                      ),
                     ),
-                    title: Row(
-                      children: [
-                        const SizedBox(width: 0),
-                        SizedBox(
-                          height: _kToolbarHeight,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: GrufioTabsApp(
-                              tabs: _tabs,
-                              activeIndex: _activeIndex,
-                              onTabSelected: _onTabSelected,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(child: MoveWindow()),
-                      ],
-                    ),
-                    actions: const [],
-                  ),
+                    // Drag zone right
+                    Expanded(child: MoveWindow()),
+                  ],
                 ),
               ),
             ),

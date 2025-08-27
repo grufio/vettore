@@ -10,13 +10,17 @@ import 'theme/app_theme_colors.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(const MyApp());
-
-  // Only perform desktop window setup on macOS.
+  // Configure native window BEFORE first frame on macOS
   if (Platform.isMacOS) {
     await WindowManipulator.initialize();
     await WindowManipulator.makeTitlebarTransparent();
     await WindowManipulator.enableFullSizeContentView();
+  }
+
+  runApp(const MyApp());
+
+  // Only perform desktop window setup on macOS.
+  if (Platform.isMacOS) {
     doWhenWindowReady(() {
       appWindow.minSize = const Size(400, 300);
       appWindow.alignment = Alignment.center;

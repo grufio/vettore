@@ -30,6 +30,7 @@ class GrufioTab extends StatefulWidget {
   final String? label;
   final bool isActive;
   final bool showLeftBorder;
+  final bool showRightBorder;
   final VoidCallback onTap;
   final VoidCallback? onClose;
   final double? width;
@@ -43,6 +44,7 @@ class GrufioTab extends StatefulWidget {
     this.onClose,
     this.width,
     this.showLeftBorder = false,
+    this.showRightBorder = true,
   });
 
   @override
@@ -149,10 +151,12 @@ class _GrufioTabState extends State<GrufioTab> {
                     ? const BorderSide(
                         color: kBordersColor, width: _kTabBorderWidth)
                     : BorderSide.none,
-                right: const BorderSide(
-                  color: kBordersColor,
-                  width: _kTabBorderWidth,
-                ),
+                right: widget.showRightBorder
+                    ? const BorderSide(
+                        color: kBordersColor,
+                        width: _kTabBorderWidth,
+                      )
+                    : BorderSide.none,
               ),
             ),
             child: child,
