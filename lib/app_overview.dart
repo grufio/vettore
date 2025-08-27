@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:macos_ui/macos_ui.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:macos_window_utils/macos_window_utils.dart';
 import 'dart:io' show Platform;
 
 import 'package:vettore/models/grufio_tab_data.dart';
@@ -68,42 +69,40 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
           children: [
             // ─────────── Titlebar region (custom frame) ───────────
             WindowTitleBarBox(
-              child: ColoredBox(
-                color: const Color(0xFFF0F0F0),
-                child: ToolBar(
-                  height: _kToolbarHeight,
-                  leading: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      MinimizeWindowButton(),
-                      MaximizeWindowButton(),
-                      CloseWindowButton(),
-                    ],
-                  ),
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: ColoredBox(
-                          color: const Color(0xFFF0F0F0),
-                          child: MoveWindow(),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: _kToolbarHeight,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: GrufioTabsApp(
-                            tabs: _tabs,
-                            activeIndex: _activeIndex,
-                            onTabSelected: _onTabSelected,
+              child: TitlebarSafeArea(
+                child: Container(
+                  color: const Color(0xFFF0F0F0),
+                  child: ToolBar(
+                    height: _kToolbarHeight,
+                    titleWidth: double.infinity,
+                    leading: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        MinimizeWindowButton(),
+                        MaximizeWindowButton(),
+                        CloseWindowButton(),
+                      ],
+                    ),
+                    title: Row(
+                      children: [
+                        const SizedBox(width: 0),
+                        SizedBox(
+                          height: _kToolbarHeight,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: GrufioTabsApp(
+                              tabs: _tabs,
+                              activeIndex: _activeIndex,
+                              onTabSelected: _onTabSelected,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
+                        const SizedBox(width: 8),
+                        Expanded(child: MoveWindow()),
+                      ],
+                    ),
+                    actions: const [],
                   ),
-                  actions: const [],
                 ),
               ),
             ),

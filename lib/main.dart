@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'dart:io' show Platform;
+import 'package:macos_window_utils/macos_window_utils.dart';
 
 import 'app_overview.dart';
 import 'theme/app_theme_colors.dart';
@@ -13,6 +14,9 @@ Future<void> main() async {
 
   // Only perform desktop window setup on macOS.
   if (Platform.isMacOS) {
+    await WindowManipulator.initialize();
+    await WindowManipulator.makeTitlebarTransparent();
+    await WindowManipulator.enableFullSizeContentView();
     doWhenWindowReady(() {
       appWindow.minSize = const Size(400, 300);
       appWindow.alignment = Alignment.center;
