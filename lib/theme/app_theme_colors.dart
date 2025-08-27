@@ -53,3 +53,20 @@ final MacosThemeData appTheme = MacosThemeData(
     secondaryColor: kSecondaryColor,
   ),
 );
+
+// =================================================================================
+// Header/Tab Colors (centralized for reuse)
+// =================================================================================
+
+// Titlebar/header background and divider
+const Color kHeaderBackgroundColor = Color(0xFFF0F0F0);
+const Color kHeaderDividerColor = kBordersColor;
+
+// Tab colors
+const Color kTabTextColor = kOnBackgroundColor;
+const Color kTabTextColorInactive = Color(0xFF7D7D7D);
+const Color kTabBackgroundActive = kSurfaceColor;
+const Color kTabBackgroundInactive = Color(0xFFF0F0F0);
+const Color kTabBackgroundHover = Color(0xFFDCDCDC);
+const Color kTabCloseHoverBackground = Color(0x33000000);
+const Color kTransparent = Color(0x00000000);

@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:macos_ui/macos_ui.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
-import 'package:macos_window_utils/macos_window_utils.dart';
+import 'package:window_manager/window_manager.dart';
 import 'dart:io' show Platform;
 
 import 'package:vettore/models/grufio_tab_data.dart';
@@ -51,8 +51,10 @@ class AppOverviewPage extends StatefulWidget {
   State<AppOverviewPage> createState() => _AppOverviewPageState();
 }
 
-class _AppOverviewPageState extends State<AppOverviewPage> {
+class _AppOverviewPageState extends State<AppOverviewPage>
+    with WidgetsBindingObserver, WindowListener {
   int _activeIndex = 0;
+  bool _isFullscreen = false;
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
     const GrufioTabData(
@@ -60,6 +62,49 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   ];
 
   void _onTabSelected(int i) => setState(() => _activeIndex = i);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    if (Platform.isMacOS) {
+      windowManager.addListener(this);
+      _refreshWindowInfo();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (Platform.isMacOS) {
+      windowManager.removeListener(this);
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    if (Platform.isMacOS) {
+      _refreshWindowInfo();
+    }
+  }
+
+  Future<void> _refreshWindowInfo() async {
+    try {
+      final isFs = await windowManager.isFullScreen();
+      if (!mounted) return;
+      setState(() {
+        _isFullscreen = isFs;
+      });
+    } catch (_) {}
+  }
+
+  @override
+  void onWindowEvent(String eventName) async {
+    if (eventName == 'enter-full-screen' || eventName == 'leave-full-screen') {
+      await _refreshWindowInfo();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,11 +118,11 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
               child: Container(
                 height: _kToolbarHeight,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F0F0),
+                  color: kHeaderBackgroundColor,
                   border: Border(
-                      bottom: BorderSide(color: kBordersColor, width: 1)),
+                      bottom: BorderSide(color: kHeaderDividerColor, width: 1)),
                 ),
-                padding: const EdgeInsets.only(left: 72),
+                padding: EdgeInsets.only(left: _isFullscreen ? 0 : 72),
                 child: Row(
                   children: [
                     // Tabs left

@@ -16,14 +16,15 @@ const double _kCloseButtonSize = 20.0;
 const double _kCloseButtonIconSize = 16.0;
 const double _kCloseButtonBorderRadius = 4.0;
 
-// --- Colors (no Material)
-const Color _kContentColor = kOnBackgroundColor;
-const Color _kContentColorInactive = Color(0xFF7D7D7D); // font inactive
-const Color _kContentColorHover = Color(0xFF000000); // hover text/icon
-const Color _kTabHoverColor = Color(0xFFDCDCDC);
-const Color _kCloseButtonHoverColor = Color(0x33000000);
-const Color _kTabActiveColor = kSurfaceColor; // active tab background = white
-const Color _kTabInactiveBgColor = Color(0xFFF0F0F0); // background inactive
+// --- Colors from theme
+const Color _kContentColor = kTabTextColor;
+const Color _kContentColorInactive = kTabTextColorInactive; // font inactive
+const Color _kContentColorHover = kTabTextColor; // hover text/icon
+const Color _kTabHoverColor = kTabBackgroundHover;
+const Color _kCloseButtonHoverColor = kTabCloseHoverBackground;
+const Color _kTabActiveColor = kTabBackgroundActive; // active tab background
+const Color _kTabInactiveBgColor =
+    kTabBackgroundInactive; // background inactive
 
 class GrufioTab extends StatefulWidget {
   final String iconPath;
@@ -66,9 +67,8 @@ class _GrufioTabState extends State<GrufioTab> {
           width: _kCloseButtonSize,
           height: _kCloseButtonSize,
           decoration: BoxDecoration(
-            color: _isCloseButtonHovered
-                ? _kCloseButtonHoverColor
-                : const Color(0x00000000),
+            color:
+                _isCloseButtonHovered ? _kCloseButtonHoverColor : kTransparent,
             borderRadius: BorderRadius.circular(_kCloseButtonBorderRadius),
           ),
           child: SvgPicture.asset(
