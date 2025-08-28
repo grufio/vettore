@@ -13,13 +13,14 @@ const double _kTabBorderWidth = 1.0;
 
 // --- Constants for Close Button ---
 const double _kCloseButtonSize = 20.0;
-const double _kCloseButtonIconSize = 16.0;
+const double _kCloseButtonIconSize = 20.0;
 const double _kCloseButtonBorderRadius = 4.0;
 
 // --- Colors from theme
 const Color _kContentColor = kTabTextColor;
 const Color _kContentColorInactive = kTabTextColorInactive; // font inactive
-const Color _kContentColorHover = kTabTextColor; // hover text/icon
+const Color _kContentColorHover =
+    kTabTextColorInactive; // hover text/icon = 7D7D7D
 const Color _kTabHoverColor = kTabBackgroundHover;
 const Color _kCloseButtonHoverColor = kTabCloseHoverBackground;
 const Color _kTabActiveColor = kTabBackgroundActive; // active tab background
@@ -72,7 +73,7 @@ class _GrufioTabState extends State<GrufioTab> {
             borderRadius: BorderRadius.circular(_kCloseButtonBorderRadius),
           ),
           child: SvgPicture.asset(
-            'assets/icons/16/close--filled.svg',
+            'assets/icons/32/close.svg',
             width: _kCloseButtonIconSize,
             height: _kCloseButtonIconSize,
             colorFilter: ColorFilter.mode(

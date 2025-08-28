@@ -18,6 +18,8 @@ class AppHeaderBar extends StatefulWidget {
     this.leftPaddingWhenWindowed = 72.0,
     this.enableDragZone = true,
     this.autoFullscreenPadding = true,
+    this.showCloseButtons = true,
+    this.onCloseTab,
   });
 
   final List<GrufioTabData> tabs;
@@ -27,6 +29,8 @@ class AppHeaderBar extends StatefulWidget {
   final double leftPaddingWhenWindowed;
   final bool enableDragZone;
   final bool autoFullscreenPadding;
+  final bool showCloseButtons;
+  final ValueChanged<int>? onCloseTab;
 
   @override
   State<AppHeaderBar> createState() => _AppHeaderBarState();
@@ -104,6 +108,9 @@ class _AppHeaderBarState extends State<AppHeaderBar>
                   showLeftBorder: i == 0,
                   showRightBorder: true,
                   onTap: () => widget.onTabSelected(i),
+                  onClose: (widget.showCloseButtons && i > 0)
+                      ? () => widget.onCloseTab?.call(i)
+                      : null,
                 );
               }),
             ),
@@ -115,7 +122,8 @@ class _AppHeaderBarState extends State<AppHeaderBar>
     );
 
     if (Platform.isMacOS) {
-      return WindowTitleBarBox(child: header);
+      // Return the full 40px header without wrapping in WindowTitleBarBox
+      return header;
     }
     return header;
   }

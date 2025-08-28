@@ -121,6 +121,7 @@ class _AppOverviewPageState extends State<AppOverviewPage>
               onTabSelected: _onTabSelected,
               height: _kToolbarHeight,
               leftPaddingWhenWindowed: 72,
+              onCloseTab: (_) {},
             ),
 
             // ─────────── Content region ───────────
