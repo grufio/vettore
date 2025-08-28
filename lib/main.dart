@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'dart:io' show Platform;
-import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app_overview.dart';
@@ -15,8 +14,6 @@ Future<void> main() async {
   if (Platform.isMacOS) {
     await windowManager.ensureInitialized();
     await WindowManipulator.initialize();
-    await WindowManipulator.makeTitlebarTransparent();
-    await WindowManipulator.enableFullSizeContentView();
   }
 
   runApp(const MyApp());

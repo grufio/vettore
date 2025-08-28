@@ -87,7 +87,7 @@ class _AppHeaderBarState extends State<AppHeaderBar>
 
     final header = Container(
       height: widget.height,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: kHeaderBackgroundColor,
         border:
             Border(bottom: BorderSide(color: kHeaderDividerColor, width: 1)),
