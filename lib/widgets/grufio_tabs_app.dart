@@ -20,7 +20,7 @@ const double _kCloseButtonBorderRadius = 4.0;
 const Color _kContentColor = kTabTextColor;
 const Color _kContentColorInactive = kTabTextColorInactive; // font inactive
 const Color _kContentColorHover =
-    kTabTextColorInactive; // hover text/icon = 7D7D7D
+    kTextBlackColor; // hover text/icon = black for inactive tabs
 const Color _kTabHoverColor = kTabBackgroundHover;
 const Color _kCloseButtonHoverColor = kTabCloseHoverBackground;
 const Color _kTabActiveColor = kTabBackgroundActive; // active tab background
@@ -91,9 +91,9 @@ class _GrufioTabState extends State<GrufioTab> {
   @override
   Widget build(BuildContext context) {
     final bool isClosable = widget.onClose != null;
-    final Color contentColor = _isHovered
-        ? _kContentColorHover
-        : (widget.isActive ? _kContentColor : _kContentColorInactive);
+    final Color contentColor = widget.isActive
+        ? _kContentColor
+        : (_isHovered ? _kContentColorHover : _kContentColorInactive);
 
     final iconWidget = SvgPicture.asset(
       widget.iconPath,
@@ -121,7 +121,7 @@ class _GrufioTabState extends State<GrufioTab> {
               if (isClosable) ...[
                 const SizedBox(width: _kTabSpacing),
                 Opacity(
-                  opacity: _isHovered ? 1.0 : 0.0,
+                  opacity: widget.isActive ? 1.0 : (_isHovered ? 1.0 : 0.0),
                   child: _buildCloseButton(),
                 ),
               ],

@@ -1,9 +1,6 @@
 // lib/app_overview.dart
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
-import 'package:macos_ui/macos_ui.dart';
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:window_manager/window_manager.dart';
 import 'dart:io' show Platform;
 
@@ -64,6 +61,17 @@ class _AppOverviewPageState extends State<AppOverviewPage>
 
   void _onTabSelected(int i) => setState(() => _activeIndex = i);
 
+  void _onCloseTab(int index) {
+    if (index <= 0 || index >= _tabs.length)
+      return; // do not close home; guard bounds
+    setState(() {
+      _tabs.removeAt(index);
+      if (_activeIndex >= _tabs.length) {
+        _activeIndex = _tabs.length - 1;
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -121,7 +129,7 @@ class _AppOverviewPageState extends State<AppOverviewPage>
               onTabSelected: _onTabSelected,
               height: _kToolbarHeight,
               leftPaddingWhenWindowed: 72,
-              onCloseTab: (_) {},
+              onCloseTab: _onCloseTab,
             ),
 
             // ─────────── Content region ───────────

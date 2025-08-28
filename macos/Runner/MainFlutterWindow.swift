@@ -12,11 +12,6 @@ class MainFlutterWindow: BitsdojoWindow {
     centerTrafficLightsVertically()
   }
 
-  override func layout() {
-    super.layout()
-    centerTrafficLightsVertically()
-  }
-
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     let windowFrame = self.frame

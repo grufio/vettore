@@ -18,6 +18,8 @@ const Color kOnSecondaryColor = Color(0xFFFFFFFF);
 const Color kOnBackgroundColor = Color(0xFF212121); // Dark grey for text
 const Color kOnSurfaceColor = Color(0xFF212121);
 const Color kOnErrorColor = Color(0xFFFFFFFF);
+// Explicit black for text where true black is desired
+const Color kTextBlackColor = Color(0xFF000000);
 
 // =================================================================================
 // Main App Theme
@@ -30,20 +32,20 @@ final MacosThemeData appTheme = MacosThemeData(
   canvasColor: kBackgroundColor,
   dividerColor: kBordersColor,
   typography: MacosTypography(
-    color: kOnBackgroundColor, // This was the missing parameter
-    body: const TextStyle(color: kOnBackgroundColor),
+    color: kTextBlackColor,
+    body: const TextStyle(color: kTextBlackColor),
     title1: const TextStyle(
-      color: kOnBackgroundColor,
+      color: kTextBlackColor,
       fontWeight: FontWeight.bold,
       fontSize: 24,
     ),
     title2: const TextStyle(
-      color: kOnBackgroundColor,
+      color: kTextBlackColor,
       fontWeight: FontWeight.bold,
       fontSize: 20,
     ),
     title3: const TextStyle(
-      color: kOnBackgroundColor,
+      color: kTextBlackColor,
       fontWeight: FontWeight.bold,
       fontSize: 18,
     ),
@@ -68,5 +70,6 @@ const Color kTabTextColorInactive = Color(0xFF7D7D7D);
 const Color kTabBackgroundActive = kSurfaceColor;
 const Color kTabBackgroundInactive = Color(0xFFF0F0F0);
 const Color kTabBackgroundHover = Color(0xFFDCDCDC);
-const Color kTabCloseHoverBackground = Color(0x33000000);
+const Color kTabCloseHoverBackground =
+    Color(0xFFBFBFBF); // TabsIcon.create hover bg
 const Color kTransparent = Color(0x00000000);
