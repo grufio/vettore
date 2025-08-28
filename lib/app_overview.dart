@@ -1,7 +1,6 @@
 // lib/app_overview.dart
 
 import 'package:flutter/cupertino.dart';
-import 'package:window_manager/window_manager.dart';
 import 'dart:io' show Platform;
 
 import 'package:vettore/models/grufio_tab_data.dart';
@@ -49,14 +48,14 @@ class AppOverviewPage extends StatefulWidget {
   State<AppOverviewPage> createState() => _AppOverviewPageState();
 }
 
-class _AppOverviewPageState extends State<AppOverviewPage>
-    with WidgetsBindingObserver, WindowListener {
+class _AppOverviewPageState extends State<AppOverviewPage> {
   int _activeIndex = 0;
-  bool _isFullscreen = false;
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
     const GrufioTabData(
         iconPath: 'assets/icons/32/color-palette.svg', label: 'Palette'),
+    const GrufioTabData(
+        iconPath: 'assets/icons/32/color-palette.svg', label: 'Example'),
   ];
 
   void _onTabSelected(int i) => setState(() => _activeIndex = i);
@@ -72,47 +71,19 @@ class _AppOverviewPageState extends State<AppOverviewPage>
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    if (Platform.isMacOS) {
-      windowManager.addListener(this);
-      _refreshWindowInfo();
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    if (Platform.isMacOS) {
-      windowManager.removeListener(this);
-    }
-    super.dispose();
-  }
-
-  @override
-  void didChangeMetrics() {
-    if (Platform.isMacOS) {
-      _refreshWindowInfo();
-    }
-  }
-
-  Future<void> _refreshWindowInfo() async {
-    try {
-      final isFs = await windowManager.isFullScreen();
-      if (!mounted) return;
-      setState(() {
-        _isFullscreen = isFs;
-      });
-    } catch (_) {}
-  }
-
-  @override
-  void onWindowEvent(String eventName) async {
-    if (eventName == 'enter-full-screen' || eventName == 'leave-full-screen') {
-      await _refreshWindowInfo();
-    }
+  void _onAddTab() {
+    final int paletteIndex = _tabs.indexWhere((t) => t.label == 'Palette');
+    final int insertIndex = paletteIndex >= 0 ? paletteIndex + 1 : _tabs.length;
+    setState(() {
+      _tabs.insert(
+        insertIndex,
+        const GrufioTabData(
+          iconPath: 'assets/icons/32/color-palette.svg',
+          label: 'Example',
+        ),
+      );
+      _activeIndex = insertIndex;
+    });
   }
 
   @override
@@ -130,6 +101,7 @@ class _AppOverviewPageState extends State<AppOverviewPage>
               height: _kToolbarHeight,
               leftPaddingWhenWindowed: 72,
               onCloseTab: _onCloseTab,
+              onAddTab: _onAddTab,
             ),
 
             // ─────────── Content region ───────────

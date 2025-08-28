@@ -20,6 +20,7 @@ class AppHeaderBar extends StatefulWidget {
     this.autoFullscreenPadding = true,
     this.showCloseButtons = true,
     this.onCloseTab,
+    this.onAddTab,
   });
 
   final List<GrufioTabData> tabs;
@@ -31,6 +32,7 @@ class AppHeaderBar extends StatefulWidget {
   final bool autoFullscreenPadding;
   final bool showCloseButtons;
   final ValueChanged<int>? onCloseTab;
+  final VoidCallback? onAddTab;
 
   @override
   State<AppHeaderBar> createState() => _AppHeaderBarState();
@@ -114,6 +116,9 @@ class _AppHeaderBarState extends State<AppHeaderBar>
                 );
               }),
             ),
+          ),
+          GrufioTabButton(
+            onTap: () => widget.onAddTab?.call(),
           ),
           if (Platform.isMacOS && widget.enableDragZone)
             Expanded(child: MoveWindow()),

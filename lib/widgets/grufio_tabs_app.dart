@@ -4,8 +4,8 @@ import 'package:vettore/theme/app_theme_colors.dart';
 
 // --- Constants for Tab Dimensions and Styles ---
 const double _kTabHeight = 40.0;
-const double _kTabIconSize = 16.0;
-const double _kTabHorizontalPadding = 12.0;
+const double _kTabIconSize = 20.0;
+const double _kTabHorizontalPadding = 8.0;
 const double _kTabSpacing = 8.0;
 const double _kTabFontSize = 12.0;
 const String _kTabFontFamily = 'Inter';
@@ -161,6 +161,57 @@ class _GrufioTabState extends State<GrufioTab> {
               ),
             ),
             child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A plus-tab button that matches the inactive tab styling but has no borders.
+/// Fixed size: 40x40. Displays only the add icon and triggers [onTap] when pressed.
+class GrufioTabButton extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const GrufioTabButton({super.key, required this.onTap});
+
+  @override
+  State<GrufioTabButton> createState() => _GrufioTabButtonState();
+}
+
+class _GrufioTabButtonState extends State<GrufioTabButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color contentColor =
+        _isHovered ? _kContentColorHover : _kContentColorInactive;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: ColoredBox(
+          color: _kTabInactiveBgColor,
+          child: Container(
+            width: _kTabHeight,
+            height: _kTabHeight,
+            decoration: BoxDecoration(
+              color: _isHovered ? _kTabHoverColor : _kTabInactiveBgColor,
+              border: const Border(
+                left: BorderSide.none,
+                right: BorderSide.none,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: SvgPicture.asset(
+              'assets/icons/32/add.svg',
+              width: 20.0,
+              height: 20.0,
+              colorFilter: ColorFilter.mode(contentColor, BlendMode.srcIn),
+            ),
           ),
         ),
       ),
