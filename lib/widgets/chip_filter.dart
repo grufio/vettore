@@ -3,11 +3,10 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
 /// Active filter chip
-/// Specs:
 /// - height: 20px
 /// - padding left/right: 8px
-/// - text: bold 12px black
-/// - background: kWhite
+/// - font: medium 12px, color kGrey90
+/// - background: kChipActiveBackground
 class ContentChip extends StatelessWidget {
   final String label;
 
@@ -15,18 +14,13 @@ class ContentChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appText = Theme.of(context).extension<AppTextStyles>();
-    final TextStyle textStyle = (appText?.bodyM ??
-            const TextStyle(fontSize: 12.0))
-        .copyWith(fontWeight: FontWeight.bold, color: kGrey100, height: 1.0);
+    final TextStyle textStyle = appTextStyles.bodyMMedium;
 
     return Container(
       height: 20.0,
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: kWhite,
-      ),
+      decoration: const BoxDecoration(color: kChipActiveBackground),
       child: Text(
         label,
         style: textStyle,

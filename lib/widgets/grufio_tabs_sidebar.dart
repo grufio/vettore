@@ -16,7 +16,6 @@ class GrufioTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appTextStyles = theme.extension<AppTextStyles>()!;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,

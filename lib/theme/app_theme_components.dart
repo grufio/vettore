@@ -11,7 +11,8 @@ final ElevatedButtonThemeData kElevatedButtonTheme = ElevatedButtonThemeData(
   style: ElevatedButton.styleFrom(
     backgroundColor: kPrimaryColor,
     foregroundColor: kWhite,
-    textStyle: appTextStyles.bodyXL.copyWith(fontWeight: FontWeight.bold),
+    textStyle:
+        appTextStyles.bodyM.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8.0),
     ),

@@ -22,9 +22,7 @@ class HomeSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appTextStyles = Theme.of(context).extension<AppTextStyles>();
-    final TextStyle baseTextStyle = (appTextStyles?.bodyM ??
-        const TextStyle(fontSize: 12.0, color: kGrey90));
+    final TextStyle baseTextStyle = appTextStyles.bodyM;
 
     return Container(
       width: width,

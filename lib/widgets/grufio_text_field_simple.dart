@@ -33,17 +33,13 @@ class GrufioTextFieldSimple extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appTextStyles = theme.extension<AppTextStyles>()!;
+    Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (topLabel != null) ...[
-          Text(
-            topLabel!,
-            style: appTextStyles.bodyS,
-          ),
+          Text(topLabel!, style: appTextStyles.bodyS),
           const SizedBox(height: kSpacingXs),
         ],
         TextField(

@@ -16,7 +16,6 @@ class GrufioCheckbox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appTextStyles = theme.extension<AppTextStyles>()!;
 
     return InkWell(
       onTap: () {
@@ -31,10 +30,7 @@ class GrufioCheckbox extends StatelessWidget {
                 value ? theme.colorScheme.primary : theme.unselectedWidgetColor,
           ),
           const SizedBox(width: 8),
-          Text(
-            title,
-            style: appTextStyles.bodyM,
-          ),
+          Text(title, style: appTextStyles.bodyM),
         ],
       ),
     );

@@ -17,10 +17,10 @@ class _AddProjectButtonState extends State<AddProjectButton> {
 
   @override
   Widget build(BuildContext context) {
-    final appTextStyles = Theme.of(context).extension<AppTextStyles>();
-    final TextStyle labelStyle =
-        (appTextStyles?.bodyM ?? const TextStyle(fontSize: 12))
-            .copyWith(color: kWhite, height: 1.0);
+    final TextStyle labelStyle = appTextStyles.bodyM.copyWith(
+      color: kWhite,
+      height: 1.0,
+    );
     final Color backgroundColor = _isHovered ? kGrey100 : kButtonColor;
 
     return MouseRegion(
@@ -30,7 +30,7 @@ class _AddProjectButtonState extends State<AddProjectButton> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          height: 28.0,
+          height: 24.0,
           padding: const EdgeInsets.only(left: 8.0, right: 12.0),
           decoration: BoxDecoration(
             color: backgroundColor,

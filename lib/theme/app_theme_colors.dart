@@ -18,12 +18,14 @@ const Color kGrey80 = Color(0xFF464646);
 const Color kGrey90 = Color(0xFF282828);
 const Color kGrey100 = Color(0xFF000000);
 
-// Button
+//Button
 const Color kButtonColor = kGrey70;
 
 // Header
 const Color kHeaderBackgroundColor = kGrey10;
 const Color kBordersColor = kGrey20;
+// Chips
+const Color kChipActiveBackground = kGrey10;
 
 // Tab colors
 const Color kTabTextColorInactive = kGrey60;
