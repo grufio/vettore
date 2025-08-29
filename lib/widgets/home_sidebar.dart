@@ -29,7 +29,7 @@ class HomeSidebar extends StatelessWidget {
     return Container(
       width: width,
       decoration: const BoxDecoration(
-        color: kBackgroundColor,
+        color: kWhite,
         border: Border(
           right: BorderSide(color: kBordersColor, width: 1.0),
         ),
@@ -185,7 +185,7 @@ class _SidebarRowState extends State<_SidebarRow> {
           height: widget.height,
           padding: EdgeInsets.symmetric(horizontal: widget.horizontalPadding),
           decoration: BoxDecoration(
-            color: _isHovered ? kTabBackgroundHover : kBackgroundColor,
+            color: _isHovered ? kTabBackgroundHover : kWhite,
             // No per-row borders; section dividers are handled externally
             border: null,
           ),

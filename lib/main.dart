@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
       return MacosApp(
         debugShowCheckedModeBanner: false,
         theme: appTheme,
-        color: kBackgroundColor,
+        color: kWhite,
         home: const AppOverviewPage(),
       );
     }
@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
     // On non-macOS (e.g., iOS), use a minimal WidgetsApp to render content
     // without importing Material or Cupertino themes.
     return WidgetsApp(
-      color: kBackgroundColor,
+      color: kWhite,
       builder: (context, _) => const AppOverviewPage(),
     );
   }

@@ -68,7 +68,7 @@ class _GrufioTabState extends State<GrufioTab> {
             width: _kCloseButtonIconSize,
             height: _kCloseButtonIconSize,
             colorFilter: ColorFilter.mode(
-              _isCloseButtonHovered ? kTextBlackColor : kTabTextColorInactive,
+              _isCloseButtonHovered ? kBlack : kTabTextColorInactive,
               BlendMode.srcIn,
             ),
           ),
@@ -82,7 +82,7 @@ class _GrufioTabState extends State<GrufioTab> {
     final bool isClosable = widget.onClose != null;
     final Color contentColor = widget.isActive
         ? kTabTextColor
-        : (_isHovered ? kTextBlackColor : kTabTextColorInactive);
+        : (_isHovered ? kBlack : kTabTextColorInactive);
 
     final iconWidget = SvgPicture.asset(
       widget.iconPath,
@@ -173,8 +173,7 @@ class _GrufioTabButtonState extends State<GrufioTabButton> {
 
   @override
   Widget build(BuildContext context) {
-    final Color contentColor =
-        _isHovered ? kTextBlackColor : kTabTextColorInactive;
+    final Color contentColor = _isHovered ? kBlack : kTabTextColorInactive;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,

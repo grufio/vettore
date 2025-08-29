@@ -6,6 +6,10 @@ import 'dart:io' show Platform;
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/widgets/grufio_tabs_app.dart' show GrufioTab;
 import 'package:vettore/widgets/home_sidebar.dart';
+import 'package:vettore/widgets/content_toolbar.dart';
+import 'package:vettore/widgets/button_app.dart';
+import 'package:vettore/widgets/content_filter.dart';
+import 'package:vettore/widgets/chip_filter.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
@@ -91,7 +95,7 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   Widget build(BuildContext context) {
     if (Platform.isMacOS) {
       return ColoredBox(
-        color: kBackgroundColor,
+        color: kWhite,
         child: Column(
           children: [
             // ─────────── Titlebar region (custom frame) ───────────
@@ -108,7 +112,7 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
             // ─────────── Content region ───────────
             Expanded(
               child: ColoredBox(
-                color: kBackgroundColor,
+                color: kWhite,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -122,8 +126,29 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                         horizontalPadding: 16.0,
                       ),
                     Expanded(
-                      child: Center(
-                        child: Text('Content for Tab ${_activeIndex + 1}'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (_activeIndex == 0)
+                            ContentToolbar(
+                              children: [
+                                AddProjectButton(onTap: () {}),
+                              ],
+                            ),
+                          if (_activeIndex == 0)
+                            const ContentFilter(
+                              children: [
+                                ContentChip.active(label: 'Completed'),
+                                ContentChip.active(label: 'All'),
+                              ],
+                            ),
+                          Expanded(
+                            child: Center(
+                              child:
+                                  Text('Content for Tab ${_activeIndex + 1}'),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -137,7 +162,7 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
 
     // iOS and other non-macOS platforms: render without macOS-specific widgets.
     return Container(
-      color: kBackgroundColor,
+      color: kWhite,
       child: Column(
         children: [
           // Simple header area with tabs

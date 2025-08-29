@@ -9,23 +9,23 @@ import 'package:vettore/theme/app_theme_colors.dart';
 /// A macOS theme that uses the custom colors from your theme.
 final MacosThemeData appTheme = MacosThemeData.light().copyWith(
   primaryColor: kPrimaryColor,
-  canvasColor: kBackgroundColor,
+  canvasColor: kWhite,
   dividerColor: kBordersColor,
   typography: MacosTypography(
-    color: kTextBlackColor,
-    body: const TextStyle(color: kTextBlackColor),
+    color: kBlack,
+    body: const TextStyle(color: kBlack),
     title1: const TextStyle(
-      color: kTextBlackColor,
+      color: kBlack,
       fontWeight: FontWeight.bold,
       fontSize: 24,
     ),
     title2: const TextStyle(
-      color: kTextBlackColor,
+      color: kBlack,
       fontWeight: FontWeight.bold,
       fontSize: 20,
     ),
     title3: const TextStyle(
-      color: kTextBlackColor,
+      color: kBlack,
       fontWeight: FontWeight.bold,
       fontSize: 18,
     ),

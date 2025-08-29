@@ -8,18 +8,18 @@ import 'package:macos_ui/macos_ui.dart';
 
 const Color kPrimaryColor = Color(0xFF0D47A1); // A deep, professional blue
 const Color kSecondaryColor = Color(0xFF28a745); // A vibrant, clear green
-const Color kBackgroundColor = Color(0xFFFFFFFF);
-const Color kSurfaceColor = Color(0xFFFFFFFF);
+// Buttons
+const Color kButtonColor = Color(0xFF646464);
+const Color kWhite = Color(0xFFFFFFFF);
+// Deprecated: use kWhite directly. Keeping for now to avoid breaking import
 const Color kErrorColor = Color(0xFFdc3545); // A standard error red
 const Color kBordersColor = Color(0xFFDCDCDC); // For borders and dividers
 
-const Color kOnPrimaryColor = Color(0xFFFFFFFF);
-const Color kOnSecondaryColor = Color(0xFFFFFFFF);
 const Color kOnBackgroundColor = Color(0xFF212121); // Dark grey for text
 const Color kOnSurfaceColor = Color(0xFF212121);
-const Color kOnErrorColor = Color(0xFFFFFFFF);
+
 // Explicit black for text where true black is desired
-const Color kTextBlackColor = Color(0xFF000000);
+const Color kBlack = Color(0xFF000000);
 
 // =================================================================================
 // Main App Theme
@@ -29,23 +29,23 @@ const Color kTextBlackColor = Color(0xFF000000);
 final MacosThemeData appTheme = MacosThemeData(
   brightness: ui.Brightness.light,
   primaryColor: kPrimaryColor,
-  canvasColor: kBackgroundColor,
+  canvasColor: kWhite,
   dividerColor: kBordersColor,
   typography: MacosTypography(
-    color: kTextBlackColor,
-    body: const TextStyle(color: kTextBlackColor),
+    color: kBlack,
+    body: const TextStyle(color: kBlack),
     title1: const TextStyle(
-      color: kTextBlackColor,
+      color: kBlack,
       fontWeight: FontWeight.bold,
       fontSize: 24,
     ),
     title2: const TextStyle(
-      color: kTextBlackColor,
+      color: kBlack,
       fontWeight: FontWeight.bold,
       fontSize: 20,
     ),
     title3: const TextStyle(
-      color: kTextBlackColor,
+      color: kBlack,
       fontWeight: FontWeight.bold,
       fontSize: 18,
     ),
@@ -67,7 +67,7 @@ const Color kHeaderDividerColor = kBordersColor;
 // Tab colors
 const Color kTabTextColor = kOnBackgroundColor;
 const Color kTabTextColorInactive = Color(0xFF7D7D7D);
-const Color kTabBackgroundActive = kSurfaceColor;
+const Color kTabBackgroundActive = kWhite;
 const Color kTabBackgroundInactive = Color(0xFFF0F0F0);
 const Color kTabBackgroundHover = Color(0xFFDCDCDC);
 const Color kTabCloseHoverBackground =

@@ -10,7 +10,7 @@ import 'package:vettore/theme/app_theme_typography.dart';
 final ElevatedButtonThemeData kElevatedButtonTheme = ElevatedButtonThemeData(
   style: ElevatedButton.styleFrom(
     backgroundColor: kPrimaryColor,
-    foregroundColor: kOnPrimaryColor,
+    foregroundColor: kWhite,
     textStyle: appTextStyles.bodyXL.copyWith(fontWeight: FontWeight.bold),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8.0),
