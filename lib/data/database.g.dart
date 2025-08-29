@@ -2571,6 +2571,1031 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   }
 }
 
+class $ImagesTable extends Images with TableInfo<$ImagesTable, DbImage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ImagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _origSrcMeta =
+      const VerificationMeta('origSrc');
+  @override
+  late final GeneratedColumn<Uint8List> origSrc = GeneratedColumn<Uint8List>(
+      'orig_src', aliasedName, true,
+      type: DriftSqlType.blob, requiredDuringInsert: false);
+  static const VerificationMeta _origBytesMeta =
+      const VerificationMeta('origBytes');
+  @override
+  late final GeneratedColumn<int> origBytes = GeneratedColumn<int>(
+      'orig_bytes', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _origWidthMeta =
+      const VerificationMeta('origWidth');
+  @override
+  late final GeneratedColumn<int> origWidth = GeneratedColumn<int>(
+      'orig_width', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _origHeightMeta =
+      const VerificationMeta('origHeight');
+  @override
+  late final GeneratedColumn<int> origHeight = GeneratedColumn<int>(
+      'orig_height', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _origUniqueColorsMeta =
+      const VerificationMeta('origUniqueColors');
+  @override
+  late final GeneratedColumn<int> origUniqueColors = GeneratedColumn<int>(
+      'orig_unique_colors', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _convSrcMeta =
+      const VerificationMeta('convSrc');
+  @override
+  late final GeneratedColumn<Uint8List> convSrc = GeneratedColumn<Uint8List>(
+      'conv_src', aliasedName, true,
+      type: DriftSqlType.blob, requiredDuringInsert: false);
+  static const VerificationMeta _convBytesMeta =
+      const VerificationMeta('convBytes');
+  @override
+  late final GeneratedColumn<int> convBytes = GeneratedColumn<int>(
+      'conv_bytes', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _convWidthMeta =
+      const VerificationMeta('convWidth');
+  @override
+  late final GeneratedColumn<int> convWidth = GeneratedColumn<int>(
+      'conv_width', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _convHeightMeta =
+      const VerificationMeta('convHeight');
+  @override
+  late final GeneratedColumn<int> convHeight = GeneratedColumn<int>(
+      'conv_height', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _convUniqueColorsMeta =
+      const VerificationMeta('convUniqueColors');
+  @override
+  late final GeneratedColumn<int> convUniqueColors = GeneratedColumn<int>(
+      'conv_unique_colors', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _thumbnailMeta =
+      const VerificationMeta('thumbnail');
+  @override
+  late final GeneratedColumn<Uint8List> thumbnail = GeneratedColumn<Uint8List>(
+      'thumbnail', aliasedName, true,
+      type: DriftSqlType.blob, requiredDuringInsert: false);
+  static const VerificationMeta _mimeTypeMeta =
+      const VerificationMeta('mimeType');
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+      'mime_type', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        origSrc,
+        origBytes,
+        origWidth,
+        origHeight,
+        origUniqueColors,
+        convSrc,
+        convBytes,
+        convWidth,
+        convHeight,
+        convUniqueColors,
+        thumbnail,
+        mimeType
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'images';
+  @override
+  VerificationContext validateIntegrity(Insertable<DbImage> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('orig_src')) {
+      context.handle(_origSrcMeta,
+          origSrc.isAcceptableOrUnknown(data['orig_src']!, _origSrcMeta));
+    }
+    if (data.containsKey('orig_bytes')) {
+      context.handle(_origBytesMeta,
+          origBytes.isAcceptableOrUnknown(data['orig_bytes']!, _origBytesMeta));
+    }
+    if (data.containsKey('orig_width')) {
+      context.handle(_origWidthMeta,
+          origWidth.isAcceptableOrUnknown(data['orig_width']!, _origWidthMeta));
+    }
+    if (data.containsKey('orig_height')) {
+      context.handle(
+          _origHeightMeta,
+          origHeight.isAcceptableOrUnknown(
+              data['orig_height']!, _origHeightMeta));
+    }
+    if (data.containsKey('orig_unique_colors')) {
+      context.handle(
+          _origUniqueColorsMeta,
+          origUniqueColors.isAcceptableOrUnknown(
+              data['orig_unique_colors']!, _origUniqueColorsMeta));
+    }
+    if (data.containsKey('conv_src')) {
+      context.handle(_convSrcMeta,
+          convSrc.isAcceptableOrUnknown(data['conv_src']!, _convSrcMeta));
+    }
+    if (data.containsKey('conv_bytes')) {
+      context.handle(_convBytesMeta,
+          convBytes.isAcceptableOrUnknown(data['conv_bytes']!, _convBytesMeta));
+    }
+    if (data.containsKey('conv_width')) {
+      context.handle(_convWidthMeta,
+          convWidth.isAcceptableOrUnknown(data['conv_width']!, _convWidthMeta));
+    }
+    if (data.containsKey('conv_height')) {
+      context.handle(
+          _convHeightMeta,
+          convHeight.isAcceptableOrUnknown(
+              data['conv_height']!, _convHeightMeta));
+    }
+    if (data.containsKey('conv_unique_colors')) {
+      context.handle(
+          _convUniqueColorsMeta,
+          convUniqueColors.isAcceptableOrUnknown(
+              data['conv_unique_colors']!, _convUniqueColorsMeta));
+    }
+    if (data.containsKey('thumbnail')) {
+      context.handle(_thumbnailMeta,
+          thumbnail.isAcceptableOrUnknown(data['thumbnail']!, _thumbnailMeta));
+    }
+    if (data.containsKey('mime_type')) {
+      context.handle(_mimeTypeMeta,
+          mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DbImage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbImage(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      origSrc: attachedDatabase.typeMapping
+          .read(DriftSqlType.blob, data['${effectivePrefix}orig_src']),
+      origBytes: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}orig_bytes']),
+      origWidth: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}orig_width']),
+      origHeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}orig_height']),
+      origUniqueColors: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}orig_unique_colors']),
+      convSrc: attachedDatabase.typeMapping
+          .read(DriftSqlType.blob, data['${effectivePrefix}conv_src']),
+      convBytes: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}conv_bytes']),
+      convWidth: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}conv_width']),
+      convHeight: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}conv_height']),
+      convUniqueColors: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}conv_unique_colors']),
+      thumbnail: attachedDatabase.typeMapping
+          .read(DriftSqlType.blob, data['${effectivePrefix}thumbnail']),
+      mimeType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}mime_type']),
+    );
+  }
+
+  @override
+  $ImagesTable createAlias(String alias) {
+    return $ImagesTable(attachedDatabase, alias);
+  }
+}
+
+class DbImage extends DataClass implements Insertable<DbImage> {
+  final int id;
+  final Uint8List? origSrc;
+  final int? origBytes;
+  final int? origWidth;
+  final int? origHeight;
+  final int? origUniqueColors;
+  final Uint8List? convSrc;
+  final int? convBytes;
+  final int? convWidth;
+  final int? convHeight;
+  final int? convUniqueColors;
+  final Uint8List? thumbnail;
+  final String? mimeType;
+  const DbImage(
+      {required this.id,
+      this.origSrc,
+      this.origBytes,
+      this.origWidth,
+      this.origHeight,
+      this.origUniqueColors,
+      this.convSrc,
+      this.convBytes,
+      this.convWidth,
+      this.convHeight,
+      this.convUniqueColors,
+      this.thumbnail,
+      this.mimeType});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || origSrc != null) {
+      map['orig_src'] = Variable<Uint8List>(origSrc);
+    }
+    if (!nullToAbsent || origBytes != null) {
+      map['orig_bytes'] = Variable<int>(origBytes);
+    }
+    if (!nullToAbsent || origWidth != null) {
+      map['orig_width'] = Variable<int>(origWidth);
+    }
+    if (!nullToAbsent || origHeight != null) {
+      map['orig_height'] = Variable<int>(origHeight);
+    }
+    if (!nullToAbsent || origUniqueColors != null) {
+      map['orig_unique_colors'] = Variable<int>(origUniqueColors);
+    }
+    if (!nullToAbsent || convSrc != null) {
+      map['conv_src'] = Variable<Uint8List>(convSrc);
+    }
+    if (!nullToAbsent || convBytes != null) {
+      map['conv_bytes'] = Variable<int>(convBytes);
+    }
+    if (!nullToAbsent || convWidth != null) {
+      map['conv_width'] = Variable<int>(convWidth);
+    }
+    if (!nullToAbsent || convHeight != null) {
+      map['conv_height'] = Variable<int>(convHeight);
+    }
+    if (!nullToAbsent || convUniqueColors != null) {
+      map['conv_unique_colors'] = Variable<int>(convUniqueColors);
+    }
+    if (!nullToAbsent || thumbnail != null) {
+      map['thumbnail'] = Variable<Uint8List>(thumbnail);
+    }
+    if (!nullToAbsent || mimeType != null) {
+      map['mime_type'] = Variable<String>(mimeType);
+    }
+    return map;
+  }
+
+  ImagesCompanion toCompanion(bool nullToAbsent) {
+    return ImagesCompanion(
+      id: Value(id),
+      origSrc: origSrc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origSrc),
+      origBytes: origBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origBytes),
+      origWidth: origWidth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origWidth),
+      origHeight: origHeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origHeight),
+      origUniqueColors: origUniqueColors == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origUniqueColors),
+      convSrc: convSrc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(convSrc),
+      convBytes: convBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(convBytes),
+      convWidth: convWidth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(convWidth),
+      convHeight: convHeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(convHeight),
+      convUniqueColors: convUniqueColors == null && nullToAbsent
+          ? const Value.absent()
+          : Value(convUniqueColors),
+      thumbnail: thumbnail == null && nullToAbsent
+          ? const Value.absent()
+          : Value(thumbnail),
+      mimeType: mimeType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mimeType),
+    );
+  }
+
+  factory DbImage.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbImage(
+      id: serializer.fromJson<int>(json['id']),
+      origSrc: serializer.fromJson<Uint8List?>(json['origSrc']),
+      origBytes: serializer.fromJson<int?>(json['origBytes']),
+      origWidth: serializer.fromJson<int?>(json['origWidth']),
+      origHeight: serializer.fromJson<int?>(json['origHeight']),
+      origUniqueColors: serializer.fromJson<int?>(json['origUniqueColors']),
+      convSrc: serializer.fromJson<Uint8List?>(json['convSrc']),
+      convBytes: serializer.fromJson<int?>(json['convBytes']),
+      convWidth: serializer.fromJson<int?>(json['convWidth']),
+      convHeight: serializer.fromJson<int?>(json['convHeight']),
+      convUniqueColors: serializer.fromJson<int?>(json['convUniqueColors']),
+      thumbnail: serializer.fromJson<Uint8List?>(json['thumbnail']),
+      mimeType: serializer.fromJson<String?>(json['mimeType']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'origSrc': serializer.toJson<Uint8List?>(origSrc),
+      'origBytes': serializer.toJson<int?>(origBytes),
+      'origWidth': serializer.toJson<int?>(origWidth),
+      'origHeight': serializer.toJson<int?>(origHeight),
+      'origUniqueColors': serializer.toJson<int?>(origUniqueColors),
+      'convSrc': serializer.toJson<Uint8List?>(convSrc),
+      'convBytes': serializer.toJson<int?>(convBytes),
+      'convWidth': serializer.toJson<int?>(convWidth),
+      'convHeight': serializer.toJson<int?>(convHeight),
+      'convUniqueColors': serializer.toJson<int?>(convUniqueColors),
+      'thumbnail': serializer.toJson<Uint8List?>(thumbnail),
+      'mimeType': serializer.toJson<String?>(mimeType),
+    };
+  }
+
+  DbImage copyWith(
+          {int? id,
+          Value<Uint8List?> origSrc = const Value.absent(),
+          Value<int?> origBytes = const Value.absent(),
+          Value<int?> origWidth = const Value.absent(),
+          Value<int?> origHeight = const Value.absent(),
+          Value<int?> origUniqueColors = const Value.absent(),
+          Value<Uint8List?> convSrc = const Value.absent(),
+          Value<int?> convBytes = const Value.absent(),
+          Value<int?> convWidth = const Value.absent(),
+          Value<int?> convHeight = const Value.absent(),
+          Value<int?> convUniqueColors = const Value.absent(),
+          Value<Uint8List?> thumbnail = const Value.absent(),
+          Value<String?> mimeType = const Value.absent()}) =>
+      DbImage(
+        id: id ?? this.id,
+        origSrc: origSrc.present ? origSrc.value : this.origSrc,
+        origBytes: origBytes.present ? origBytes.value : this.origBytes,
+        origWidth: origWidth.present ? origWidth.value : this.origWidth,
+        origHeight: origHeight.present ? origHeight.value : this.origHeight,
+        origUniqueColors: origUniqueColors.present
+            ? origUniqueColors.value
+            : this.origUniqueColors,
+        convSrc: convSrc.present ? convSrc.value : this.convSrc,
+        convBytes: convBytes.present ? convBytes.value : this.convBytes,
+        convWidth: convWidth.present ? convWidth.value : this.convWidth,
+        convHeight: convHeight.present ? convHeight.value : this.convHeight,
+        convUniqueColors: convUniqueColors.present
+            ? convUniqueColors.value
+            : this.convUniqueColors,
+        thumbnail: thumbnail.present ? thumbnail.value : this.thumbnail,
+        mimeType: mimeType.present ? mimeType.value : this.mimeType,
+      );
+  DbImage copyWithCompanion(ImagesCompanion data) {
+    return DbImage(
+      id: data.id.present ? data.id.value : this.id,
+      origSrc: data.origSrc.present ? data.origSrc.value : this.origSrc,
+      origBytes: data.origBytes.present ? data.origBytes.value : this.origBytes,
+      origWidth: data.origWidth.present ? data.origWidth.value : this.origWidth,
+      origHeight:
+          data.origHeight.present ? data.origHeight.value : this.origHeight,
+      origUniqueColors: data.origUniqueColors.present
+          ? data.origUniqueColors.value
+          : this.origUniqueColors,
+      convSrc: data.convSrc.present ? data.convSrc.value : this.convSrc,
+      convBytes: data.convBytes.present ? data.convBytes.value : this.convBytes,
+      convWidth: data.convWidth.present ? data.convWidth.value : this.convWidth,
+      convHeight:
+          data.convHeight.present ? data.convHeight.value : this.convHeight,
+      convUniqueColors: data.convUniqueColors.present
+          ? data.convUniqueColors.value
+          : this.convUniqueColors,
+      thumbnail: data.thumbnail.present ? data.thumbnail.value : this.thumbnail,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbImage(')
+          ..write('id: $id, ')
+          ..write('origSrc: $origSrc, ')
+          ..write('origBytes: $origBytes, ')
+          ..write('origWidth: $origWidth, ')
+          ..write('origHeight: $origHeight, ')
+          ..write('origUniqueColors: $origUniqueColors, ')
+          ..write('convSrc: $convSrc, ')
+          ..write('convBytes: $convBytes, ')
+          ..write('convWidth: $convWidth, ')
+          ..write('convHeight: $convHeight, ')
+          ..write('convUniqueColors: $convUniqueColors, ')
+          ..write('thumbnail: $thumbnail, ')
+          ..write('mimeType: $mimeType')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      $driftBlobEquality.hash(origSrc),
+      origBytes,
+      origWidth,
+      origHeight,
+      origUniqueColors,
+      $driftBlobEquality.hash(convSrc),
+      convBytes,
+      convWidth,
+      convHeight,
+      convUniqueColors,
+      $driftBlobEquality.hash(thumbnail),
+      mimeType);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbImage &&
+          other.id == this.id &&
+          $driftBlobEquality.equals(other.origSrc, this.origSrc) &&
+          other.origBytes == this.origBytes &&
+          other.origWidth == this.origWidth &&
+          other.origHeight == this.origHeight &&
+          other.origUniqueColors == this.origUniqueColors &&
+          $driftBlobEquality.equals(other.convSrc, this.convSrc) &&
+          other.convBytes == this.convBytes &&
+          other.convWidth == this.convWidth &&
+          other.convHeight == this.convHeight &&
+          other.convUniqueColors == this.convUniqueColors &&
+          $driftBlobEquality.equals(other.thumbnail, this.thumbnail) &&
+          other.mimeType == this.mimeType);
+}
+
+class ImagesCompanion extends UpdateCompanion<DbImage> {
+  final Value<int> id;
+  final Value<Uint8List?> origSrc;
+  final Value<int?> origBytes;
+  final Value<int?> origWidth;
+  final Value<int?> origHeight;
+  final Value<int?> origUniqueColors;
+  final Value<Uint8List?> convSrc;
+  final Value<int?> convBytes;
+  final Value<int?> convWidth;
+  final Value<int?> convHeight;
+  final Value<int?> convUniqueColors;
+  final Value<Uint8List?> thumbnail;
+  final Value<String?> mimeType;
+  const ImagesCompanion({
+    this.id = const Value.absent(),
+    this.origSrc = const Value.absent(),
+    this.origBytes = const Value.absent(),
+    this.origWidth = const Value.absent(),
+    this.origHeight = const Value.absent(),
+    this.origUniqueColors = const Value.absent(),
+    this.convSrc = const Value.absent(),
+    this.convBytes = const Value.absent(),
+    this.convWidth = const Value.absent(),
+    this.convHeight = const Value.absent(),
+    this.convUniqueColors = const Value.absent(),
+    this.thumbnail = const Value.absent(),
+    this.mimeType = const Value.absent(),
+  });
+  ImagesCompanion.insert({
+    this.id = const Value.absent(),
+    this.origSrc = const Value.absent(),
+    this.origBytes = const Value.absent(),
+    this.origWidth = const Value.absent(),
+    this.origHeight = const Value.absent(),
+    this.origUniqueColors = const Value.absent(),
+    this.convSrc = const Value.absent(),
+    this.convBytes = const Value.absent(),
+    this.convWidth = const Value.absent(),
+    this.convHeight = const Value.absent(),
+    this.convUniqueColors = const Value.absent(),
+    this.thumbnail = const Value.absent(),
+    this.mimeType = const Value.absent(),
+  });
+  static Insertable<DbImage> custom({
+    Expression<int>? id,
+    Expression<Uint8List>? origSrc,
+    Expression<int>? origBytes,
+    Expression<int>? origWidth,
+    Expression<int>? origHeight,
+    Expression<int>? origUniqueColors,
+    Expression<Uint8List>? convSrc,
+    Expression<int>? convBytes,
+    Expression<int>? convWidth,
+    Expression<int>? convHeight,
+    Expression<int>? convUniqueColors,
+    Expression<Uint8List>? thumbnail,
+    Expression<String>? mimeType,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (origSrc != null) 'orig_src': origSrc,
+      if (origBytes != null) 'orig_bytes': origBytes,
+      if (origWidth != null) 'orig_width': origWidth,
+      if (origHeight != null) 'orig_height': origHeight,
+      if (origUniqueColors != null) 'orig_unique_colors': origUniqueColors,
+      if (convSrc != null) 'conv_src': convSrc,
+      if (convBytes != null) 'conv_bytes': convBytes,
+      if (convWidth != null) 'conv_width': convWidth,
+      if (convHeight != null) 'conv_height': convHeight,
+      if (convUniqueColors != null) 'conv_unique_colors': convUniqueColors,
+      if (thumbnail != null) 'thumbnail': thumbnail,
+      if (mimeType != null) 'mime_type': mimeType,
+    });
+  }
+
+  ImagesCompanion copyWith(
+      {Value<int>? id,
+      Value<Uint8List?>? origSrc,
+      Value<int?>? origBytes,
+      Value<int?>? origWidth,
+      Value<int?>? origHeight,
+      Value<int?>? origUniqueColors,
+      Value<Uint8List?>? convSrc,
+      Value<int?>? convBytes,
+      Value<int?>? convWidth,
+      Value<int?>? convHeight,
+      Value<int?>? convUniqueColors,
+      Value<Uint8List?>? thumbnail,
+      Value<String?>? mimeType}) {
+    return ImagesCompanion(
+      id: id ?? this.id,
+      origSrc: origSrc ?? this.origSrc,
+      origBytes: origBytes ?? this.origBytes,
+      origWidth: origWidth ?? this.origWidth,
+      origHeight: origHeight ?? this.origHeight,
+      origUniqueColors: origUniqueColors ?? this.origUniqueColors,
+      convSrc: convSrc ?? this.convSrc,
+      convBytes: convBytes ?? this.convBytes,
+      convWidth: convWidth ?? this.convWidth,
+      convHeight: convHeight ?? this.convHeight,
+      convUniqueColors: convUniqueColors ?? this.convUniqueColors,
+      thumbnail: thumbnail ?? this.thumbnail,
+      mimeType: mimeType ?? this.mimeType,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (origSrc.present) {
+      map['orig_src'] = Variable<Uint8List>(origSrc.value);
+    }
+    if (origBytes.present) {
+      map['orig_bytes'] = Variable<int>(origBytes.value);
+    }
+    if (origWidth.present) {
+      map['orig_width'] = Variable<int>(origWidth.value);
+    }
+    if (origHeight.present) {
+      map['orig_height'] = Variable<int>(origHeight.value);
+    }
+    if (origUniqueColors.present) {
+      map['orig_unique_colors'] = Variable<int>(origUniqueColors.value);
+    }
+    if (convSrc.present) {
+      map['conv_src'] = Variable<Uint8List>(convSrc.value);
+    }
+    if (convBytes.present) {
+      map['conv_bytes'] = Variable<int>(convBytes.value);
+    }
+    if (convWidth.present) {
+      map['conv_width'] = Variable<int>(convWidth.value);
+    }
+    if (convHeight.present) {
+      map['conv_height'] = Variable<int>(convHeight.value);
+    }
+    if (convUniqueColors.present) {
+      map['conv_unique_colors'] = Variable<int>(convUniqueColors.value);
+    }
+    if (thumbnail.present) {
+      map['thumbnail'] = Variable<Uint8List>(thumbnail.value);
+    }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImagesCompanion(')
+          ..write('id: $id, ')
+          ..write('origSrc: $origSrc, ')
+          ..write('origBytes: $origBytes, ')
+          ..write('origWidth: $origWidth, ')
+          ..write('origHeight: $origHeight, ')
+          ..write('origUniqueColors: $origUniqueColors, ')
+          ..write('convSrc: $convSrc, ')
+          ..write('convBytes: $convBytes, ')
+          ..write('convWidth: $convWidth, ')
+          ..write('convHeight: $convHeight, ')
+          ..write('convUniqueColors: $convUniqueColors, ')
+          ..write('thumbnail: $thumbnail, ')
+          ..write('mimeType: $mimeType')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProjectsNewTable extends ProjectsNew
+    with TableInfo<$ProjectsNewTable, DbProjectNew> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProjectsNewTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _authorMeta = const VerificationMeta('author');
+  @override
+  late final GeneratedColumn<String> author = GeneratedColumn<String>(
+      'author', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('draft'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _imageIdMeta =
+      const VerificationMeta('imageId');
+  @override
+  late final GeneratedColumn<int> imageId = GeneratedColumn<int>(
+      'image_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES images (id) ON DELETE SET NULL'));
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, title, author, status, createdAt, updatedAt, imageId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'projects_new';
+  @override
+  VerificationContext validateIntegrity(Insertable<DbProjectNew> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('author')) {
+      context.handle(_authorMeta,
+          author.isAcceptableOrUnknown(data['author']!, _authorMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('image_id')) {
+      context.handle(_imageIdMeta,
+          imageId.isAcceptableOrUnknown(data['image_id']!, _imageIdMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DbProjectNew map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbProjectNew(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      author: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}author']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}updated_at'])!,
+      imageId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}image_id']),
+    );
+  }
+
+  @override
+  $ProjectsNewTable createAlias(String alias) {
+    return $ProjectsNewTable(attachedDatabase, alias);
+  }
+}
+
+class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
+  final int id;
+  final String title;
+  final String? author;
+  final String status;
+  final int createdAt;
+  final int updatedAt;
+  final int? imageId;
+  const DbProjectNew(
+      {required this.id,
+      required this.title,
+      this.author,
+      required this.status,
+      required this.createdAt,
+      required this.updatedAt,
+      this.imageId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || author != null) {
+      map['author'] = Variable<String>(author);
+    }
+    map['status'] = Variable<String>(status);
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || imageId != null) {
+      map['image_id'] = Variable<int>(imageId);
+    }
+    return map;
+  }
+
+  ProjectsNewCompanion toCompanion(bool nullToAbsent) {
+    return ProjectsNewCompanion(
+      id: Value(id),
+      title: Value(title),
+      author:
+          author == null && nullToAbsent ? const Value.absent() : Value(author),
+      status: Value(status),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      imageId: imageId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageId),
+    );
+  }
+
+  factory DbProjectNew.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbProjectNew(
+      id: serializer.fromJson<int>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      author: serializer.fromJson<String?>(json['author']),
+      status: serializer.fromJson<String>(json['status']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      imageId: serializer.fromJson<int?>(json['imageId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'title': serializer.toJson<String>(title),
+      'author': serializer.toJson<String?>(author),
+      'status': serializer.toJson<String>(status),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+      'imageId': serializer.toJson<int?>(imageId),
+    };
+  }
+
+  DbProjectNew copyWith(
+          {int? id,
+          String? title,
+          Value<String?> author = const Value.absent(),
+          String? status,
+          int? createdAt,
+          int? updatedAt,
+          Value<int?> imageId = const Value.absent()}) =>
+      DbProjectNew(
+        id: id ?? this.id,
+        title: title ?? this.title,
+        author: author.present ? author.value : this.author,
+        status: status ?? this.status,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        imageId: imageId.present ? imageId.value : this.imageId,
+      );
+  DbProjectNew copyWithCompanion(ProjectsNewCompanion data) {
+    return DbProjectNew(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      author: data.author.present ? data.author.value : this.author,
+      status: data.status.present ? data.status.value : this.status,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      imageId: data.imageId.present ? data.imageId.value : this.imageId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbProjectNew(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('author: $author, ')
+          ..write('status: $status, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('imageId: $imageId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, title, author, status, createdAt, updatedAt, imageId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbProjectNew &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.author == this.author &&
+          other.status == this.status &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.imageId == this.imageId);
+}
+
+class ProjectsNewCompanion extends UpdateCompanion<DbProjectNew> {
+  final Value<int> id;
+  final Value<String> title;
+  final Value<String?> author;
+  final Value<String> status;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int?> imageId;
+  const ProjectsNewCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.author = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.imageId = const Value.absent(),
+  });
+  ProjectsNewCompanion.insert({
+    this.id = const Value.absent(),
+    required String title,
+    this.author = const Value.absent(),
+    this.status = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.imageId = const Value.absent(),
+  })  : title = Value(title),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<DbProjectNew> custom({
+    Expression<int>? id,
+    Expression<String>? title,
+    Expression<String>? author,
+    Expression<String>? status,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? imageId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (author != null) 'author': author,
+      if (status != null) 'status': status,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (imageId != null) 'image_id': imageId,
+    });
+  }
+
+  ProjectsNewCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? title,
+      Value<String?>? author,
+      Value<String>? status,
+      Value<int>? createdAt,
+      Value<int>? updatedAt,
+      Value<int?>? imageId}) {
+    return ProjectsNewCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      author: author ?? this.author,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      imageId: imageId ?? this.imageId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (author.present) {
+      map['author'] = Variable<String>(author.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (imageId.present) {
+      map['image_id'] = Variable<int>(imageId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjectsNewCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('author: $author, ')
+          ..write('status: $status, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('imageId: $imageId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2583,6 +3608,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ColorComponentsTable colorComponents =
       $ColorComponentsTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $ImagesTable images = $ImagesTable(this);
+  late final $ProjectsNewTable projectsNew = $ProjectsNewTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2594,8 +3621,22 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         vendorColors,
         vendorColorVariants,
         colorComponents,
-        settings
+        settings,
+        images,
+        projectsNew
       ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
+        [
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('images',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('projects_new', kind: UpdateKind.update),
+            ],
+          ),
+        ],
+      );
 }
 
 typedef $$PalettesTableCreateCompanionBuilder = PalettesCompanion Function({
@@ -4799,6 +5840,673 @@ typedef $$SettingsTableProcessedTableManager = ProcessedTableManager<
     (Setting, BaseReferences<_$AppDatabase, $SettingsTable, Setting>),
     Setting,
     PrefetchHooks Function()>;
+typedef $$ImagesTableCreateCompanionBuilder = ImagesCompanion Function({
+  Value<int> id,
+  Value<Uint8List?> origSrc,
+  Value<int?> origBytes,
+  Value<int?> origWidth,
+  Value<int?> origHeight,
+  Value<int?> origUniqueColors,
+  Value<Uint8List?> convSrc,
+  Value<int?> convBytes,
+  Value<int?> convWidth,
+  Value<int?> convHeight,
+  Value<int?> convUniqueColors,
+  Value<Uint8List?> thumbnail,
+  Value<String?> mimeType,
+});
+typedef $$ImagesTableUpdateCompanionBuilder = ImagesCompanion Function({
+  Value<int> id,
+  Value<Uint8List?> origSrc,
+  Value<int?> origBytes,
+  Value<int?> origWidth,
+  Value<int?> origHeight,
+  Value<int?> origUniqueColors,
+  Value<Uint8List?> convSrc,
+  Value<int?> convBytes,
+  Value<int?> convWidth,
+  Value<int?> convHeight,
+  Value<int?> convUniqueColors,
+  Value<Uint8List?> thumbnail,
+  Value<String?> mimeType,
+});
+
+final class $$ImagesTableReferences
+    extends BaseReferences<_$AppDatabase, $ImagesTable, DbImage> {
+  $$ImagesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$ProjectsNewTable, List<DbProjectNew>>
+      _projectsNewRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.projectsNew,
+              aliasName:
+                  $_aliasNameGenerator(db.images.id, db.projectsNew.imageId));
+
+  $$ProjectsNewTableProcessedTableManager get projectsNewRefs {
+    final manager = $$ProjectsNewTableTableManager($_db, $_db.projectsNew)
+        .filter((f) => f.imageId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_projectsNewRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$ImagesTableFilterComposer
+    extends Composer<_$AppDatabase, $ImagesTable> {
+  $$ImagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<Uint8List> get origSrc => $composableBuilder(
+      column: $table.origSrc, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get origBytes => $composableBuilder(
+      column: $table.origBytes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get origWidth => $composableBuilder(
+      column: $table.origWidth, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get origHeight => $composableBuilder(
+      column: $table.origHeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get origUniqueColors => $composableBuilder(
+      column: $table.origUniqueColors,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<Uint8List> get convSrc => $composableBuilder(
+      column: $table.convSrc, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get convBytes => $composableBuilder(
+      column: $table.convBytes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get convWidth => $composableBuilder(
+      column: $table.convWidth, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get convHeight => $composableBuilder(
+      column: $table.convHeight, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get convUniqueColors => $composableBuilder(
+      column: $table.convUniqueColors,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<Uint8List> get thumbnail => $composableBuilder(
+      column: $table.thumbnail, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mimeType => $composableBuilder(
+      column: $table.mimeType, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> projectsNewRefs(
+      Expression<bool> Function($$ProjectsNewTableFilterComposer f) f) {
+    final $$ProjectsNewTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.projectsNew,
+        getReferencedColumn: (t) => t.imageId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProjectsNewTableFilterComposer(
+              $db: $db,
+              $table: $db.projectsNew,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$ImagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ImagesTable> {
+  $$ImagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<Uint8List> get origSrc => $composableBuilder(
+      column: $table.origSrc, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get origBytes => $composableBuilder(
+      column: $table.origBytes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get origWidth => $composableBuilder(
+      column: $table.origWidth, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get origHeight => $composableBuilder(
+      column: $table.origHeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get origUniqueColors => $composableBuilder(
+      column: $table.origUniqueColors,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<Uint8List> get convSrc => $composableBuilder(
+      column: $table.convSrc, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get convBytes => $composableBuilder(
+      column: $table.convBytes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get convWidth => $composableBuilder(
+      column: $table.convWidth, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get convHeight => $composableBuilder(
+      column: $table.convHeight, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get convUniqueColors => $composableBuilder(
+      column: $table.convUniqueColors,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<Uint8List> get thumbnail => $composableBuilder(
+      column: $table.thumbnail, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get mimeType => $composableBuilder(
+      column: $table.mimeType, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ImagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ImagesTable> {
+  $$ImagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get origSrc =>
+      $composableBuilder(column: $table.origSrc, builder: (column) => column);
+
+  GeneratedColumn<int> get origBytes =>
+      $composableBuilder(column: $table.origBytes, builder: (column) => column);
+
+  GeneratedColumn<int> get origWidth =>
+      $composableBuilder(column: $table.origWidth, builder: (column) => column);
+
+  GeneratedColumn<int> get origHeight => $composableBuilder(
+      column: $table.origHeight, builder: (column) => column);
+
+  GeneratedColumn<int> get origUniqueColors => $composableBuilder(
+      column: $table.origUniqueColors, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get convSrc =>
+      $composableBuilder(column: $table.convSrc, builder: (column) => column);
+
+  GeneratedColumn<int> get convBytes =>
+      $composableBuilder(column: $table.convBytes, builder: (column) => column);
+
+  GeneratedColumn<int> get convWidth =>
+      $composableBuilder(column: $table.convWidth, builder: (column) => column);
+
+  GeneratedColumn<int> get convHeight => $composableBuilder(
+      column: $table.convHeight, builder: (column) => column);
+
+  GeneratedColumn<int> get convUniqueColors => $composableBuilder(
+      column: $table.convUniqueColors, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get thumbnail =>
+      $composableBuilder(column: $table.thumbnail, builder: (column) => column);
+
+  GeneratedColumn<String> get mimeType =>
+      $composableBuilder(column: $table.mimeType, builder: (column) => column);
+
+  Expression<T> projectsNewRefs<T extends Object>(
+      Expression<T> Function($$ProjectsNewTableAnnotationComposer a) f) {
+    final $$ProjectsNewTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.projectsNew,
+        getReferencedColumn: (t) => t.imageId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ProjectsNewTableAnnotationComposer(
+              $db: $db,
+              $table: $db.projectsNew,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$ImagesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ImagesTable,
+    DbImage,
+    $$ImagesTableFilterComposer,
+    $$ImagesTableOrderingComposer,
+    $$ImagesTableAnnotationComposer,
+    $$ImagesTableCreateCompanionBuilder,
+    $$ImagesTableUpdateCompanionBuilder,
+    (DbImage, $$ImagesTableReferences),
+    DbImage,
+    PrefetchHooks Function({bool projectsNewRefs})> {
+  $$ImagesTableTableManager(_$AppDatabase db, $ImagesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ImagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ImagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<Uint8List?> origSrc = const Value.absent(),
+            Value<int?> origBytes = const Value.absent(),
+            Value<int?> origWidth = const Value.absent(),
+            Value<int?> origHeight = const Value.absent(),
+            Value<int?> origUniqueColors = const Value.absent(),
+            Value<Uint8List?> convSrc = const Value.absent(),
+            Value<int?> convBytes = const Value.absent(),
+            Value<int?> convWidth = const Value.absent(),
+            Value<int?> convHeight = const Value.absent(),
+            Value<int?> convUniqueColors = const Value.absent(),
+            Value<Uint8List?> thumbnail = const Value.absent(),
+            Value<String?> mimeType = const Value.absent(),
+          }) =>
+              ImagesCompanion(
+            id: id,
+            origSrc: origSrc,
+            origBytes: origBytes,
+            origWidth: origWidth,
+            origHeight: origHeight,
+            origUniqueColors: origUniqueColors,
+            convSrc: convSrc,
+            convBytes: convBytes,
+            convWidth: convWidth,
+            convHeight: convHeight,
+            convUniqueColors: convUniqueColors,
+            thumbnail: thumbnail,
+            mimeType: mimeType,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<Uint8List?> origSrc = const Value.absent(),
+            Value<int?> origBytes = const Value.absent(),
+            Value<int?> origWidth = const Value.absent(),
+            Value<int?> origHeight = const Value.absent(),
+            Value<int?> origUniqueColors = const Value.absent(),
+            Value<Uint8List?> convSrc = const Value.absent(),
+            Value<int?> convBytes = const Value.absent(),
+            Value<int?> convWidth = const Value.absent(),
+            Value<int?> convHeight = const Value.absent(),
+            Value<int?> convUniqueColors = const Value.absent(),
+            Value<Uint8List?> thumbnail = const Value.absent(),
+            Value<String?> mimeType = const Value.absent(),
+          }) =>
+              ImagesCompanion.insert(
+            id: id,
+            origSrc: origSrc,
+            origBytes: origBytes,
+            origWidth: origWidth,
+            origHeight: origHeight,
+            origUniqueColors: origUniqueColors,
+            convSrc: convSrc,
+            convBytes: convBytes,
+            convWidth: convWidth,
+            convHeight: convHeight,
+            convUniqueColors: convUniqueColors,
+            thumbnail: thumbnail,
+            mimeType: mimeType,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) =>
+                  (e.readTable(table), $$ImagesTableReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: ({projectsNewRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (projectsNewRefs) db.projectsNew],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (projectsNewRefs)
+                    await $_getPrefetchedData<DbImage, $ImagesTable,
+                            DbProjectNew>(
+                        currentTable: table,
+                        referencedTable:
+                            $$ImagesTableReferences._projectsNewRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$ImagesTableReferences(db, table, p0)
+                                .projectsNewRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.imageId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$ImagesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ImagesTable,
+    DbImage,
+    $$ImagesTableFilterComposer,
+    $$ImagesTableOrderingComposer,
+    $$ImagesTableAnnotationComposer,
+    $$ImagesTableCreateCompanionBuilder,
+    $$ImagesTableUpdateCompanionBuilder,
+    (DbImage, $$ImagesTableReferences),
+    DbImage,
+    PrefetchHooks Function({bool projectsNewRefs})>;
+typedef $$ProjectsNewTableCreateCompanionBuilder = ProjectsNewCompanion
+    Function({
+  Value<int> id,
+  required String title,
+  Value<String?> author,
+  Value<String> status,
+  required int createdAt,
+  required int updatedAt,
+  Value<int?> imageId,
+});
+typedef $$ProjectsNewTableUpdateCompanionBuilder = ProjectsNewCompanion
+    Function({
+  Value<int> id,
+  Value<String> title,
+  Value<String?> author,
+  Value<String> status,
+  Value<int> createdAt,
+  Value<int> updatedAt,
+  Value<int?> imageId,
+});
+
+final class $$ProjectsNewTableReferences
+    extends BaseReferences<_$AppDatabase, $ProjectsNewTable, DbProjectNew> {
+  $$ProjectsNewTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ImagesTable _imageIdTable(_$AppDatabase db) => db.images
+      .createAlias($_aliasNameGenerator(db.projectsNew.imageId, db.images.id));
+
+  $$ImagesTableProcessedTableManager? get imageId {
+    final $_column = $_itemColumn<int>('image_id');
+    if ($_column == null) return null;
+    final manager = $$ImagesTableTableManager($_db, $_db.images)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_imageIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$ProjectsNewTableFilterComposer
+    extends Composer<_$AppDatabase, $ProjectsNewTable> {
+  $$ProjectsNewTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get author => $composableBuilder(
+      column: $table.author, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  $$ImagesTableFilterComposer get imageId {
+    final $$ImagesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.imageId,
+        referencedTable: $db.images,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ImagesTableFilterComposer(
+              $db: $db,
+              $table: $db.images,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ProjectsNewTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProjectsNewTable> {
+  $$ProjectsNewTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get author => $composableBuilder(
+      column: $table.author, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  $$ImagesTableOrderingComposer get imageId {
+    final $$ImagesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.imageId,
+        referencedTable: $db.images,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ImagesTableOrderingComposer(
+              $db: $db,
+              $table: $db.images,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ProjectsNewTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProjectsNewTable> {
+  $$ProjectsNewTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get author =>
+      $composableBuilder(column: $table.author, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ImagesTableAnnotationComposer get imageId {
+    final $$ImagesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.imageId,
+        referencedTable: $db.images,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ImagesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.images,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ProjectsNewTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ProjectsNewTable,
+    DbProjectNew,
+    $$ProjectsNewTableFilterComposer,
+    $$ProjectsNewTableOrderingComposer,
+    $$ProjectsNewTableAnnotationComposer,
+    $$ProjectsNewTableCreateCompanionBuilder,
+    $$ProjectsNewTableUpdateCompanionBuilder,
+    (DbProjectNew, $$ProjectsNewTableReferences),
+    DbProjectNew,
+    PrefetchHooks Function({bool imageId})> {
+  $$ProjectsNewTableTableManager(_$AppDatabase db, $ProjectsNewTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProjectsNewTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProjectsNewTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProjectsNewTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String?> author = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<int> createdAt = const Value.absent(),
+            Value<int> updatedAt = const Value.absent(),
+            Value<int?> imageId = const Value.absent(),
+          }) =>
+              ProjectsNewCompanion(
+            id: id,
+            title: title,
+            author: author,
+            status: status,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            imageId: imageId,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String title,
+            Value<String?> author = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            required int createdAt,
+            required int updatedAt,
+            Value<int?> imageId = const Value.absent(),
+          }) =>
+              ProjectsNewCompanion.insert(
+            id: id,
+            title: title,
+            author: author,
+            status: status,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            imageId: imageId,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$ProjectsNewTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({imageId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (imageId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.imageId,
+                    referencedTable:
+                        $$ProjectsNewTableReferences._imageIdTable(db),
+                    referencedColumn:
+                        $$ProjectsNewTableReferences._imageIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$ProjectsNewTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ProjectsNewTable,
+    DbProjectNew,
+    $$ProjectsNewTableFilterComposer,
+    $$ProjectsNewTableOrderingComposer,
+    $$ProjectsNewTableAnnotationComposer,
+    $$ProjectsNewTableCreateCompanionBuilder,
+    $$ProjectsNewTableUpdateCompanionBuilder,
+    (DbProjectNew, $$ProjectsNewTableReferences),
+    DbProjectNew,
+    PrefetchHooks Function({bool imageId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4817,4 +6525,8 @@ class $AppDatabaseManager {
       $$ColorComponentsTableTableManager(_db, _db.colorComponents);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
+  $$ImagesTableTableManager get images =>
+      $$ImagesTableTableManager(_db, _db.images);
+  $$ProjectsNewTableTableManager get projectsNew =>
+      $$ProjectsNewTableTableManager(_db, _db.projectsNew);
 }

@@ -88,6 +88,44 @@ class Settings extends Table {
   Set<Column> get primaryKey => {key};
 }
 
+// Images Table (new)
+@DataClassName('DbImage')
+class Images extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  // Original image
+  BlobColumn get origSrc => blob().nullable()();
+  IntColumn get origBytes => integer().nullable()();
+  IntColumn get origWidth => integer().nullable()();
+  IntColumn get origHeight => integer().nullable()();
+  IntColumn get origUniqueColors => integer().nullable()();
+
+  // Converted image
+  BlobColumn get convSrc => blob().nullable()();
+  IntColumn get convBytes => integer().nullable()();
+  IntColumn get convWidth => integer().nullable()();
+  IntColumn get convHeight => integer().nullable()();
+  IntColumn get convUniqueColors => integer().nullable()();
+
+  // Extras
+  BlobColumn get thumbnail => blob().nullable()();
+  TextColumn get mimeType => text().nullable()();
+}
+
+// ProjectsNew Table (new)
+@DataClassName('DbProjectNew')
+class ProjectsNew extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get title => text()();
+  TextColumn get author => text().nullable()();
+  TextColumn get status => text().withDefault(const Constant('draft'))();
+  IntColumn get createdAt => integer()(); // unix ms
+  IntColumn get updatedAt => integer()(); // unix ms
+  IntColumn get imageId => integer()
+      .nullable()
+      .references(Images, #id, onDelete: KeyAction.setNull)();
+}
+
 //-
 //-
 //-         DATABASE CLASS
@@ -101,13 +139,15 @@ class Settings extends Table {
   VendorColors,
   VendorColorVariants,
   ColorComponents,
-  Settings
+  Settings,
+  Images,
+  ProjectsNew
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration {
@@ -160,6 +200,18 @@ class AppDatabase extends _$AppDatabase {
         if (from < 12) {
           // Version 12 adds the settings table.
           await m.createTable(settings);
+        }
+        if (from < 13) {
+          // Version 13 adds the new Images and ProjectsNew tables.
+          await m.createTable(images);
+          await m.createTable(projectsNew);
+          // Create indexes for projects_new
+          await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_new_updatedAt ON projects_new(updatedAt)');
+          await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_new_title ON projects_new(title)');
+          await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_new_status ON projects_new(status)');
         }
       },
     );
@@ -216,7 +268,7 @@ class VendorColorWithVariants {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'db.sqlite'));
+    final file = File(p.join(dbFolder.path, 'db_grufio.sqlite'));
     return NativeDatabase(file);
   });
 }
