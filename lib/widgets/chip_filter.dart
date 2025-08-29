@@ -16,9 +16,9 @@ class ContentChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appText = Theme.of(context).extension<AppTextStyles>();
-    final TextStyle textStyle =
-        (appText?.bodyM ?? const TextStyle(fontSize: 12.0))
-            .copyWith(fontWeight: FontWeight.bold, color: kBlack, height: 1.0);
+    final TextStyle textStyle = (appText?.bodyM ??
+            const TextStyle(fontSize: 12.0))
+        .copyWith(fontWeight: FontWeight.bold, color: kGrey100, height: 1.0);
 
     return Container(
       height: 20.0,

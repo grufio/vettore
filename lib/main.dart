@@ -33,11 +33,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (Platform.isMacOS) {
-      return MacosApp(
+      return const MacosApp(
         debugShowCheckedModeBanner: false,
-        theme: appTheme,
-        color: kWhite,
-        home: const AppOverviewPage(),
+        home: AppOverviewPage(),
       );
     }
 

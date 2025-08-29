@@ -91,8 +91,7 @@ class _AppHeaderBarState extends State<AppHeaderBar>
       height: widget.height,
       decoration: const BoxDecoration(
         color: kHeaderBackgroundColor,
-        border:
-            Border(bottom: BorderSide(color: kHeaderDividerColor, width: 1)),
+        border: Border(bottom: BorderSide(color: kBordersColor, width: 1)),
       ),
       padding: EdgeInsets.only(left: leftPad),
       child: Row(

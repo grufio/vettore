@@ -24,7 +24,7 @@ class HomeSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final appTextStyles = Theme.of(context).extension<AppTextStyles>();
     final TextStyle baseTextStyle = (appTextStyles?.bodyM ??
-        const TextStyle(fontSize: 12.0, color: kOnBackgroundColor));
+        const TextStyle(fontSize: 12.0, color: kGrey90));
 
     return Container(
       width: width,

@@ -1,75 +1,34 @@
 import 'package:flutter/widgets.dart';
-import 'dart:ui' as ui;
-import 'package:macos_ui/macos_ui.dart';
 
-// =================================================================================
 // App Color Constants
-// =================================================================================
-
 const Color kPrimaryColor = Color(0xFF0D47A1); // A deep, professional blue
 const Color kSecondaryColor = Color(0xFF28a745); // A vibrant, clear green
-// Buttons
-const Color kButtonColor = Color(0xFF646464);
-const Color kWhite = Color(0xFFFFFFFF);
-// Deprecated: use kWhite directly. Keeping for now to avoid breaking import
 const Color kErrorColor = Color(0xFFdc3545); // A standard error red
-const Color kBordersColor = Color(0xFFDCDCDC); // For borders and dividers
 
-const Color kOnBackgroundColor = Color(0xFF212121); // Dark grey for text
-const Color kOnSurfaceColor = Color(0xFF212121);
+// Greys
+const Color kWhite = Color(0xFFFFFFFF);
+const Color kGrey10 = Color(0xFFF0F0F0);
+const Color kGrey20 = Color(0xFFDCDCDC);
+const Color kGrey30 = Color(0xFFBEBEBE);
+const Color kGrey40 = Color(0xFFAFAFAF);
+const Color kGrey50 = Color(0xFFA0A0A0);
+const Color kGrey60 = Color(0xFF7D7D7D);
+const Color kGrey70 = Color(0xFF616161);
+const Color kGrey80 = Color(0xFF464646);
+const Color kGrey90 = Color(0xFF282828);
+const Color kGrey100 = Color(0xFF000000);
 
-// Explicit black for text where true black is desired
-const Color kBlack = Color(0xFF000000);
+// Button
+const Color kButtonColor = kGrey70;
 
-// =================================================================================
-// Main App Theme
-// =================================================================================
-
-/// A macOS theme that uses the custom colors from your theme.
-final MacosThemeData appTheme = MacosThemeData(
-  brightness: ui.Brightness.light,
-  primaryColor: kPrimaryColor,
-  canvasColor: kWhite,
-  dividerColor: kBordersColor,
-  typography: MacosTypography(
-    color: kBlack,
-    body: const TextStyle(color: kBlack),
-    title1: const TextStyle(
-      color: kBlack,
-      fontWeight: FontWeight.bold,
-      fontSize: 24,
-    ),
-    title2: const TextStyle(
-      color: kBlack,
-      fontWeight: FontWeight.bold,
-      fontSize: 20,
-    ),
-    title3: const TextStyle(
-      color: kBlack,
-      fontWeight: FontWeight.bold,
-      fontSize: 18,
-    ),
-  ),
-  pushButtonTheme: const PushButtonThemeData(
-    color: kPrimaryColor,
-    secondaryColor: kSecondaryColor,
-  ),
-);
-
-// =================================================================================
-// Header/Tab Colors (centralized for reuse)
-// =================================================================================
-
-// Titlebar/header background and divider
-const Color kHeaderBackgroundColor = Color(0xFFF0F0F0);
-const Color kHeaderDividerColor = kBordersColor;
+// Header
+const Color kHeaderBackgroundColor = kGrey10;
+const Color kBordersColor = kGrey20;
 
 // Tab colors
-const Color kTabTextColor = kOnBackgroundColor;
-const Color kTabTextColorInactive = Color(0xFF7D7D7D);
+const Color kTabTextColorInactive = kGrey60;
 const Color kTabBackgroundActive = kWhite;
-const Color kTabBackgroundInactive = Color(0xFFF0F0F0);
-const Color kTabBackgroundHover = Color(0xFFDCDCDC);
-const Color kTabCloseHoverBackground =
-    Color(0xFFBFBFBF); // TabsIcon.create hover bg
+const Color kTabBackgroundInactive = kGrey10;
+const Color kTabBackgroundHover = kGrey20;
+const Color kTabCloseHoverBackground = kGrey30; // TabsIcon.create hover bg
 const Color kTransparent = Color(0x00000000);

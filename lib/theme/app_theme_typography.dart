@@ -59,26 +59,26 @@ const appTextStyles = AppTextStyles(
   bodyXS: TextStyle(
     fontSize: 8.0,
     fontWeight: FontWeight.normal,
-    color: kBlack,
+    color: kGrey90,
   ),
   bodyS: TextStyle(
     fontSize: 10.0,
     fontWeight: FontWeight.normal,
-    color: kBlack,
+    color: kGrey90,
   ),
   bodyM: TextStyle(
     fontSize: 12.0,
     fontWeight: FontWeight.normal,
-    color: kBlack,
+    color: kGrey90,
   ),
   bodyL: TextStyle(
     fontSize: 14.0,
     fontWeight: FontWeight.normal,
-    color: kBlack,
+    color: kGrey90,
   ),
   bodyXL: TextStyle(
     fontSize: 16.0,
     fontWeight: FontWeight.normal,
-    color: kBlack,
+    color: kGrey90,
   ),
 );

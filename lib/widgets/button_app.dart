@@ -21,7 +21,7 @@ class _AddProjectButtonState extends State<AddProjectButton> {
     final TextStyle labelStyle =
         (appTextStyles?.bodyM ?? const TextStyle(fontSize: 12))
             .copyWith(color: kWhite, height: 1.0);
-    final Color backgroundColor = _isHovered ? kBlack : kButtonColor;
+    final Color backgroundColor = _isHovered ? kGrey100 : kButtonColor;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
