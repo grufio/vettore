@@ -14,8 +14,8 @@ class HomeSidebar extends StatelessWidget {
     super.key,
     required this.items,
     required this.onTap,
-    this.width = 280.0,
-    this.rowHeight = 28.0,
+    this.width = 240.0,
+    this.rowHeight = 24.0,
     this.topPadding = 8.0,
     this.horizontalPadding = 16.0,
   });
@@ -183,7 +183,7 @@ class _SidebarRowState extends State<_SidebarRow> {
           height: widget.height,
           padding: EdgeInsets.symmetric(horizontal: widget.horizontalPadding),
           decoration: BoxDecoration(
-            color: _isHovered ? kTabBackgroundHover : kWhite,
+            color: _isHovered ? kGrey20 : kWhite,
             // No per-row borders; section dividers are handled externally
             border: null,
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 // App Color Constants
+const Color kTransparent = Color(0x00000000);
 const Color kPrimaryColor = Color(0xFF0D47A1); // A deep, professional blue
 const Color kSecondaryColor = Color(0xFF28a745); // A vibrant, clear green
 const Color kErrorColor = Color(0xFFdc3545); // A standard error red
@@ -24,8 +25,10 @@ const Color kButtonColor = kGrey70;
 // Header
 const Color kHeaderBackgroundColor = kGrey10;
 const Color kBordersColor = kGrey20;
+
 // Chips
 const Color kChipActiveBackground = kGrey10;
+const Color kChipHoverBackground = kGrey10;
 
 // Tab colors
 const Color kTabTextColorInactive = kGrey60;
@@ -33,4 +36,3 @@ const Color kTabBackgroundActive = kWhite;
 const Color kTabBackgroundInactive = kGrey10;
 const Color kTabBackgroundHover = kGrey20;
 const Color kTabCloseHoverBackground = kGrey30; // TabsIcon.create hover bg
-const Color kTransparent = Color(0x00000000);

@@ -8,8 +8,7 @@ import 'package:vettore/widgets/grufio_tabs_app.dart' show GrufioTab;
 import 'package:vettore/widgets/home_sidebar.dart';
 import 'package:vettore/widgets/content_toolbar.dart';
 import 'package:vettore/widgets/button_app.dart';
-import 'package:vettore/widgets/content_filter.dart';
-import 'package:vettore/widgets/chip_filter.dart';
+import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
@@ -55,6 +54,7 @@ class AppOverviewPage extends StatefulWidget {
 
 class _AppOverviewPageState extends State<AppOverviewPage> {
   int _activeIndex = 0;
+  String _activeFilterId = 'completed';
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
     const GrufioTabData(
@@ -136,11 +136,14 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                               ],
                             ),
                           if (_activeIndex == 0)
-                            const ContentFilter(
-                              children: [
-                                ContentChip.active(label: 'Completed'),
-                                ContentChip.active(label: 'All'),
+                            ContentFilterBar(
+                              items: const [
+                                FilterItem(id: 'completed', label: 'Completed'),
+                                FilterItem(id: 'all', label: 'All'),
                               ],
+                              activeId: _activeFilterId,
+                              onChanged: (id) =>
+                                  setState(() => _activeFilterId = id),
                             ),
                           Expanded(
                             child: Center(
