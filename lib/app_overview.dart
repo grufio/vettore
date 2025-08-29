@@ -5,6 +5,7 @@ import 'dart:io' show Platform;
 
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/widgets/grufio_tabs_app.dart' show GrufioTab;
+import 'package:vettore/widgets/home_sidebar.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
@@ -108,8 +109,24 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
             Expanded(
               child: ColoredBox(
                 color: kBackgroundColor,
-                child: Center(
-                  child: Text('Content for Tab ${_activeIndex + 1}'),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_activeIndex == 0)
+                      HomeSidebar(
+                        items: const ['Projects', 'Palettes', 'Libraries'],
+                        onTap: (_) {},
+                        width: 280.0,
+                        rowHeight: 28.0,
+                        topPadding: 8.0,
+                        horizontalPadding: 16.0,
+                      ),
+                    Expanded(
+                      child: Center(
+                        child: Text('Content for Tab ${_activeIndex + 1}'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

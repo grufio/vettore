@@ -16,16 +16,7 @@ const double _kCloseButtonSize = 20.0;
 const double _kCloseButtonIconSize = 20.0;
 const double _kCloseButtonBorderRadius = 4.0;
 
-// --- Colors from theme
-const Color _kContentColor = kTabTextColor;
-const Color _kContentColorInactive = kTabTextColorInactive; // font inactive
-const Color _kContentColorHover =
-    kTextBlackColor; // hover text/icon = black for inactive tabs
-const Color _kTabHoverColor = kTabBackgroundHover;
-const Color _kCloseButtonHoverColor = kTabCloseHoverBackground;
-const Color _kTabActiveColor = kTabBackgroundActive; // active tab background
-const Color _kTabInactiveBgColor =
-    kTabBackgroundInactive; // background inactive
+// --- Colors directly from theme
 
 class GrufioTab extends StatefulWidget {
   final String iconPath;
@@ -69,7 +60,7 @@ class _GrufioTabState extends State<GrufioTab> {
           height: _kCloseButtonSize,
           decoration: BoxDecoration(
             color:
-                _isCloseButtonHovered ? _kCloseButtonHoverColor : kTransparent,
+                _isCloseButtonHovered ? kTabCloseHoverBackground : kTransparent,
             borderRadius: BorderRadius.circular(_kCloseButtonBorderRadius),
           ),
           child: SvgPicture.asset(
@@ -77,9 +68,7 @@ class _GrufioTabState extends State<GrufioTab> {
             width: _kCloseButtonIconSize,
             height: _kCloseButtonIconSize,
             colorFilter: ColorFilter.mode(
-              _isCloseButtonHovered
-                  ? _kContentColorHover
-                  : _kContentColorInactive,
+              _isCloseButtonHovered ? kTextBlackColor : kTabTextColorInactive,
               BlendMode.srcIn,
             ),
           ),
@@ -92,8 +81,8 @@ class _GrufioTabState extends State<GrufioTab> {
   Widget build(BuildContext context) {
     final bool isClosable = widget.onClose != null;
     final Color contentColor = widget.isActive
-        ? _kContentColor
-        : (_isHovered ? _kContentColorHover : _kContentColorInactive);
+        ? kTabTextColor
+        : (_isHovered ? kTextBlackColor : kTabTextColorInactive);
 
     final iconWidget = SvgPicture.asset(
       widget.iconPath,
@@ -135,7 +124,7 @@ class _GrufioTabState extends State<GrufioTab> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: ColoredBox(
-          color: _kTabInactiveBgColor, // ensure tab strip background F0F0F0
+          color: kTabBackgroundInactive, // ensure tab strip background F0F0F0
           child: Container(
             width: widget.width,
             height: _kTabHeight,
@@ -145,8 +134,8 @@ class _GrufioTabState extends State<GrufioTab> {
                     horizontal: _kTabHorizontalPadding),
             decoration: BoxDecoration(
               color: widget.isActive
-                  ? _kTabActiveColor
-                  : (_isHovered ? _kTabHoverColor : _kTabInactiveBgColor),
+                  ? kTabBackgroundActive
+                  : (_isHovered ? kTabBackgroundHover : kTabBackgroundInactive),
               border: Border(
                 left: widget.showLeftBorder
                     ? const BorderSide(
@@ -185,7 +174,7 @@ class _GrufioTabButtonState extends State<GrufioTabButton> {
   @override
   Widget build(BuildContext context) {
     final Color contentColor =
-        _isHovered ? _kContentColorHover : _kContentColorInactive;
+        _isHovered ? kTextBlackColor : kTabTextColorInactive;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -194,12 +183,12 @@ class _GrufioTabButtonState extends State<GrufioTabButton> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: ColoredBox(
-          color: _kTabInactiveBgColor,
+          color: kTabBackgroundInactive,
           child: Container(
             width: _kTabHeight,
             height: _kTabHeight,
             decoration: BoxDecoration(
-              color: _isHovered ? _kTabHoverColor : _kTabInactiveBgColor,
+              color: _isHovered ? kTabBackgroundHover : kTabBackgroundInactive,
               border: const Border(
                 left: BorderSide.none,
                 right: BorderSide.none,
