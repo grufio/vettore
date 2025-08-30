@@ -1,6 +1,7 @@
 // lib/app_overview.dart
 
 import 'package:flutter/cupertino.dart';
+import 'dart:typed_data';
 import 'dart:io' show Platform;
 
 import 'package:vettore/models/grufio_tab_data.dart';
@@ -12,6 +13,7 @@ import 'package:vettore/widgets/button_app.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/widgets/preview_gallery.dart';
 
 const double _kToolbarHeight = 40.0;
 
@@ -160,10 +162,12 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                                   setState(() => _activeFilterId = id),
                             ),
                           Expanded(
-                            child: Center(
-                              child:
-                                  Text('Content for Tab ${_activeIndex + 1}'),
-                            ),
+                            child: _activeIndex == 0
+                                ? const _HomeGalleryContainer()
+                                : Center(
+                                    child: Text(
+                                        'Content for Tab ${_activeIndex + 1}'),
+                                  ),
                           ),
                         ],
                       ),
@@ -204,6 +208,23 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _HomeGalleryContainer extends StatelessWidget {
+  const _HomeGalleryContainer();
+
+  @override
+  Widget build(BuildContext context) {
+    // Placeholder items; we'll wire DB later
+    final List<Uint8List> items =
+        List<Uint8List>.generate(20, (_) => Uint8List(0));
+    return PreviewGallery(
+      items: items,
+      minTileWidth: 280.0,
+      spacing: 16.0,
+      padding: const EdgeInsets.all(24.0),
     );
   }
 }
