@@ -5,7 +5,8 @@ import 'dart:io' show Platform;
 
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/widgets/grufio_tabs_app.dart' show GrufioTab;
-import 'package:vettore/widgets/home_sidebar.dart';
+import 'package:vettore/widgets/side_panel.dart';
+import 'package:vettore/widgets/home_navigation.dart';
 import 'package:vettore/widgets/content_toolbar.dart';
 import 'package:vettore/widgets/button_app.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
@@ -55,6 +56,7 @@ class AppOverviewPage extends StatefulWidget {
 class _AppOverviewPageState extends State<AppOverviewPage> {
   int _activeIndex = 0;
   String _activeFilterId = 'completed';
+  double _sidePanelWidth = 260.0;
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
     const GrufioTabData(
@@ -117,13 +119,25 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_activeIndex == 0)
-                      HomeSidebar(
-                        items: const ['Projects', 'Palettes', 'Libraries'],
-                        onTap: (_) {},
-                        width: 280.0,
-                        rowHeight: 28.0,
+                      SidePanel(
+                        side: SidePanelSide.left,
+                        width: _sidePanelWidth,
                         topPadding: 8.0,
                         horizontalPadding: 16.0,
+                        resizable: true,
+                        minWidth: 100.0,
+                        maxWidth: 300.0,
+                        onResizeDelta: (dx) => setState(() {
+                          _sidePanelWidth =
+                              (_sidePanelWidth + dx).clamp(100.0, 300.0);
+                        }),
+                        onResetWidth: () => setState(() {
+                          _sidePanelWidth = 280.0;
+                        }),
+                        child: HomeNavigation(
+                          rowHeight: 24.0,
+                          onTap: (_) {},
+                        ),
                       ),
                     Expanded(
                       child: Column(
