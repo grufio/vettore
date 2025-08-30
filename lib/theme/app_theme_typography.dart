@@ -21,7 +21,7 @@ class AppTextStylesExported {
       );
   TextStyle get bodyMMedium => const TextStyle(
         fontSize: 12.0,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w500,
         color: kGrey90,
       );
   TextStyle get bodyL => const TextStyle(

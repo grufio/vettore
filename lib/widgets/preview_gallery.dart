@@ -15,7 +15,7 @@ class PreviewGallery extends StatelessWidget {
     required this.items,
     this.minTileWidth = 220.0,
     this.spacing = 16.0,
-    this.padding = const EdgeInsets.all(24.0),
+    this.padding = const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
   });
 
   @override

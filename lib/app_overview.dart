@@ -13,6 +13,7 @@ import 'package:vettore/widgets/button_app.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/app_project_detail.dart';
 import 'package:vettore/widgets/preview_gallery.dart';
 
 const double _kToolbarHeight = 40.0;
@@ -57,6 +58,7 @@ class AppOverviewPage extends StatefulWidget {
 
 class _AppOverviewPageState extends State<AppOverviewPage> {
   int _activeIndex = 0;
+  bool _showDetail = false;
   String _activeFilterId = 'completed';
   double _sidePanelWidth = 260.0;
   final _tabs = <GrufioTabData>[
@@ -67,7 +69,18 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
         iconPath: 'assets/icons/32/color-palette.svg', label: 'Example'),
   ];
 
-  void _onTabSelected(int i) => setState(() => _activeIndex = i);
+  void _onTabSelected(int i) => setState(() {
+        _activeIndex = i;
+        _showDetail = i != 0;
+      });
+
+  @override
+  void initState() {
+    super.initState();
+    // Force initial view to Home (gallery)
+    _activeIndex = 0;
+    _showDetail = false;
+  }
 
   void _onCloseTab(int index) {
     if (index <= 0 || index >= _tabs.length)
@@ -98,6 +111,20 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   @override
   Widget build(BuildContext context) {
     if (Platform.isMacOS) {
+      if (_showDetail) {
+        return AppProjectDetailPage(
+          initialActiveIndex: _activeIndex,
+          onNavigateTab: (i) {
+            if (i == 0) {
+              // Navigate back to Home overview
+              setState(() {
+                _activeIndex = 0;
+                _showDetail = false;
+              });
+            }
+          },
+        );
+      }
       return ColoredBox(
         color: kWhite,
         child: Column(
@@ -162,12 +189,14 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                                   setState(() => _activeFilterId = id),
                             ),
                           Expanded(
-                            child: _activeIndex == 0
-                                ? const _HomeGalleryContainer()
-                                : Center(
-                                    child: Text(
-                                        'Content for Tab ${_activeIndex + 1}'),
-                                  ),
+                            child: _showDetail
+                                ? const AppProjectDetailPage()
+                                : (_activeIndex == 0
+                                    ? const _HomeGalleryContainer()
+                                    : Center(
+                                        child: Text(
+                                            'Content for Tab ${_activeIndex + 1}'),
+                                      )),
                           ),
                         ],
                       ),
@@ -224,7 +253,7 @@ class _HomeGalleryContainer extends StatelessWidget {
       items: items,
       minTileWidth: 280.0,
       spacing: 16.0,
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
     );
   }
 }
