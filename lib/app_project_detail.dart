@@ -4,8 +4,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
-import 'package:vettore/widgets/grufio_tabs_app.dart' show GrufioTab;
 import 'package:vettore/widgets/side_panel.dart';
+import 'package:vettore/widgets/content_filter_bar.dart';
+import 'package:vettore/widgets/snackbar_image.dart';
+import 'package:photo_view/photo_view.dart';
 
 class AppProjectDetailPage extends StatefulWidget {
   final int initialActiveIndex;
@@ -24,6 +26,9 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
   static const double _kToolbarHeight = 40.0;
 
   late int _activeIndex;
+  String _detailFilterId = 'image';
+  late final PhotoViewController _photoController;
+  late final PhotoViewScaleStateController _scaleStateController;
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
     const GrufioTabData(
@@ -41,6 +46,29 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
   void initState() {
     super.initState();
     _activeIndex = widget.initialActiveIndex;
+    _photoController = PhotoViewController();
+    _scaleStateController = PhotoViewScaleStateController();
+  }
+
+  @override
+  void dispose() {
+    _photoController.dispose();
+    _scaleStateController.dispose();
+    super.dispose();
+  }
+
+  void _zoomIn() {
+    final double current = _photoController.scale ?? 1.0;
+    _photoController.scale = current * 1.25;
+  }
+
+  void _zoomOut() {
+    final double current = _photoController.scale ?? 1.0;
+    _photoController.scale = current / 1.25;
+  }
+
+  void _fitToScreen() {
+    _scaleStateController.scaleState = PhotoViewScaleState.initial;
   }
 
   @override
@@ -63,6 +91,28 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
             height: _kToolbarHeight,
             leftPaddingWhenWindowed: 72,
           ),
+          // Detail filter bar with bottom border
+          Container(
+            decoration: const BoxDecoration(
+              color: kWhite,
+              border: Border(
+                bottom: BorderSide(color: kBordersColor, width: 1.0),
+              ),
+            ),
+            child: ContentFilterBar(
+              items: const [
+                FilterItem(id: 'image', label: 'Image'),
+                FilterItem(id: 'conversion', label: 'Conversion'),
+                FilterItem(id: 'grid', label: 'Grid'),
+                FilterItem(id: 'output', label: 'Output'),
+              ],
+              activeId: _detailFilterId,
+              onChanged: (id) => setState(() => _detailFilterId = id),
+              height: 40.0,
+              horizontalPadding: 24.0,
+              gap: 4.0,
+            ),
+          ),
           Expanded(
             child: ColoredBox(
               color: kWhite,
@@ -71,11 +121,7 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
                 children: [
                   // Main detail area placeholder
                   Expanded(
-                    child: Center(
-                      child: Text(
-                        'Project Detail (Tab ${_activeIndex + 1})',
-                      ),
-                    ),
+                    child: _buildDetailBody(),
                   ),
                   // Right side panel (empty for now)
                   SidePanel(
@@ -91,6 +137,43 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+extension on _AppProjectDetailPageState {
+  Widget _buildDetailBody() {
+    return Stack(
+      children: [
+        ColoredBox(
+          color: kGrey10,
+          child: ClipRect(
+            child: PhotoView(
+              controller: _photoController,
+              scaleStateController: _scaleStateController,
+              backgroundDecoration: const BoxDecoration(color: kGrey10),
+              imageProvider:
+                  const AssetImage('assets/images/test/28-367x267.jpg'),
+              initialScale: PhotoViewComputedScale.contained,
+              minScale: PhotoViewComputedScale.contained,
+              maxScale: PhotoViewComputedScale.covered * 4.0,
+              filterQuality: FilterQuality.none,
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 16.0,
+          child: Center(
+            child: SnackbarImage(
+              onZoomIn: _zoomIn,
+              onZoomOut: _zoomOut,
+              onFitToScreen: _fitToScreen,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

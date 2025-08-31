@@ -22,7 +22,7 @@ class ContentFilterBar extends StatefulWidget {
     required this.items,
     required this.activeId,
     required this.onChanged,
-    this.height = 48.0,
+    this.height = 40.0,
     this.horizontalPadding = 24.0,
     this.gap = 4.0,
     this.scrollable = true,

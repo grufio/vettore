@@ -59,6 +59,7 @@ dependencies:
   bitsdojo_window: ^0.1.6
   window_manager: ^0.5.1
   flutter_staggered_grid_view: ^0.7.0
+  photo_view: ^0.14.0
 
 dev_dependencies:
   flutter_test:
@@ -91,6 +92,7 @@ flutter:
   assets:
     - assets/images/libraries/schmincke/norma/
     - assets/images/layout/
+    - assets/images/test/
     - assets/icons/32/
     - path: assets/icons/
       transformers:
