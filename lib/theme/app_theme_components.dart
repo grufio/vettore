@@ -1,24 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/theme/app_theme_typography.dart';
 
 // =================================================================================
 // App Component Themes
 // =================================================================================
 
-// --- ElevatedButton Theme ---
-final ElevatedButtonThemeData kElevatedButtonTheme = ElevatedButtonThemeData(
-  style: ElevatedButton.styleFrom(
-    backgroundColor: kPrimaryColor,
-    foregroundColor: kWhite,
-    textStyle:
-        appTextStyles.bodyM.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8.0),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-  ),
-);
+// (Removed) ElevatedButton Theme - will be set locally in widgets as needed.
 
 // --- InputDecoration Theme for TextFields ---
 const InputDecorationTheme kInputDecorationTheme = InputDecorationTheme(

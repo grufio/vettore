@@ -34,7 +34,7 @@ class _AddProjectButtonState extends State<AddProjectButton> {
           padding: const EdgeInsets.only(left: 8.0, right: 12.0),
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(14.0),
+            borderRadius: BorderRadius.circular(6.0),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

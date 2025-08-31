@@ -7,6 +7,10 @@ import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/snackbar_image.dart';
+import 'package:vettore/widgets/input_value_type.dart';
+import 'package:vettore/widgets/section_sidebar.dart';
+import 'package:vettore/widgets/section_input.dart';
+import 'package:vettore/widgets/button_app.dart';
 import 'package:photo_view/photo_view.dart';
 
 class AppProjectDetailPage extends StatefulWidget {
@@ -29,6 +33,10 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
   String _detailFilterId = 'image';
   late final PhotoViewController _photoController;
   late final PhotoViewScaleStateController _scaleStateController;
+  late final TextEditingController _inputValueController;
+  late final TextEditingController _inputValueController2;
+  late final TextEditingController _singleInputController;
+  double _rightPanelWidth = 260.0;
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
     const GrufioTabData(
@@ -48,12 +56,18 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
     _activeIndex = widget.initialActiveIndex;
     _photoController = PhotoViewController();
     _scaleStateController = PhotoViewScaleStateController();
+    _inputValueController = TextEditingController(text: '1024');
+    _inputValueController2 = TextEditingController();
+    _singleInputController = TextEditingController();
   }
 
   @override
   void dispose() {
     _photoController.dispose();
     _scaleStateController.dispose();
+    _inputValueController.dispose();
+    _inputValueController2.dispose();
+    _singleInputController.dispose();
     super.dispose();
   }
 
@@ -126,10 +140,57 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
                   // Right side panel (empty for now)
                   SidePanel(
                     side: SidePanelSide.right,
-                    width: 260.0,
+                    width: _rightPanelWidth,
                     topPadding: 8.0,
                     horizontalPadding: 16.0,
-                    child: const SizedBox.shrink(),
+                    resizable: true,
+                    minWidth: 200.0,
+                    maxWidth: 400.0,
+                    onResizeDelta: (delta) {
+                      setState(() {
+                        _rightPanelWidth =
+                            (_rightPanelWidth + delta).clamp(200.0, 400.0);
+                      });
+                    },
+                    onResetWidth: () {
+                      setState(() {
+                        _rightPanelWidth = 280.0;
+                      });
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SectionSidebar(
+                          title: 'Title',
+                          children: [
+                            SectionInput(
+                              left: InputValueType(
+                                controller: _inputValueController,
+                                placeholder: null,
+                              ),
+                              right: InputValueType(
+                                controller: _inputValueController2,
+                                placeholder: null,
+                              ),
+                              actionIconAsset: null,
+                            ),
+                            SectionInput(
+                              left: InputValueType(
+                                controller: _singleInputController,
+                                placeholder: null,
+                              ),
+                              right: null,
+                              actionIconAsset: null,
+                            ),
+                            SectionInput(
+                              full: AddProjectButton(onTap: () {}),
+                              actionIconAsset: null,
+                            ),
+                          ],
+                        ),
+                        const Expanded(child: SizedBox.shrink()),
+                      ],
+                    ),
                   ),
                 ],
               ),
