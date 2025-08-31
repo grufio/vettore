@@ -46,6 +46,10 @@ class _InputValueTypeState extends State<InputValueType> {
     };
     _focusListener = () {
       if (!mounted) return;
+      // When focus is gained, select all content so it shows highlighted and is editable.
+      if (_focusNode.hasFocus) {
+        _selectAll();
+      }
       setState(() {});
     };
     _controller.addListener(_controllerListener);
@@ -78,6 +82,10 @@ class _InputValueTypeState extends State<InputValueType> {
       decoration: BoxDecoration(
         color: kGrey10,
         borderRadius: BorderRadius.circular(4.0),
+        border: Border.all(
+          color: _focusNode.hasFocus ? kInputFocus : kTransparent,
+          width: 1.0,
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -110,7 +118,7 @@ class _InputValueTypeState extends State<InputValueType> {
                   style: textStyle,
                   cursorColor: kGrey100,
                   backgroundCursorColor: kGrey10,
-                  selectionColor: kGrey20,
+                  selectionColor: kInputBackground,
                   textAlign: widget.textAlign,
                   autofocus: widget.autofocus,
                   onChanged: widget.onChanged,
@@ -127,5 +135,11 @@ class _InputValueTypeState extends State<InputValueType> {
         ],
       ),
     );
+  }
+
+  void _selectAll() {
+    final String text = _controller.text;
+    _controller.selection =
+        TextSelection(baseOffset: 0, extentOffset: text.length);
   }
 }

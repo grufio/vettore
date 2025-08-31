@@ -6,6 +6,9 @@ const Color kPrimaryColor = Color(0xFF0D47A1); // A deep, professional blue
 const Color kSecondaryColor = Color(0xFF28a745); // A vibrant, clear green
 const Color kErrorColor = Color(0xFFdc3545); // A standard error red
 
+const Color kInputFocus = Color(0xFF7C5CFF);
+const Color kInputBackground = Color(0xFFCBBEFF);
+
 // Greys
 const Color kWhite = Color(0xFFFFFFFF);
 const Color kGrey10 = Color(0xFFF0F0F0);
