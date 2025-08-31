@@ -6,12 +6,11 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
-import 'package:vettore/widgets/snackbar_image.dart';
 import 'package:vettore/widgets/input_value_type.dart';
 import 'package:vettore/widgets/section_sidebar.dart';
 import 'package:vettore/widgets/section_input.dart';
 import 'package:vettore/widgets/button_app.dart';
-import 'package:photo_view/photo_view.dart';
+import 'package:vettore/widgets/image_upload_text.dart';
 
 class AppProjectDetailPage extends StatefulWidget {
   final int initialActiveIndex;
@@ -31,8 +30,7 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
 
   late int _activeIndex;
   String _detailFilterId = 'image';
-  late final PhotoViewController _photoController;
-  late final PhotoViewScaleStateController _scaleStateController;
+  // Photo viewer removed for empty state; controllers retained for later usage
   late final TextEditingController _inputValueController;
   late final TextEditingController _inputValueController2;
   late final TextEditingController _singleInputController;
@@ -54,8 +52,6 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
   void initState() {
     super.initState();
     _activeIndex = widget.initialActiveIndex;
-    _photoController = PhotoViewController();
-    _scaleStateController = PhotoViewScaleStateController();
     _inputValueController = TextEditingController(text: '1024');
     _inputValueController2 = TextEditingController();
     _singleInputController = TextEditingController();
@@ -63,27 +59,13 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
 
   @override
   void dispose() {
-    _photoController.dispose();
-    _scaleStateController.dispose();
     _inputValueController.dispose();
     _inputValueController2.dispose();
     _singleInputController.dispose();
     super.dispose();
   }
 
-  void _zoomIn() {
-    final double current = _photoController.scale ?? 1.0;
-    _photoController.scale = current * 1.25;
-  }
-
-  void _zoomOut() {
-    final double current = _photoController.scale ?? 1.0;
-    _photoController.scale = current / 1.25;
-  }
-
-  void _fitToScreen() {
-    _scaleStateController.scaleState = PhotoViewScaleState.initial;
-  }
+  // Image viewer actions will be re-enabled once an image is present.
 
   @override
   Widget build(BuildContext context) {
@@ -204,37 +186,11 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
 
 extension on _AppProjectDetailPageState {
   Widget _buildDetailBody() {
-    return Stack(
-      children: [
-        ColoredBox(
-          color: kGrey10,
-          child: ClipRect(
-            child: PhotoView(
-              controller: _photoController,
-              scaleStateController: _scaleStateController,
-              backgroundDecoration: const BoxDecoration(color: kGrey10),
-              imageProvider:
-                  const AssetImage('assets/images/test/28-367x267.jpg'),
-              initialScale: PhotoViewComputedScale.contained,
-              minScale: PhotoViewComputedScale.contained,
-              maxScale: PhotoViewComputedScale.covered * 4.0,
-              filterQuality: FilterQuality.none,
-            ),
-          ),
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 16.0,
-          child: Center(
-            child: SnackbarImage(
-              onZoomIn: _zoomIn,
-              onZoomOut: _zoomOut,
-              onFitToScreen: _fitToScreen,
-            ),
-          ),
-        ),
-      ],
+    return const ColoredBox(
+      color: kGrey10,
+      child: Center(
+        child: ImageUploadText(),
+      ),
     );
   }
 }
