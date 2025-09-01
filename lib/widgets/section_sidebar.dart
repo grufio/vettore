@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/widgets/input_value_type.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
 class SectionSidebar extends StatelessWidget {
@@ -59,6 +60,26 @@ class SectionInput extends StatelessWidget {
     this.actionIconAsset,
     this.onActionTap,
   });
+
+  factory SectionInput.fullText({
+    Key? key,
+    required TextEditingController controller,
+    String? placeholder,
+    String? suffixText,
+    String? actionIconAsset,
+    VoidCallback? onActionTap,
+  }) {
+    return SectionInput(
+      key: key,
+      full: InputValueType.text(
+        controller: controller,
+        placeholder: placeholder,
+        suffixText: suffixText,
+      ),
+      actionIconAsset: actionIconAsset,
+      onActionTap: onActionTap,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

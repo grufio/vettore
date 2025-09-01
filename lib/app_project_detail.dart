@@ -11,6 +11,7 @@ import 'package:vettore/widgets/section_sidebar.dart';
 import 'package:vettore/widgets/section_input.dart';
 import 'package:vettore/widgets/button_app.dart';
 import 'package:vettore/widgets/image_upload_text.dart';
+import 'package:vettore/widgets/input_row_full.dart';
 
 class AppProjectDetailPage extends StatefulWidget {
   final int initialActiveIndex;
@@ -148,14 +149,11 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
                         SectionSidebar(
                           title: 'Projekt',
                           children: [
-                            SectionInput(
-                              full: InputValueType(
-                                controller: _projectController,
-                                placeholder: null,
-                                suffixText: null,
-                              ),
-                              actionIconAsset:
-                                  'assets/icons/32/color-palette.svg',
+                            InputRowFull(
+                              controller: _projectController,
+                              placeholder: null,
+                              suffixText: null,
+                              onActionTap: () {},
                             ),
                           ],
                         ),

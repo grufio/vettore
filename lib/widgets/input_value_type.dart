@@ -20,6 +20,7 @@ class InputValueType extends StatefulWidget {
   final bool autofocus;
   final String? placeholder;
   final String? suffixText;
+  final String prefixIconAsset;
 
   const InputValueType({
     super.key,
@@ -31,7 +32,34 @@ class InputValueType extends StatefulWidget {
     this.autofocus = false,
     this.placeholder,
     this.suffixText,
+    this.prefixIconAsset = 'assets/icons/32/color-palette.svg',
   });
+
+  factory InputValueType.text({
+    Key? key,
+    TextEditingController? controller,
+    FocusNode? focusNode,
+    ValueChanged<String>? onChanged,
+    ValueChanged<String>? onSubmitted,
+    TextAlign textAlign = TextAlign.start,
+    bool autofocus = false,
+    String? placeholder,
+    String? suffixText,
+    String prefixIconAsset = 'assets/icons/32/document--blank.svg',
+  }) {
+    return InputValueType(
+      key: key,
+      controller: controller,
+      focusNode: focusNode,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      textAlign: textAlign,
+      autofocus: autofocus,
+      placeholder: placeholder,
+      suffixText: suffixText,
+      prefixIconAsset: prefixIconAsset,
+    );
+  }
 
   @override
   State<InputValueType> createState() => _InputValueTypeState();
@@ -101,7 +129,7 @@ class _InputValueTypeState extends State<InputValueType> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SvgPicture.asset(
-            'assets/icons/32/color-palette.svg',
+            widget.prefixIconAsset,
             width: 16.0,
             height: 16.0,
             colorFilter: const ColorFilter.mode(kGrey70, BlendMode.srcIn),
