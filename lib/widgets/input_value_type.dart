@@ -111,8 +111,11 @@ class _InputValueTypeState extends State<InputValueType> {
   Widget build(BuildContext context) {
     final TextStyle textStyle =
         appTextStyles.bodyM.copyWith(color: kGrey100, height: 1.0);
-    final TextStyle placeholderStyle =
-        appTextStyles.bodyM.copyWith(color: kGrey60, height: 1.0);
+    final TextStyle placeholderStyle = appTextStyles.bodyM.copyWith(
+      color: kGrey70,
+      fontStyle: FontStyle.italic,
+      height: 1.0,
+    );
 
     return Container(
       height: 24.0,
@@ -141,12 +144,10 @@ class _InputValueTypeState extends State<InputValueType> {
               child: Stack(
                 alignment: Alignment.centerLeft,
                 children: [
-                  if ((_controller.text.isEmpty) &&
-                      !_focusNode.hasFocus &&
-                      (widget.placeholder != null))
+                  if (_controller.text.isEmpty)
                     IgnorePointer(
                       child: Text(
-                        widget.placeholder!,
+                        widget.placeholder ?? 'example',
                         style: placeholderStyle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
