@@ -3,9 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' show Value;
-import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/input_value_type.dart';
@@ -21,11 +19,13 @@ class AppProjectDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
   final ValueChanged<int>? onNavigateTab;
   final int? projectId; // optional for now; when null we load/create first
+  final ValueChanged<String>? onProjectTitleSaved;
   const AppProjectDetailPage({
     super.key,
     this.initialActiveIndex = 1,
     this.onNavigateTab,
     this.projectId,
+    this.onProjectTitleSaved,
   });
 
   @override
@@ -34,9 +34,7 @@ class AppProjectDetailPage extends ConsumerStatefulWidget {
 }
 
 class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
-  static const double _kToolbarHeight = 40.0;
-
-  late int _activeIndex;
+  // Header handled by shell; these are no longer needed
   String _detailFilterId = 'image';
   // Photo viewer removed for empty state; controllers retained for later usage
   late final TextEditingController _inputValueController;
@@ -45,40 +43,10 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   late final TextEditingController _projectController;
   int? _currentProjectId;
   double _rightPanelWidth = 260.0;
-  List<GrufioTabData> get _tabs {
-    // Base tabs: Home, Palette, Example
-    final base = <GrufioTabData>[
-      const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
-      const GrufioTabData(
-          iconPath: 'assets/icons/32/color-palette.svg', label: 'Palette'),
-      const GrufioTabData(
-          iconPath: 'assets/icons/32/color-palette.svg', label: 'Example'),
-    ];
-    if (_currentProjectId != null) {
-      final projectLabel = (_projectController.text.isNotEmpty)
-          ? _projectController.text
-          : 'Untitled';
-      // Insert the project tab right after 'Palette' to match overview insertion
-      base.insert(
-        2,
-        GrufioTabData(
-          iconPath: 'assets/icons/32/color-palette.svg',
-          label: projectLabel,
-        ),
-      );
-    }
-    return base;
-  }
-
-  void _onTabSelected(int i) {
-    setState(() => _activeIndex = i);
-    widget.onNavigateTab?.call(i);
-  }
 
   @override
   void initState() {
     super.initState();
-    _activeIndex = widget.initialActiveIndex;
     _inputValueController = TextEditingController(text: '1024');
     _inputValueController2 = TextEditingController();
     _singleInputController = TextEditingController();
@@ -110,13 +78,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
       color: kWhite,
       child: Column(
         children: [
-          AppHeaderBar(
-            tabs: _tabs,
-            activeIndex: _activeIndex,
-            onTabSelected: _onTabSelected,
-            height: _kToolbarHeight,
-            leftPaddingWhenWindowed: 72,
-          ),
+          // Header handled by shared shell; keep content only when embedded
           // Detail filter bar with bottom border
           Container(
             decoration: const BoxDecoration(
@@ -261,6 +223,8 @@ extension on _AppProjectDetailPageState {
       updatedAt: Value(now),
     );
     await repo.update(companion);
+    // Notify shell to update tab label
+    widget.onProjectTitleSaved?.call(_projectController.text);
   }
 
   Widget _buildDetailBody() {

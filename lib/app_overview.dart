@@ -18,7 +18,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:vettore/data/database.dart';
-import 'package:vettore/widgets/preview_gallery.dart';
+// import 'package:vettore/widgets/preview_gallery.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:vettore/widgets/thumbnail_tile.dart';
 
 const double _kToolbarHeight = 40.0;
 
@@ -55,7 +57,10 @@ class GrufioTabsApp extends StatelessWidget {
 }
 
 class AppOverviewPage extends StatefulWidget {
-  const AppOverviewPage({super.key});
+  final bool showHeader;
+  final ValueChanged<int>? onOpenProject;
+  const AppOverviewPage(
+      {super.key, this.showHeader = true, this.onOpenProject});
   @override
   State<AppOverviewPage> createState() => _AppOverviewPageState();
 }
@@ -137,7 +142,7 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   @override
   Widget build(BuildContext context) {
     if (Platform.isMacOS) {
-      if (_showDetail) {
+      if (_showDetail && widget.showHeader) {
         return AppProjectDetailPage(
           initialActiveIndex: _activeIndex,
           onNavigateTab: (i) {
@@ -150,6 +155,59 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
             }
           },
           projectId: _newProjectIdForDetail,
+        );
+      }
+      if (!widget.showHeader) {
+        // Render only the content area for Home (gallery)
+        return ColoredBox(
+          color: kWhite,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SidePanel(
+                side: SidePanelSide.left,
+                width: _sidePanelWidth,
+                topPadding: 8.0,
+                horizontalPadding: 16.0,
+                resizable: true,
+                minWidth: 100.0,
+                maxWidth: 300.0,
+                onResizeDelta: (dx) => setState(() {
+                  _sidePanelWidth = (_sidePanelWidth + dx).clamp(100.0, 300.0);
+                }),
+                onResetWidth: () => setState(() {
+                  _sidePanelWidth = 280.0;
+                }),
+                child: HomeNavigation(
+                  rowHeight: 24.0,
+                  onTap: (_) {},
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ContentToolbar(
+                      children: [
+                        AddProjectButton(onTap: () {}),
+                      ],
+                    ),
+                    ContentFilterBar(
+                      items: const [
+                        FilterItem(id: 'completed', label: 'Completed'),
+                        FilterItem(id: 'all', label: 'All'),
+                      ],
+                      activeId: _activeFilterId,
+                      onChanged: (id) => setState(() => _activeFilterId = id),
+                    ),
+                    Expanded(
+                        child: _HomeGalleryContainer(
+                            onOpenProject: widget.onOpenProject)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       }
       return ColoredBox(
@@ -219,7 +277,8 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                             child: _showDetail
                                 ? const AppProjectDetailPage()
                                 : (_activeIndex == 0
-                                    ? const _HomeGalleryContainer()
+                                    ? _HomeGalleryContainer(
+                                        onOpenProject: widget.onOpenProject)
                                     : Center(
                                         child: Text(
                                             'Content for Tab ${_activeIndex + 1}'),
@@ -268,19 +327,45 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   }
 }
 
-class _HomeGalleryContainer extends StatelessWidget {
-  const _HomeGalleryContainer();
+class _HomeGalleryContainer extends ConsumerWidget {
+  final ValueChanged<int>? onOpenProject;
+  const _HomeGalleryContainer({this.onOpenProject});
 
   @override
-  Widget build(BuildContext context) {
-    // Placeholder items; we'll wire DB later
-    final List<Uint8List> items =
-        List<Uint8List>.generate(20, (_) => Uint8List(0));
-    return PreviewGallery(
-      items: items,
-      minTileWidth: 280.0,
-      spacing: 16.0,
-      padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repo = ref.watch(projectRepositoryProvider);
+    return StreamBuilder<List<DbProject>>(
+      stream: repo.watchAll(),
+      builder: (context, snapshot) {
+        final projects = snapshot.data ?? const <DbProject>[];
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final double width = constraints.maxWidth;
+            final int columns =
+                width.isFinite ? (width / 280.0).floor().clamp(1, 12) : 3;
+            return MasonryGridView.count(
+              crossAxisCount: columns,
+              mainAxisSpacing: 16.0,
+              crossAxisSpacing: 16.0,
+              padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
+              itemCount: projects.length,
+              itemBuilder: (context, index) {
+                final p = projects[index];
+                return GestureDetector(
+                  onDoubleTap: () => onOpenProject?.call(p.id),
+                  child: ThumbnailTile(
+                    imageBytes: Uint8List(0),
+                    footerHeight: 72.0,
+                    lines: [p.title, '324x240px', '30.12.2005, 12:24'],
+                    textPadding: 12.0,
+                    lineSpacing: 12.0,
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }

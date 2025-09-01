@@ -6,7 +6,13 @@ import 'package:window_manager/window_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_overview.dart';
+import 'app_project_detail.dart';
+import 'widgets/app_header_bar.dart';
+import 'models/grufio_tab_data.dart';
 import 'theme/app_theme_colors.dart';
+import 'package:vettore/providers/application_providers.dart';
+import 'package:vettore/data/database.dart';
+import 'package:drift/drift.dart' show Value;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +42,7 @@ class MyApp extends StatelessWidget {
     if (Platform.isMacOS) {
       return const MacosApp(
         debugShowCheckedModeBanner: false,
-        home: AppOverviewPage(),
+        home: _AppShell(),
       );
     }
 
@@ -44,7 +50,128 @@ class MyApp extends StatelessWidget {
     // without importing Material or Cupertino themes.
     return WidgetsApp(
       color: kWhite,
-      builder: (context, _) => const AppOverviewPage(),
+      builder: (context, _) => const _AppShell(),
+    );
+  }
+}
+
+class _AppShell extends StatefulWidget {
+  const _AppShell();
+  @override
+  State<_AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<_AppShell> {
+  int _activeIndex = 0;
+  final List<GrufioTabData> _tabs = [
+    const GrufioTabData(
+        iconPath: 'assets/icons/32/home.svg', width: 40, projectId: null),
+  ];
+  int? _currentProjectId;
+
+  void _handleSelect(int i) {
+    setState(() => _activeIndex = i);
+  }
+
+  void _handleClose(int i) {
+    if (i <= 0 || i >= _tabs.length) return;
+    setState(() {
+      _tabs.removeAt(i);
+      if (_activeIndex >= _tabs.length) _activeIndex = _tabs.length - 1;
+      if (_activeIndex == 0) _currentProjectId = null;
+    });
+  }
+
+  Future<void> _handleAddTab() async {
+    final container = ProviderScope.containerOf(context);
+    final repo = container.read(projectRepositoryProvider);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final id = await repo.insert(ProjectsCompanion.insert(
+      title: 'Untitled',
+      author: const Value(null),
+      status: const Value('draft'),
+      createdAt: now,
+      updatedAt: now,
+      imageId: const Value(null),
+    ));
+    setState(() {
+      _currentProjectId = id;
+      _tabs.add(const GrufioTabData(
+          iconPath: 'assets/icons/32/color-palette.svg',
+          label: 'Untitled',
+          projectId: null));
+      _tabs[_tabs.length - 1] = GrufioTabData(
+        iconPath: 'assets/icons/32/color-palette.svg',
+        label: 'Untitled',
+        width: null,
+        projectId: id,
+      );
+      _activeIndex = _tabs.length - 1;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: kWhite,
+      child: Column(
+        children: [
+          AppHeaderBar(
+            tabs: _tabs,
+            activeIndex: _activeIndex,
+            onTabSelected: _handleSelect,
+            onCloseTab: _handleClose,
+            onAddTab: _handleAddTab,
+          ),
+          Expanded(
+            child: (_activeIndex == 0)
+                ? AppOverviewPage(
+                    showHeader: false,
+                    onOpenProject: (projectId) {
+                      // If already open, select its tab; else create a new tab
+                      final existingIndex = _tabs.indexWhere((t) =>
+                          t.projectId != null && t.projectId == projectId);
+                      if (existingIndex != -1) {
+                        setState(() {
+                          _activeIndex = existingIndex;
+                          _currentProjectId = projectId;
+                        });
+                      } else {
+                        setState(() {
+                          _currentProjectId = projectId;
+                          _tabs.add(GrufioTabData(
+                            iconPath: 'assets/icons/32/color-palette.svg',
+                            label: 'Untitled',
+                            projectId: projectId,
+                          ));
+                          _activeIndex = _tabs.length - 1;
+                        });
+                      }
+                    },
+                  )
+                : AppProjectDetailPage(
+                    initialActiveIndex: _activeIndex,
+                    onNavigateTab: (i) {
+                      if (i == 0) setState(() => _activeIndex = 0);
+                    },
+                    projectId: _currentProjectId,
+                    onProjectTitleSaved: (newTitle) {
+                      // Update the label of the active project tab
+                      if (_activeIndex > 0 && _activeIndex < _tabs.length) {
+                        final current = _tabs[_activeIndex];
+                        _tabs[_activeIndex] = GrufioTabData(
+                          iconPath: current.iconPath,
+                          label: newTitle.isEmpty ? 'Untitled' : newTitle,
+                          width: current.width,
+                          projectId: current.projectId,
+                        );
+                        setState(() {});
+                      }
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
