@@ -12,25 +12,7 @@ part 'database.g.dart';
 //-
 //-
 
-// Project Table
-class Projects extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get name => text()();
-  BlobColumn get imageData => blob()();
-  BlobColumn get thumbnailData => blob()();
-  BoolColumn get isConverted => boolean().withDefault(const Constant(false))();
-  TextColumn get vectorObjects => text().withDefault(const Constant('[]'))();
-  RealColumn get imageWidth => real().nullable()();
-  RealColumn get imageHeight => real().nullable()();
-  IntColumn get uniqueColorCount => integer().nullable()();
-  BlobColumn get originalImageData => blob().nullable()();
-  BlobColumn get resizedImageData => blob().nullable()();
-  RealColumn get originalImageWidth => real().nullable()();
-  RealColumn get originalImageHeight => real().nullable()();
-  IntColumn get filterQualityIndex =>
-      integer().withDefault(const Constant(1))();
-  IntColumn get paletteId => integer().nullable().references(Palettes, #id)();
-}
+// (Legacy Projects table removed)
 
 // Palette Table
 class Palettes extends Table {
@@ -112,9 +94,11 @@ class Images extends Table {
   TextColumn get mimeType => text().nullable()();
 }
 
-// ProjectsNew Table (new)
-@DataClassName('DbProjectNew')
-class ProjectsNew extends Table {
+// Projects Table (renamed from ProjectsNew)
+@DataClassName('DbProject')
+class Projects extends Table {
+  @override
+  String get tableName => 'projects';
   IntColumn get id => integer().autoIncrement()();
   TextColumn get title => text()();
   TextColumn get author => text().nullable()();
@@ -133,7 +117,6 @@ class ProjectsNew extends Table {
 //-
 
 @DriftDatabase(tables: [
-  Projects,
   Palettes,
   PaletteColors,
   VendorColors,
@@ -141,13 +124,13 @@ class ProjectsNew extends Table {
   ColorComponents,
   Settings,
   Images,
-  ProjectsNew
+  Projects
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration {
@@ -189,10 +172,7 @@ class AppDatabase extends _$AppDatabase {
           // Version 9 adds the color density column.
           await m.addColumn(vendorColors, vendorColors.colorDensity);
         }
-        if (from < 10) {
-          // Version 10 adds the resized image data cache.
-          await m.addColumn(projects, projects.resizedImageData);
-        }
+        // Legacy migrations referencing old Projects table removed
         if (from < 11) {
           // Version 11 adds the isPredefined flag to palettes.
           await m.addColumn(palettes, palettes.isPredefined);
@@ -202,16 +182,26 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(settings);
         }
         if (from < 13) {
-          // Version 13 adds the new Images and ProjectsNew tables.
           await m.createTable(images);
           await m.createTable(projectsNew);
-          // Create indexes for projects_new
           await customStatement(
               'CREATE INDEX IF NOT EXISTS idx_projects_new_updatedAt ON projects_new(updatedAt)');
           await customStatement(
               'CREATE INDEX IF NOT EXISTS idx_projects_new_title ON projects_new(title)');
           await customStatement(
               'CREATE INDEX IF NOT EXISTS idx_projects_new_status ON projects_new(status)');
+        }
+        if (from < 14) {
+          // Drop old legacy projects table if present, then rename
+          await customStatement('DROP TABLE IF EXISTS projects');
+          await customStatement('ALTER TABLE projects_new RENAME TO projects');
+          // Recreate indexes under new name
+          await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_updatedAt ON projects(updatedAt)');
+          await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_title ON projects(title)');
+          await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)');
         }
       },
     );

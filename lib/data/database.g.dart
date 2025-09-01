@@ -382,774 +382,6 @@ class PalettesCompanion extends UpdateCompanion<Palette> {
   }
 }
 
-class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $ProjectsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-      'id', aliasedName, false,
-      hasAutoIncrement: true,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-      'name', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _imageDataMeta =
-      const VerificationMeta('imageData');
-  @override
-  late final GeneratedColumn<Uint8List> imageData = GeneratedColumn<Uint8List>(
-      'image_data', aliasedName, false,
-      type: DriftSqlType.blob, requiredDuringInsert: true);
-  static const VerificationMeta _thumbnailDataMeta =
-      const VerificationMeta('thumbnailData');
-  @override
-  late final GeneratedColumn<Uint8List> thumbnailData =
-      GeneratedColumn<Uint8List>('thumbnail_data', aliasedName, false,
-          type: DriftSqlType.blob, requiredDuringInsert: true);
-  static const VerificationMeta _isConvertedMeta =
-      const VerificationMeta('isConverted');
-  @override
-  late final GeneratedColumn<bool> isConverted = GeneratedColumn<bool>(
-      'is_converted', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("is_converted" IN (0, 1))'),
-      defaultValue: const Constant(false));
-  static const VerificationMeta _vectorObjectsMeta =
-      const VerificationMeta('vectorObjects');
-  @override
-  late final GeneratedColumn<String> vectorObjects = GeneratedColumn<String>(
-      'vector_objects', aliasedName, false,
-      type: DriftSqlType.string,
-      requiredDuringInsert: false,
-      defaultValue: const Constant('[]'));
-  static const VerificationMeta _imageWidthMeta =
-      const VerificationMeta('imageWidth');
-  @override
-  late final GeneratedColumn<double> imageWidth = GeneratedColumn<double>(
-      'image_width', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
-  static const VerificationMeta _imageHeightMeta =
-      const VerificationMeta('imageHeight');
-  @override
-  late final GeneratedColumn<double> imageHeight = GeneratedColumn<double>(
-      'image_height', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
-  static const VerificationMeta _uniqueColorCountMeta =
-      const VerificationMeta('uniqueColorCount');
-  @override
-  late final GeneratedColumn<int> uniqueColorCount = GeneratedColumn<int>(
-      'unique_color_count', aliasedName, true,
-      type: DriftSqlType.int, requiredDuringInsert: false);
-  static const VerificationMeta _originalImageDataMeta =
-      const VerificationMeta('originalImageData');
-  @override
-  late final GeneratedColumn<Uint8List> originalImageData =
-      GeneratedColumn<Uint8List>('original_image_data', aliasedName, true,
-          type: DriftSqlType.blob, requiredDuringInsert: false);
-  static const VerificationMeta _resizedImageDataMeta =
-      const VerificationMeta('resizedImageData');
-  @override
-  late final GeneratedColumn<Uint8List> resizedImageData =
-      GeneratedColumn<Uint8List>('resized_image_data', aliasedName, true,
-          type: DriftSqlType.blob, requiredDuringInsert: false);
-  static const VerificationMeta _originalImageWidthMeta =
-      const VerificationMeta('originalImageWidth');
-  @override
-  late final GeneratedColumn<double> originalImageWidth =
-      GeneratedColumn<double>('original_image_width', aliasedName, true,
-          type: DriftSqlType.double, requiredDuringInsert: false);
-  static const VerificationMeta _originalImageHeightMeta =
-      const VerificationMeta('originalImageHeight');
-  @override
-  late final GeneratedColumn<double> originalImageHeight =
-      GeneratedColumn<double>('original_image_height', aliasedName, true,
-          type: DriftSqlType.double, requiredDuringInsert: false);
-  static const VerificationMeta _filterQualityIndexMeta =
-      const VerificationMeta('filterQualityIndex');
-  @override
-  late final GeneratedColumn<int> filterQualityIndex = GeneratedColumn<int>(
-      'filter_quality_index', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(1));
-  static const VerificationMeta _paletteIdMeta =
-      const VerificationMeta('paletteId');
-  @override
-  late final GeneratedColumn<int> paletteId = GeneratedColumn<int>(
-      'palette_id', aliasedName, true,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES palettes (id)'));
-  @override
-  List<GeneratedColumn> get $columns => [
-        id,
-        name,
-        imageData,
-        thumbnailData,
-        isConverted,
-        vectorObjects,
-        imageWidth,
-        imageHeight,
-        uniqueColorCount,
-        originalImageData,
-        resizedImageData,
-        originalImageWidth,
-        originalImageHeight,
-        filterQualityIndex,
-        paletteId
-      ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'projects';
-  @override
-  VerificationContext validateIntegrity(Insertable<Project> instance,
-      {bool isInserting = false}) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('image_data')) {
-      context.handle(_imageDataMeta,
-          imageData.isAcceptableOrUnknown(data['image_data']!, _imageDataMeta));
-    } else if (isInserting) {
-      context.missing(_imageDataMeta);
-    }
-    if (data.containsKey('thumbnail_data')) {
-      context.handle(
-          _thumbnailDataMeta,
-          thumbnailData.isAcceptableOrUnknown(
-              data['thumbnail_data']!, _thumbnailDataMeta));
-    } else if (isInserting) {
-      context.missing(_thumbnailDataMeta);
-    }
-    if (data.containsKey('is_converted')) {
-      context.handle(
-          _isConvertedMeta,
-          isConverted.isAcceptableOrUnknown(
-              data['is_converted']!, _isConvertedMeta));
-    }
-    if (data.containsKey('vector_objects')) {
-      context.handle(
-          _vectorObjectsMeta,
-          vectorObjects.isAcceptableOrUnknown(
-              data['vector_objects']!, _vectorObjectsMeta));
-    }
-    if (data.containsKey('image_width')) {
-      context.handle(
-          _imageWidthMeta,
-          imageWidth.isAcceptableOrUnknown(
-              data['image_width']!, _imageWidthMeta));
-    }
-    if (data.containsKey('image_height')) {
-      context.handle(
-          _imageHeightMeta,
-          imageHeight.isAcceptableOrUnknown(
-              data['image_height']!, _imageHeightMeta));
-    }
-    if (data.containsKey('unique_color_count')) {
-      context.handle(
-          _uniqueColorCountMeta,
-          uniqueColorCount.isAcceptableOrUnknown(
-              data['unique_color_count']!, _uniqueColorCountMeta));
-    }
-    if (data.containsKey('original_image_data')) {
-      context.handle(
-          _originalImageDataMeta,
-          originalImageData.isAcceptableOrUnknown(
-              data['original_image_data']!, _originalImageDataMeta));
-    }
-    if (data.containsKey('resized_image_data')) {
-      context.handle(
-          _resizedImageDataMeta,
-          resizedImageData.isAcceptableOrUnknown(
-              data['resized_image_data']!, _resizedImageDataMeta));
-    }
-    if (data.containsKey('original_image_width')) {
-      context.handle(
-          _originalImageWidthMeta,
-          originalImageWidth.isAcceptableOrUnknown(
-              data['original_image_width']!, _originalImageWidthMeta));
-    }
-    if (data.containsKey('original_image_height')) {
-      context.handle(
-          _originalImageHeightMeta,
-          originalImageHeight.isAcceptableOrUnknown(
-              data['original_image_height']!, _originalImageHeightMeta));
-    }
-    if (data.containsKey('filter_quality_index')) {
-      context.handle(
-          _filterQualityIndexMeta,
-          filterQualityIndex.isAcceptableOrUnknown(
-              data['filter_quality_index']!, _filterQualityIndexMeta));
-    }
-    if (data.containsKey('palette_id')) {
-      context.handle(_paletteIdMeta,
-          paletteId.isAcceptableOrUnknown(data['palette_id']!, _paletteIdMeta));
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  Project map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Project(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      imageData: attachedDatabase.typeMapping
-          .read(DriftSqlType.blob, data['${effectivePrefix}image_data'])!,
-      thumbnailData: attachedDatabase.typeMapping
-          .read(DriftSqlType.blob, data['${effectivePrefix}thumbnail_data'])!,
-      isConverted: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_converted'])!,
-      vectorObjects: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}vector_objects'])!,
-      imageWidth: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}image_width']),
-      imageHeight: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}image_height']),
-      uniqueColorCount: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}unique_color_count']),
-      originalImageData: attachedDatabase.typeMapping.read(
-          DriftSqlType.blob, data['${effectivePrefix}original_image_data']),
-      resizedImageData: attachedDatabase.typeMapping.read(
-          DriftSqlType.blob, data['${effectivePrefix}resized_image_data']),
-      originalImageWidth: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}original_image_width']),
-      originalImageHeight: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}original_image_height']),
-      filterQualityIndex: attachedDatabase.typeMapping.read(
-          DriftSqlType.int, data['${effectivePrefix}filter_quality_index'])!,
-      paletteId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}palette_id']),
-    );
-  }
-
-  @override
-  $ProjectsTable createAlias(String alias) {
-    return $ProjectsTable(attachedDatabase, alias);
-  }
-}
-
-class Project extends DataClass implements Insertable<Project> {
-  final int id;
-  final String name;
-  final Uint8List imageData;
-  final Uint8List thumbnailData;
-  final bool isConverted;
-  final String vectorObjects;
-  final double? imageWidth;
-  final double? imageHeight;
-  final int? uniqueColorCount;
-  final Uint8List? originalImageData;
-  final Uint8List? resizedImageData;
-  final double? originalImageWidth;
-  final double? originalImageHeight;
-  final int filterQualityIndex;
-  final int? paletteId;
-  const Project(
-      {required this.id,
-      required this.name,
-      required this.imageData,
-      required this.thumbnailData,
-      required this.isConverted,
-      required this.vectorObjects,
-      this.imageWidth,
-      this.imageHeight,
-      this.uniqueColorCount,
-      this.originalImageData,
-      this.resizedImageData,
-      this.originalImageWidth,
-      this.originalImageHeight,
-      required this.filterQualityIndex,
-      this.paletteId});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['name'] = Variable<String>(name);
-    map['image_data'] = Variable<Uint8List>(imageData);
-    map['thumbnail_data'] = Variable<Uint8List>(thumbnailData);
-    map['is_converted'] = Variable<bool>(isConverted);
-    map['vector_objects'] = Variable<String>(vectorObjects);
-    if (!nullToAbsent || imageWidth != null) {
-      map['image_width'] = Variable<double>(imageWidth);
-    }
-    if (!nullToAbsent || imageHeight != null) {
-      map['image_height'] = Variable<double>(imageHeight);
-    }
-    if (!nullToAbsent || uniqueColorCount != null) {
-      map['unique_color_count'] = Variable<int>(uniqueColorCount);
-    }
-    if (!nullToAbsent || originalImageData != null) {
-      map['original_image_data'] = Variable<Uint8List>(originalImageData);
-    }
-    if (!nullToAbsent || resizedImageData != null) {
-      map['resized_image_data'] = Variable<Uint8List>(resizedImageData);
-    }
-    if (!nullToAbsent || originalImageWidth != null) {
-      map['original_image_width'] = Variable<double>(originalImageWidth);
-    }
-    if (!nullToAbsent || originalImageHeight != null) {
-      map['original_image_height'] = Variable<double>(originalImageHeight);
-    }
-    map['filter_quality_index'] = Variable<int>(filterQualityIndex);
-    if (!nullToAbsent || paletteId != null) {
-      map['palette_id'] = Variable<int>(paletteId);
-    }
-    return map;
-  }
-
-  ProjectsCompanion toCompanion(bool nullToAbsent) {
-    return ProjectsCompanion(
-      id: Value(id),
-      name: Value(name),
-      imageData: Value(imageData),
-      thumbnailData: Value(thumbnailData),
-      isConverted: Value(isConverted),
-      vectorObjects: Value(vectorObjects),
-      imageWidth: imageWidth == null && nullToAbsent
-          ? const Value.absent()
-          : Value(imageWidth),
-      imageHeight: imageHeight == null && nullToAbsent
-          ? const Value.absent()
-          : Value(imageHeight),
-      uniqueColorCount: uniqueColorCount == null && nullToAbsent
-          ? const Value.absent()
-          : Value(uniqueColorCount),
-      originalImageData: originalImageData == null && nullToAbsent
-          ? const Value.absent()
-          : Value(originalImageData),
-      resizedImageData: resizedImageData == null && nullToAbsent
-          ? const Value.absent()
-          : Value(resizedImageData),
-      originalImageWidth: originalImageWidth == null && nullToAbsent
-          ? const Value.absent()
-          : Value(originalImageWidth),
-      originalImageHeight: originalImageHeight == null && nullToAbsent
-          ? const Value.absent()
-          : Value(originalImageHeight),
-      filterQualityIndex: Value(filterQualityIndex),
-      paletteId: paletteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(paletteId),
-    );
-  }
-
-  factory Project.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Project(
-      id: serializer.fromJson<int>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      imageData: serializer.fromJson<Uint8List>(json['imageData']),
-      thumbnailData: serializer.fromJson<Uint8List>(json['thumbnailData']),
-      isConverted: serializer.fromJson<bool>(json['isConverted']),
-      vectorObjects: serializer.fromJson<String>(json['vectorObjects']),
-      imageWidth: serializer.fromJson<double?>(json['imageWidth']),
-      imageHeight: serializer.fromJson<double?>(json['imageHeight']),
-      uniqueColorCount: serializer.fromJson<int?>(json['uniqueColorCount']),
-      originalImageData:
-          serializer.fromJson<Uint8List?>(json['originalImageData']),
-      resizedImageData:
-          serializer.fromJson<Uint8List?>(json['resizedImageData']),
-      originalImageWidth:
-          serializer.fromJson<double?>(json['originalImageWidth']),
-      originalImageHeight:
-          serializer.fromJson<double?>(json['originalImageHeight']),
-      filterQualityIndex: serializer.fromJson<int>(json['filterQualityIndex']),
-      paletteId: serializer.fromJson<int?>(json['paletteId']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'name': serializer.toJson<String>(name),
-      'imageData': serializer.toJson<Uint8List>(imageData),
-      'thumbnailData': serializer.toJson<Uint8List>(thumbnailData),
-      'isConverted': serializer.toJson<bool>(isConverted),
-      'vectorObjects': serializer.toJson<String>(vectorObjects),
-      'imageWidth': serializer.toJson<double?>(imageWidth),
-      'imageHeight': serializer.toJson<double?>(imageHeight),
-      'uniqueColorCount': serializer.toJson<int?>(uniqueColorCount),
-      'originalImageData': serializer.toJson<Uint8List?>(originalImageData),
-      'resizedImageData': serializer.toJson<Uint8List?>(resizedImageData),
-      'originalImageWidth': serializer.toJson<double?>(originalImageWidth),
-      'originalImageHeight': serializer.toJson<double?>(originalImageHeight),
-      'filterQualityIndex': serializer.toJson<int>(filterQualityIndex),
-      'paletteId': serializer.toJson<int?>(paletteId),
-    };
-  }
-
-  Project copyWith(
-          {int? id,
-          String? name,
-          Uint8List? imageData,
-          Uint8List? thumbnailData,
-          bool? isConverted,
-          String? vectorObjects,
-          Value<double?> imageWidth = const Value.absent(),
-          Value<double?> imageHeight = const Value.absent(),
-          Value<int?> uniqueColorCount = const Value.absent(),
-          Value<Uint8List?> originalImageData = const Value.absent(),
-          Value<Uint8List?> resizedImageData = const Value.absent(),
-          Value<double?> originalImageWidth = const Value.absent(),
-          Value<double?> originalImageHeight = const Value.absent(),
-          int? filterQualityIndex,
-          Value<int?> paletteId = const Value.absent()}) =>
-      Project(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        imageData: imageData ?? this.imageData,
-        thumbnailData: thumbnailData ?? this.thumbnailData,
-        isConverted: isConverted ?? this.isConverted,
-        vectorObjects: vectorObjects ?? this.vectorObjects,
-        imageWidth: imageWidth.present ? imageWidth.value : this.imageWidth,
-        imageHeight: imageHeight.present ? imageHeight.value : this.imageHeight,
-        uniqueColorCount: uniqueColorCount.present
-            ? uniqueColorCount.value
-            : this.uniqueColorCount,
-        originalImageData: originalImageData.present
-            ? originalImageData.value
-            : this.originalImageData,
-        resizedImageData: resizedImageData.present
-            ? resizedImageData.value
-            : this.resizedImageData,
-        originalImageWidth: originalImageWidth.present
-            ? originalImageWidth.value
-            : this.originalImageWidth,
-        originalImageHeight: originalImageHeight.present
-            ? originalImageHeight.value
-            : this.originalImageHeight,
-        filterQualityIndex: filterQualityIndex ?? this.filterQualityIndex,
-        paletteId: paletteId.present ? paletteId.value : this.paletteId,
-      );
-  Project copyWithCompanion(ProjectsCompanion data) {
-    return Project(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      imageData: data.imageData.present ? data.imageData.value : this.imageData,
-      thumbnailData: data.thumbnailData.present
-          ? data.thumbnailData.value
-          : this.thumbnailData,
-      isConverted:
-          data.isConverted.present ? data.isConverted.value : this.isConverted,
-      vectorObjects: data.vectorObjects.present
-          ? data.vectorObjects.value
-          : this.vectorObjects,
-      imageWidth:
-          data.imageWidth.present ? data.imageWidth.value : this.imageWidth,
-      imageHeight:
-          data.imageHeight.present ? data.imageHeight.value : this.imageHeight,
-      uniqueColorCount: data.uniqueColorCount.present
-          ? data.uniqueColorCount.value
-          : this.uniqueColorCount,
-      originalImageData: data.originalImageData.present
-          ? data.originalImageData.value
-          : this.originalImageData,
-      resizedImageData: data.resizedImageData.present
-          ? data.resizedImageData.value
-          : this.resizedImageData,
-      originalImageWidth: data.originalImageWidth.present
-          ? data.originalImageWidth.value
-          : this.originalImageWidth,
-      originalImageHeight: data.originalImageHeight.present
-          ? data.originalImageHeight.value
-          : this.originalImageHeight,
-      filterQualityIndex: data.filterQualityIndex.present
-          ? data.filterQualityIndex.value
-          : this.filterQualityIndex,
-      paletteId: data.paletteId.present ? data.paletteId.value : this.paletteId,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Project(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('imageData: $imageData, ')
-          ..write('thumbnailData: $thumbnailData, ')
-          ..write('isConverted: $isConverted, ')
-          ..write('vectorObjects: $vectorObjects, ')
-          ..write('imageWidth: $imageWidth, ')
-          ..write('imageHeight: $imageHeight, ')
-          ..write('uniqueColorCount: $uniqueColorCount, ')
-          ..write('originalImageData: $originalImageData, ')
-          ..write('resizedImageData: $resizedImageData, ')
-          ..write('originalImageWidth: $originalImageWidth, ')
-          ..write('originalImageHeight: $originalImageHeight, ')
-          ..write('filterQualityIndex: $filterQualityIndex, ')
-          ..write('paletteId: $paletteId')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-      id,
-      name,
-      $driftBlobEquality.hash(imageData),
-      $driftBlobEquality.hash(thumbnailData),
-      isConverted,
-      vectorObjects,
-      imageWidth,
-      imageHeight,
-      uniqueColorCount,
-      $driftBlobEquality.hash(originalImageData),
-      $driftBlobEquality.hash(resizedImageData),
-      originalImageWidth,
-      originalImageHeight,
-      filterQualityIndex,
-      paletteId);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Project &&
-          other.id == this.id &&
-          other.name == this.name &&
-          $driftBlobEquality.equals(other.imageData, this.imageData) &&
-          $driftBlobEquality.equals(other.thumbnailData, this.thumbnailData) &&
-          other.isConverted == this.isConverted &&
-          other.vectorObjects == this.vectorObjects &&
-          other.imageWidth == this.imageWidth &&
-          other.imageHeight == this.imageHeight &&
-          other.uniqueColorCount == this.uniqueColorCount &&
-          $driftBlobEquality.equals(
-              other.originalImageData, this.originalImageData) &&
-          $driftBlobEquality.equals(
-              other.resizedImageData, this.resizedImageData) &&
-          other.originalImageWidth == this.originalImageWidth &&
-          other.originalImageHeight == this.originalImageHeight &&
-          other.filterQualityIndex == this.filterQualityIndex &&
-          other.paletteId == this.paletteId);
-}
-
-class ProjectsCompanion extends UpdateCompanion<Project> {
-  final Value<int> id;
-  final Value<String> name;
-  final Value<Uint8List> imageData;
-  final Value<Uint8List> thumbnailData;
-  final Value<bool> isConverted;
-  final Value<String> vectorObjects;
-  final Value<double?> imageWidth;
-  final Value<double?> imageHeight;
-  final Value<int?> uniqueColorCount;
-  final Value<Uint8List?> originalImageData;
-  final Value<Uint8List?> resizedImageData;
-  final Value<double?> originalImageWidth;
-  final Value<double?> originalImageHeight;
-  final Value<int> filterQualityIndex;
-  final Value<int?> paletteId;
-  const ProjectsCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.imageData = const Value.absent(),
-    this.thumbnailData = const Value.absent(),
-    this.isConverted = const Value.absent(),
-    this.vectorObjects = const Value.absent(),
-    this.imageWidth = const Value.absent(),
-    this.imageHeight = const Value.absent(),
-    this.uniqueColorCount = const Value.absent(),
-    this.originalImageData = const Value.absent(),
-    this.resizedImageData = const Value.absent(),
-    this.originalImageWidth = const Value.absent(),
-    this.originalImageHeight = const Value.absent(),
-    this.filterQualityIndex = const Value.absent(),
-    this.paletteId = const Value.absent(),
-  });
-  ProjectsCompanion.insert({
-    this.id = const Value.absent(),
-    required String name,
-    required Uint8List imageData,
-    required Uint8List thumbnailData,
-    this.isConverted = const Value.absent(),
-    this.vectorObjects = const Value.absent(),
-    this.imageWidth = const Value.absent(),
-    this.imageHeight = const Value.absent(),
-    this.uniqueColorCount = const Value.absent(),
-    this.originalImageData = const Value.absent(),
-    this.resizedImageData = const Value.absent(),
-    this.originalImageWidth = const Value.absent(),
-    this.originalImageHeight = const Value.absent(),
-    this.filterQualityIndex = const Value.absent(),
-    this.paletteId = const Value.absent(),
-  })  : name = Value(name),
-        imageData = Value(imageData),
-        thumbnailData = Value(thumbnailData);
-  static Insertable<Project> custom({
-    Expression<int>? id,
-    Expression<String>? name,
-    Expression<Uint8List>? imageData,
-    Expression<Uint8List>? thumbnailData,
-    Expression<bool>? isConverted,
-    Expression<String>? vectorObjects,
-    Expression<double>? imageWidth,
-    Expression<double>? imageHeight,
-    Expression<int>? uniqueColorCount,
-    Expression<Uint8List>? originalImageData,
-    Expression<Uint8List>? resizedImageData,
-    Expression<double>? originalImageWidth,
-    Expression<double>? originalImageHeight,
-    Expression<int>? filterQualityIndex,
-    Expression<int>? paletteId,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (imageData != null) 'image_data': imageData,
-      if (thumbnailData != null) 'thumbnail_data': thumbnailData,
-      if (isConverted != null) 'is_converted': isConverted,
-      if (vectorObjects != null) 'vector_objects': vectorObjects,
-      if (imageWidth != null) 'image_width': imageWidth,
-      if (imageHeight != null) 'image_height': imageHeight,
-      if (uniqueColorCount != null) 'unique_color_count': uniqueColorCount,
-      if (originalImageData != null) 'original_image_data': originalImageData,
-      if (resizedImageData != null) 'resized_image_data': resizedImageData,
-      if (originalImageWidth != null)
-        'original_image_width': originalImageWidth,
-      if (originalImageHeight != null)
-        'original_image_height': originalImageHeight,
-      if (filterQualityIndex != null)
-        'filter_quality_index': filterQualityIndex,
-      if (paletteId != null) 'palette_id': paletteId,
-    });
-  }
-
-  ProjectsCompanion copyWith(
-      {Value<int>? id,
-      Value<String>? name,
-      Value<Uint8List>? imageData,
-      Value<Uint8List>? thumbnailData,
-      Value<bool>? isConverted,
-      Value<String>? vectorObjects,
-      Value<double?>? imageWidth,
-      Value<double?>? imageHeight,
-      Value<int?>? uniqueColorCount,
-      Value<Uint8List?>? originalImageData,
-      Value<Uint8List?>? resizedImageData,
-      Value<double?>? originalImageWidth,
-      Value<double?>? originalImageHeight,
-      Value<int>? filterQualityIndex,
-      Value<int?>? paletteId}) {
-    return ProjectsCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      imageData: imageData ?? this.imageData,
-      thumbnailData: thumbnailData ?? this.thumbnailData,
-      isConverted: isConverted ?? this.isConverted,
-      vectorObjects: vectorObjects ?? this.vectorObjects,
-      imageWidth: imageWidth ?? this.imageWidth,
-      imageHeight: imageHeight ?? this.imageHeight,
-      uniqueColorCount: uniqueColorCount ?? this.uniqueColorCount,
-      originalImageData: originalImageData ?? this.originalImageData,
-      resizedImageData: resizedImageData ?? this.resizedImageData,
-      originalImageWidth: originalImageWidth ?? this.originalImageWidth,
-      originalImageHeight: originalImageHeight ?? this.originalImageHeight,
-      filterQualityIndex: filterQualityIndex ?? this.filterQualityIndex,
-      paletteId: paletteId ?? this.paletteId,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (imageData.present) {
-      map['image_data'] = Variable<Uint8List>(imageData.value);
-    }
-    if (thumbnailData.present) {
-      map['thumbnail_data'] = Variable<Uint8List>(thumbnailData.value);
-    }
-    if (isConverted.present) {
-      map['is_converted'] = Variable<bool>(isConverted.value);
-    }
-    if (vectorObjects.present) {
-      map['vector_objects'] = Variable<String>(vectorObjects.value);
-    }
-    if (imageWidth.present) {
-      map['image_width'] = Variable<double>(imageWidth.value);
-    }
-    if (imageHeight.present) {
-      map['image_height'] = Variable<double>(imageHeight.value);
-    }
-    if (uniqueColorCount.present) {
-      map['unique_color_count'] = Variable<int>(uniqueColorCount.value);
-    }
-    if (originalImageData.present) {
-      map['original_image_data'] = Variable<Uint8List>(originalImageData.value);
-    }
-    if (resizedImageData.present) {
-      map['resized_image_data'] = Variable<Uint8List>(resizedImageData.value);
-    }
-    if (originalImageWidth.present) {
-      map['original_image_width'] = Variable<double>(originalImageWidth.value);
-    }
-    if (originalImageHeight.present) {
-      map['original_image_height'] =
-          Variable<double>(originalImageHeight.value);
-    }
-    if (filterQualityIndex.present) {
-      map['filter_quality_index'] = Variable<int>(filterQualityIndex.value);
-    }
-    if (paletteId.present) {
-      map['palette_id'] = Variable<int>(paletteId.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('ProjectsCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('imageData: $imageData, ')
-          ..write('thumbnailData: $thumbnailData, ')
-          ..write('isConverted: $isConverted, ')
-          ..write('vectorObjects: $vectorObjects, ')
-          ..write('imageWidth: $imageWidth, ')
-          ..write('imageHeight: $imageHeight, ')
-          ..write('uniqueColorCount: $uniqueColorCount, ')
-          ..write('originalImageData: $originalImageData, ')
-          ..write('resizedImageData: $resizedImageData, ')
-          ..write('originalImageWidth: $originalImageWidth, ')
-          ..write('originalImageHeight: $originalImageHeight, ')
-          ..write('filterQualityIndex: $filterQualityIndex, ')
-          ..write('paletteId: $paletteId')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $PaletteColorsTable extends PaletteColors
     with TableInfo<$PaletteColorsTable, PaletteColor> {
   @override
@@ -3222,12 +2454,12 @@ class ImagesCompanion extends UpdateCompanion<DbImage> {
   }
 }
 
-class $ProjectsNewTable extends ProjectsNew
-    with TableInfo<$ProjectsNewTable, DbProjectNew> {
+class $ProjectsTable extends Projects
+    with TableInfo<$ProjectsTable, DbProject> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $ProjectsNewTable(this.attachedDatabase, [this._alias]);
+  $ProjectsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
@@ -3282,9 +2514,9 @@ class $ProjectsNewTable extends ProjectsNew
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'projects_new';
+  static const String $name = 'projects';
   @override
-  VerificationContext validateIntegrity(Insertable<DbProjectNew> instance,
+  VerificationContext validateIntegrity(Insertable<DbProject> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -3327,9 +2559,9 @@ class $ProjectsNewTable extends ProjectsNew
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  DbProjectNew map(Map<String, dynamic> data, {String? tablePrefix}) {
+  DbProject map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return DbProjectNew(
+    return DbProject(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
       title: attachedDatabase.typeMapping
@@ -3348,12 +2580,12 @@ class $ProjectsNewTable extends ProjectsNew
   }
 
   @override
-  $ProjectsNewTable createAlias(String alias) {
-    return $ProjectsNewTable(attachedDatabase, alias);
+  $ProjectsTable createAlias(String alias) {
+    return $ProjectsTable(attachedDatabase, alias);
   }
 }
 
-class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
+class DbProject extends DataClass implements Insertable<DbProject> {
   final int id;
   final String title;
   final String? author;
@@ -3361,7 +2593,7 @@ class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
   final int createdAt;
   final int updatedAt;
   final int? imageId;
-  const DbProjectNew(
+  const DbProject(
       {required this.id,
       required this.title,
       this.author,
@@ -3386,8 +2618,8 @@ class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
     return map;
   }
 
-  ProjectsNewCompanion toCompanion(bool nullToAbsent) {
-    return ProjectsNewCompanion(
+  ProjectsCompanion toCompanion(bool nullToAbsent) {
+    return ProjectsCompanion(
       id: Value(id),
       title: Value(title),
       author:
@@ -3401,10 +2633,10 @@ class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
     );
   }
 
-  factory DbProjectNew.fromJson(Map<String, dynamic> json,
+  factory DbProject.fromJson(Map<String, dynamic> json,
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return DbProjectNew(
+    return DbProject(
       id: serializer.fromJson<int>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       author: serializer.fromJson<String?>(json['author']),
@@ -3428,7 +2660,7 @@ class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
     };
   }
 
-  DbProjectNew copyWith(
+  DbProject copyWith(
           {int? id,
           String? title,
           Value<String?> author = const Value.absent(),
@@ -3436,7 +2668,7 @@ class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
           int? createdAt,
           int? updatedAt,
           Value<int?> imageId = const Value.absent()}) =>
-      DbProjectNew(
+      DbProject(
         id: id ?? this.id,
         title: title ?? this.title,
         author: author.present ? author.value : this.author,
@@ -3445,8 +2677,8 @@ class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
         updatedAt: updatedAt ?? this.updatedAt,
         imageId: imageId.present ? imageId.value : this.imageId,
       );
-  DbProjectNew copyWithCompanion(ProjectsNewCompanion data) {
-    return DbProjectNew(
+  DbProject copyWithCompanion(ProjectsCompanion data) {
+    return DbProject(
       id: data.id.present ? data.id.value : this.id,
       title: data.title.present ? data.title.value : this.title,
       author: data.author.present ? data.author.value : this.author,
@@ -3459,7 +2691,7 @@ class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
 
   @override
   String toString() {
-    return (StringBuffer('DbProjectNew(')
+    return (StringBuffer('DbProject(')
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('author: $author, ')
@@ -3477,7 +2709,7 @@ class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is DbProjectNew &&
+      (other is DbProject &&
           other.id == this.id &&
           other.title == this.title &&
           other.author == this.author &&
@@ -3487,7 +2719,7 @@ class DbProjectNew extends DataClass implements Insertable<DbProjectNew> {
           other.imageId == this.imageId);
 }
 
-class ProjectsNewCompanion extends UpdateCompanion<DbProjectNew> {
+class ProjectsCompanion extends UpdateCompanion<DbProject> {
   final Value<int> id;
   final Value<String> title;
   final Value<String?> author;
@@ -3495,7 +2727,7 @@ class ProjectsNewCompanion extends UpdateCompanion<DbProjectNew> {
   final Value<int> createdAt;
   final Value<int> updatedAt;
   final Value<int?> imageId;
-  const ProjectsNewCompanion({
+  const ProjectsCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.author = const Value.absent(),
@@ -3504,7 +2736,7 @@ class ProjectsNewCompanion extends UpdateCompanion<DbProjectNew> {
     this.updatedAt = const Value.absent(),
     this.imageId = const Value.absent(),
   });
-  ProjectsNewCompanion.insert({
+  ProjectsCompanion.insert({
     this.id = const Value.absent(),
     required String title,
     this.author = const Value.absent(),
@@ -3515,7 +2747,7 @@ class ProjectsNewCompanion extends UpdateCompanion<DbProjectNew> {
   })  : title = Value(title),
         createdAt = Value(createdAt),
         updatedAt = Value(updatedAt);
-  static Insertable<DbProjectNew> custom({
+  static Insertable<DbProject> custom({
     Expression<int>? id,
     Expression<String>? title,
     Expression<String>? author,
@@ -3535,7 +2767,7 @@ class ProjectsNewCompanion extends UpdateCompanion<DbProjectNew> {
     });
   }
 
-  ProjectsNewCompanion copyWith(
+  ProjectsCompanion copyWith(
       {Value<int>? id,
       Value<String>? title,
       Value<String?>? author,
@@ -3543,7 +2775,7 @@ class ProjectsNewCompanion extends UpdateCompanion<DbProjectNew> {
       Value<int>? createdAt,
       Value<int>? updatedAt,
       Value<int?>? imageId}) {
-    return ProjectsNewCompanion(
+    return ProjectsCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
       author: author ?? this.author,
@@ -3583,7 +2815,7 @@ class ProjectsNewCompanion extends UpdateCompanion<DbProjectNew> {
 
   @override
   String toString() {
-    return (StringBuffer('ProjectsNewCompanion(')
+    return (StringBuffer('ProjectsCompanion(')
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('author: $author, ')
@@ -3600,7 +2832,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $PalettesTable palettes = $PalettesTable(this);
-  late final $ProjectsTable projects = $ProjectsTable(this);
   late final $PaletteColorsTable paletteColors = $PaletteColorsTable(this);
   late final $VendorColorsTable vendorColors = $VendorColorsTable(this);
   late final $VendorColorVariantsTable vendorColorVariants =
@@ -3609,21 +2840,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ColorComponentsTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
   late final $ImagesTable images = $ImagesTable(this);
-  late final $ProjectsNewTable projectsNew = $ProjectsNewTable(this);
+  late final $ProjectsTable projects = $ProjectsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
         palettes,
-        projects,
         paletteColors,
         vendorColors,
         vendorColorVariants,
         colorComponents,
         settings,
         images,
-        projectsNew
+        projects
       ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
@@ -3632,7 +2862,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
             on: TableUpdateQuery.onTableName('images',
                 limitUpdateKind: UpdateKind.delete),
             result: [
-              TableUpdate('projects_new', kind: UpdateKind.update),
+              TableUpdate('projects', kind: UpdateKind.update),
             ],
           ),
         ],
@@ -3661,21 +2891,6 @@ typedef $$PalettesTableUpdateCompanionBuilder = PalettesCompanion Function({
 final class $$PalettesTableReferences
     extends BaseReferences<_$AppDatabase, $PalettesTable, Palette> {
   $$PalettesTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static MultiTypedResultKey<$ProjectsTable, List<Project>> _projectsRefsTable(
-          _$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(db.projects,
-          aliasName:
-              $_aliasNameGenerator(db.palettes.id, db.projects.paletteId));
-
-  $$ProjectsTableProcessedTableManager get projectsRefs {
-    final manager = $$ProjectsTableTableManager($_db, $_db.projects)
-        .filter((f) => f.paletteId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_projectsRefsTable($_db));
-    return ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: cache));
-  }
 
   static MultiTypedResultKey<$PaletteColorsTable, List<PaletteColor>>
       _paletteColorsRefsTable(_$AppDatabase db) =>
@@ -3722,27 +2937,6 @@ class $$PalettesTableFilterComposer
 
   ColumnFilters<bool> get isPredefined => $composableBuilder(
       column: $table.isPredefined, builder: (column) => ColumnFilters(column));
-
-  Expression<bool> projectsRefs(
-      Expression<bool> Function($$ProjectsTableFilterComposer f) f) {
-    final $$ProjectsTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.projects,
-        getReferencedColumn: (t) => t.paletteId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$ProjectsTableFilterComposer(
-              $db: $db,
-              $table: $db.projects,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
 
   Expression<bool> paletteColorsRefs(
       Expression<bool> Function($$PaletteColorsTableFilterComposer f) f) {
@@ -3828,27 +3022,6 @@ class $$PalettesTableAnnotationComposer
   GeneratedColumn<bool> get isPredefined => $composableBuilder(
       column: $table.isPredefined, builder: (column) => column);
 
-  Expression<T> projectsRefs<T extends Object>(
-      Expression<T> Function($$ProjectsTableAnnotationComposer a) f) {
-    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $db.projects,
-        getReferencedColumn: (t) => t.paletteId,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$ProjectsTableAnnotationComposer(
-              $db: $db,
-              $table: $db.projects,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return f(composer);
-  }
-
   Expression<T> paletteColorsRefs<T extends Object>(
       Expression<T> Function($$PaletteColorsTableAnnotationComposer a) f) {
     final $$PaletteColorsTableAnnotationComposer composer = $composerBuilder(
@@ -3882,7 +3055,7 @@ class $$PalettesTableTableManager extends RootTableManager<
     $$PalettesTableUpdateCompanionBuilder,
     (Palette, $$PalettesTableReferences),
     Palette,
-    PrefetchHooks Function({bool projectsRefs, bool paletteColorsRefs})> {
+    PrefetchHooks Function({bool paletteColorsRefs})> {
   $$PalettesTableTableManager(_$AppDatabase db, $PalettesTable table)
       : super(TableManagerState(
           db: db,
@@ -3933,29 +3106,15 @@ class $$PalettesTableTableManager extends RootTableManager<
               .map((e) =>
                   (e.readTable(table), $$PalettesTableReferences(db, table, e)))
               .toList(),
-          prefetchHooksCallback: (
-              {projectsRefs = false, paletteColorsRefs = false}) {
+          prefetchHooksCallback: ({paletteColorsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
-                if (projectsRefs) db.projects,
                 if (paletteColorsRefs) db.paletteColors
               ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
-                  if (projectsRefs)
-                    await $_getPrefetchedData<Palette, $PalettesTable, Project>(
-                        currentTable: table,
-                        referencedTable:
-                            $$PalettesTableReferences._projectsRefsTable(db),
-                        managerFromTypedResult: (p0) =>
-                            $$PalettesTableReferences(db, table, p0)
-                                .projectsRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.paletteId == item.id),
-                        typedResults: items),
                   if (paletteColorsRefs)
                     await $_getPrefetchedData<Palette, $PalettesTable,
                             PaletteColor>(
@@ -3987,435 +3146,7 @@ typedef $$PalettesTableProcessedTableManager = ProcessedTableManager<
     $$PalettesTableUpdateCompanionBuilder,
     (Palette, $$PalettesTableReferences),
     Palette,
-    PrefetchHooks Function({bool projectsRefs, bool paletteColorsRefs})>;
-typedef $$ProjectsTableCreateCompanionBuilder = ProjectsCompanion Function({
-  Value<int> id,
-  required String name,
-  required Uint8List imageData,
-  required Uint8List thumbnailData,
-  Value<bool> isConverted,
-  Value<String> vectorObjects,
-  Value<double?> imageWidth,
-  Value<double?> imageHeight,
-  Value<int?> uniqueColorCount,
-  Value<Uint8List?> originalImageData,
-  Value<Uint8List?> resizedImageData,
-  Value<double?> originalImageWidth,
-  Value<double?> originalImageHeight,
-  Value<int> filterQualityIndex,
-  Value<int?> paletteId,
-});
-typedef $$ProjectsTableUpdateCompanionBuilder = ProjectsCompanion Function({
-  Value<int> id,
-  Value<String> name,
-  Value<Uint8List> imageData,
-  Value<Uint8List> thumbnailData,
-  Value<bool> isConverted,
-  Value<String> vectorObjects,
-  Value<double?> imageWidth,
-  Value<double?> imageHeight,
-  Value<int?> uniqueColorCount,
-  Value<Uint8List?> originalImageData,
-  Value<Uint8List?> resizedImageData,
-  Value<double?> originalImageWidth,
-  Value<double?> originalImageHeight,
-  Value<int> filterQualityIndex,
-  Value<int?> paletteId,
-});
-
-final class $$ProjectsTableReferences
-    extends BaseReferences<_$AppDatabase, $ProjectsTable, Project> {
-  $$ProjectsTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $PalettesTable _paletteIdTable(_$AppDatabase db) => db.palettes
-      .createAlias($_aliasNameGenerator(db.projects.paletteId, db.palettes.id));
-
-  $$PalettesTableProcessedTableManager? get paletteId {
-    final $_column = $_itemColumn<int>('palette_id');
-    if ($_column == null) return null;
-    final manager = $$PalettesTableTableManager($_db, $_db.palettes)
-        .filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_paletteIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: [item]));
-  }
-}
-
-class $$ProjectsTableFilterComposer
-    extends Composer<_$AppDatabase, $ProjectsTable> {
-  $$ProjectsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get name => $composableBuilder(
-      column: $table.name, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<Uint8List> get imageData => $composableBuilder(
-      column: $table.imageData, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<Uint8List> get thumbnailData => $composableBuilder(
-      column: $table.thumbnailData, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get isConverted => $composableBuilder(
-      column: $table.isConverted, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get vectorObjects => $composableBuilder(
-      column: $table.vectorObjects, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get imageWidth => $composableBuilder(
-      column: $table.imageWidth, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get imageHeight => $composableBuilder(
-      column: $table.imageHeight, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<int> get uniqueColorCount => $composableBuilder(
-      column: $table.uniqueColorCount,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<Uint8List> get originalImageData => $composableBuilder(
-      column: $table.originalImageData,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<Uint8List> get resizedImageData => $composableBuilder(
-      column: $table.resizedImageData,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get originalImageWidth => $composableBuilder(
-      column: $table.originalImageWidth,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get originalImageHeight => $composableBuilder(
-      column: $table.originalImageHeight,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<int> get filterQualityIndex => $composableBuilder(
-      column: $table.filterQualityIndex,
-      builder: (column) => ColumnFilters(column));
-
-  $$PalettesTableFilterComposer get paletteId {
-    final $$PalettesTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.paletteId,
-        referencedTable: $db.palettes,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$PalettesTableFilterComposer(
-              $db: $db,
-              $table: $db.palettes,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
-}
-
-class $$ProjectsTableOrderingComposer
-    extends Composer<_$AppDatabase, $ProjectsTable> {
-  $$ProjectsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get name => $composableBuilder(
-      column: $table.name, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<Uint8List> get imageData => $composableBuilder(
-      column: $table.imageData, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<Uint8List> get thumbnailData => $composableBuilder(
-      column: $table.thumbnailData,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get isConverted => $composableBuilder(
-      column: $table.isConverted, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get vectorObjects => $composableBuilder(
-      column: $table.vectorObjects,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<double> get imageWidth => $composableBuilder(
-      column: $table.imageWidth, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<double> get imageHeight => $composableBuilder(
-      column: $table.imageHeight, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<int> get uniqueColorCount => $composableBuilder(
-      column: $table.uniqueColorCount,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<Uint8List> get originalImageData => $composableBuilder(
-      column: $table.originalImageData,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<Uint8List> get resizedImageData => $composableBuilder(
-      column: $table.resizedImageData,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<double> get originalImageWidth => $composableBuilder(
-      column: $table.originalImageWidth,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<double> get originalImageHeight => $composableBuilder(
-      column: $table.originalImageHeight,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<int> get filterQualityIndex => $composableBuilder(
-      column: $table.filterQualityIndex,
-      builder: (column) => ColumnOrderings(column));
-
-  $$PalettesTableOrderingComposer get paletteId {
-    final $$PalettesTableOrderingComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.paletteId,
-        referencedTable: $db.palettes,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$PalettesTableOrderingComposer(
-              $db: $db,
-              $table: $db.palettes,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
-}
-
-class $$ProjectsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $ProjectsTable> {
-  $$ProjectsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<Uint8List> get imageData =>
-      $composableBuilder(column: $table.imageData, builder: (column) => column);
-
-  GeneratedColumn<Uint8List> get thumbnailData => $composableBuilder(
-      column: $table.thumbnailData, builder: (column) => column);
-
-  GeneratedColumn<bool> get isConverted => $composableBuilder(
-      column: $table.isConverted, builder: (column) => column);
-
-  GeneratedColumn<String> get vectorObjects => $composableBuilder(
-      column: $table.vectorObjects, builder: (column) => column);
-
-  GeneratedColumn<double> get imageWidth => $composableBuilder(
-      column: $table.imageWidth, builder: (column) => column);
-
-  GeneratedColumn<double> get imageHeight => $composableBuilder(
-      column: $table.imageHeight, builder: (column) => column);
-
-  GeneratedColumn<int> get uniqueColorCount => $composableBuilder(
-      column: $table.uniqueColorCount, builder: (column) => column);
-
-  GeneratedColumn<Uint8List> get originalImageData => $composableBuilder(
-      column: $table.originalImageData, builder: (column) => column);
-
-  GeneratedColumn<Uint8List> get resizedImageData => $composableBuilder(
-      column: $table.resizedImageData, builder: (column) => column);
-
-  GeneratedColumn<double> get originalImageWidth => $composableBuilder(
-      column: $table.originalImageWidth, builder: (column) => column);
-
-  GeneratedColumn<double> get originalImageHeight => $composableBuilder(
-      column: $table.originalImageHeight, builder: (column) => column);
-
-  GeneratedColumn<int> get filterQualityIndex => $composableBuilder(
-      column: $table.filterQualityIndex, builder: (column) => column);
-
-  $$PalettesTableAnnotationComposer get paletteId {
-    final $$PalettesTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.paletteId,
-        referencedTable: $db.palettes,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            $$PalettesTableAnnotationComposer(
-              $db: $db,
-              $table: $db.palettes,
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
-}
-
-class $$ProjectsTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $ProjectsTable,
-    Project,
-    $$ProjectsTableFilterComposer,
-    $$ProjectsTableOrderingComposer,
-    $$ProjectsTableAnnotationComposer,
-    $$ProjectsTableCreateCompanionBuilder,
-    $$ProjectsTableUpdateCompanionBuilder,
-    (Project, $$ProjectsTableReferences),
-    Project,
-    PrefetchHooks Function({bool paletteId})> {
-  $$ProjectsTableTableManager(_$AppDatabase db, $ProjectsTable table)
-      : super(TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$ProjectsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$ProjectsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$ProjectsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            Value<String> name = const Value.absent(),
-            Value<Uint8List> imageData = const Value.absent(),
-            Value<Uint8List> thumbnailData = const Value.absent(),
-            Value<bool> isConverted = const Value.absent(),
-            Value<String> vectorObjects = const Value.absent(),
-            Value<double?> imageWidth = const Value.absent(),
-            Value<double?> imageHeight = const Value.absent(),
-            Value<int?> uniqueColorCount = const Value.absent(),
-            Value<Uint8List?> originalImageData = const Value.absent(),
-            Value<Uint8List?> resizedImageData = const Value.absent(),
-            Value<double?> originalImageWidth = const Value.absent(),
-            Value<double?> originalImageHeight = const Value.absent(),
-            Value<int> filterQualityIndex = const Value.absent(),
-            Value<int?> paletteId = const Value.absent(),
-          }) =>
-              ProjectsCompanion(
-            id: id,
-            name: name,
-            imageData: imageData,
-            thumbnailData: thumbnailData,
-            isConverted: isConverted,
-            vectorObjects: vectorObjects,
-            imageWidth: imageWidth,
-            imageHeight: imageHeight,
-            uniqueColorCount: uniqueColorCount,
-            originalImageData: originalImageData,
-            resizedImageData: resizedImageData,
-            originalImageWidth: originalImageWidth,
-            originalImageHeight: originalImageHeight,
-            filterQualityIndex: filterQualityIndex,
-            paletteId: paletteId,
-          ),
-          createCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            required String name,
-            required Uint8List imageData,
-            required Uint8List thumbnailData,
-            Value<bool> isConverted = const Value.absent(),
-            Value<String> vectorObjects = const Value.absent(),
-            Value<double?> imageWidth = const Value.absent(),
-            Value<double?> imageHeight = const Value.absent(),
-            Value<int?> uniqueColorCount = const Value.absent(),
-            Value<Uint8List?> originalImageData = const Value.absent(),
-            Value<Uint8List?> resizedImageData = const Value.absent(),
-            Value<double?> originalImageWidth = const Value.absent(),
-            Value<double?> originalImageHeight = const Value.absent(),
-            Value<int> filterQualityIndex = const Value.absent(),
-            Value<int?> paletteId = const Value.absent(),
-          }) =>
-              ProjectsCompanion.insert(
-            id: id,
-            name: name,
-            imageData: imageData,
-            thumbnailData: thumbnailData,
-            isConverted: isConverted,
-            vectorObjects: vectorObjects,
-            imageWidth: imageWidth,
-            imageHeight: imageHeight,
-            uniqueColorCount: uniqueColorCount,
-            originalImageData: originalImageData,
-            resizedImageData: resizedImageData,
-            originalImageWidth: originalImageWidth,
-            originalImageHeight: originalImageHeight,
-            filterQualityIndex: filterQualityIndex,
-            paletteId: paletteId,
-          ),
-          withReferenceMapper: (p0) => p0
-              .map((e) =>
-                  (e.readTable(table), $$ProjectsTableReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: ({paletteId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins: <
-                  T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic>>(state) {
-                if (paletteId) {
-                  state = state.withJoin(
-                    currentTable: table,
-                    currentColumn: table.paletteId,
-                    referencedTable:
-                        $$ProjectsTableReferences._paletteIdTable(db),
-                    referencedColumn:
-                        $$ProjectsTableReferences._paletteIdTable(db).id,
-                  ) as T;
-                }
-
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
-        ));
-}
-
-typedef $$ProjectsTableProcessedTableManager = ProcessedTableManager<
-    _$AppDatabase,
-    $ProjectsTable,
-    Project,
-    $$ProjectsTableFilterComposer,
-    $$ProjectsTableOrderingComposer,
-    $$ProjectsTableAnnotationComposer,
-    $$ProjectsTableCreateCompanionBuilder,
-    $$ProjectsTableUpdateCompanionBuilder,
-    (Project, $$ProjectsTableReferences),
-    Project,
-    PrefetchHooks Function({bool paletteId})>;
+    PrefetchHooks Function({bool paletteColorsRefs})>;
 typedef $$PaletteColorsTableCreateCompanionBuilder = PaletteColorsCompanion
     Function({
   Value<int> id,
@@ -5875,17 +4606,16 @@ final class $$ImagesTableReferences
     extends BaseReferences<_$AppDatabase, $ImagesTable, DbImage> {
   $$ImagesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$ProjectsNewTable, List<DbProjectNew>>
-      _projectsNewRefsTable(_$AppDatabase db) =>
-          MultiTypedResultKey.fromTable(db.projectsNew,
-              aliasName:
-                  $_aliasNameGenerator(db.images.id, db.projectsNew.imageId));
+  static MultiTypedResultKey<$ProjectsTable, List<DbProject>>
+      _projectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+          db.projects,
+          aliasName: $_aliasNameGenerator(db.images.id, db.projects.imageId));
 
-  $$ProjectsNewTableProcessedTableManager get projectsNewRefs {
-    final manager = $$ProjectsNewTableTableManager($_db, $_db.projectsNew)
+  $$ProjectsTableProcessedTableManager get projectsRefs {
+    final manager = $$ProjectsTableTableManager($_db, $_db.projects)
         .filter((f) => f.imageId.id.sqlEquals($_itemColumn<int>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(_projectsNewRefsTable($_db));
+    final cache = $_typedResult.readTableOrNull(_projectsRefsTable($_db));
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
@@ -5941,19 +4671,19 @@ class $$ImagesTableFilterComposer
   ColumnFilters<String> get mimeType => $composableBuilder(
       column: $table.mimeType, builder: (column) => ColumnFilters(column));
 
-  Expression<bool> projectsNewRefs(
-      Expression<bool> Function($$ProjectsNewTableFilterComposer f) f) {
-    final $$ProjectsNewTableFilterComposer composer = $composerBuilder(
+  Expression<bool> projectsRefs(
+      Expression<bool> Function($$ProjectsTableFilterComposer f) f) {
+    final $$ProjectsTableFilterComposer composer = $composerBuilder(
         composer: this,
         getCurrentColumn: (t) => t.id,
-        referencedTable: $db.projectsNew,
+        referencedTable: $db.projects,
         getReferencedColumn: (t) => t.imageId,
         builder: (joinBuilder,
                 {$addJoinBuilderToRootComposer,
                 $removeJoinBuilderFromRootComposer}) =>
-            $$ProjectsNewTableFilterComposer(
+            $$ProjectsTableFilterComposer(
               $db: $db,
-              $table: $db.projectsNew,
+              $table: $db.projects,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -6062,19 +4792,19 @@ class $$ImagesTableAnnotationComposer
   GeneratedColumn<String> get mimeType =>
       $composableBuilder(column: $table.mimeType, builder: (column) => column);
 
-  Expression<T> projectsNewRefs<T extends Object>(
-      Expression<T> Function($$ProjectsNewTableAnnotationComposer a) f) {
-    final $$ProjectsNewTableAnnotationComposer composer = $composerBuilder(
+  Expression<T> projectsRefs<T extends Object>(
+      Expression<T> Function($$ProjectsTableAnnotationComposer a) f) {
+    final $$ProjectsTableAnnotationComposer composer = $composerBuilder(
         composer: this,
         getCurrentColumn: (t) => t.id,
-        referencedTable: $db.projectsNew,
+        referencedTable: $db.projects,
         getReferencedColumn: (t) => t.imageId,
         builder: (joinBuilder,
                 {$addJoinBuilderToRootComposer,
                 $removeJoinBuilderFromRootComposer}) =>
-            $$ProjectsNewTableAnnotationComposer(
+            $$ProjectsTableAnnotationComposer(
               $db: $db,
-              $table: $db.projectsNew,
+              $table: $db.projects,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -6095,7 +4825,7 @@ class $$ImagesTableTableManager extends RootTableManager<
     $$ImagesTableUpdateCompanionBuilder,
     (DbImage, $$ImagesTableReferences),
     DbImage,
-    PrefetchHooks Function({bool projectsNewRefs})> {
+    PrefetchHooks Function({bool projectsRefs})> {
   $$ImagesTableTableManager(_$AppDatabase db, $ImagesTable table)
       : super(TableManagerState(
           db: db,
@@ -6170,22 +4900,20 @@ class $$ImagesTableTableManager extends RootTableManager<
               .map((e) =>
                   (e.readTable(table), $$ImagesTableReferences(db, table, e)))
               .toList(),
-          prefetchHooksCallback: ({projectsNewRefs = false}) {
+          prefetchHooksCallback: ({projectsRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (projectsNewRefs) db.projectsNew],
+              explicitlyWatchedTables: [if (projectsRefs) db.projects],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
-                  if (projectsNewRefs)
-                    await $_getPrefetchedData<DbImage, $ImagesTable,
-                            DbProjectNew>(
+                  if (projectsRefs)
+                    await $_getPrefetchedData<DbImage, $ImagesTable, DbProject>(
                         currentTable: table,
                         referencedTable:
-                            $$ImagesTableReferences._projectsNewRefsTable(db),
+                            $$ImagesTableReferences._projectsRefsTable(db),
                         managerFromTypedResult: (p0) =>
-                            $$ImagesTableReferences(db, table, p0)
-                                .projectsNewRefs,
+                            $$ImagesTableReferences(db, table, p0).projectsRefs,
                         referencedItemsForCurrentItem: (item,
                                 referencedItems) =>
                             referencedItems.where((e) => e.imageId == item.id),
@@ -6208,9 +4936,8 @@ typedef $$ImagesTableProcessedTableManager = ProcessedTableManager<
     $$ImagesTableUpdateCompanionBuilder,
     (DbImage, $$ImagesTableReferences),
     DbImage,
-    PrefetchHooks Function({bool projectsNewRefs})>;
-typedef $$ProjectsNewTableCreateCompanionBuilder = ProjectsNewCompanion
-    Function({
+    PrefetchHooks Function({bool projectsRefs})>;
+typedef $$ProjectsTableCreateCompanionBuilder = ProjectsCompanion Function({
   Value<int> id,
   required String title,
   Value<String?> author,
@@ -6219,8 +4946,7 @@ typedef $$ProjectsNewTableCreateCompanionBuilder = ProjectsNewCompanion
   required int updatedAt,
   Value<int?> imageId,
 });
-typedef $$ProjectsNewTableUpdateCompanionBuilder = ProjectsNewCompanion
-    Function({
+typedef $$ProjectsTableUpdateCompanionBuilder = ProjectsCompanion Function({
   Value<int> id,
   Value<String> title,
   Value<String?> author,
@@ -6230,12 +4956,12 @@ typedef $$ProjectsNewTableUpdateCompanionBuilder = ProjectsNewCompanion
   Value<int?> imageId,
 });
 
-final class $$ProjectsNewTableReferences
-    extends BaseReferences<_$AppDatabase, $ProjectsNewTable, DbProjectNew> {
-  $$ProjectsNewTableReferences(super.$_db, super.$_table, super.$_typedResult);
+final class $$ProjectsTableReferences
+    extends BaseReferences<_$AppDatabase, $ProjectsTable, DbProject> {
+  $$ProjectsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $ImagesTable _imageIdTable(_$AppDatabase db) => db.images
-      .createAlias($_aliasNameGenerator(db.projectsNew.imageId, db.images.id));
+      .createAlias($_aliasNameGenerator(db.projects.imageId, db.images.id));
 
   $$ImagesTableProcessedTableManager? get imageId {
     final $_column = $_itemColumn<int>('image_id');
@@ -6249,9 +4975,9 @@ final class $$ProjectsNewTableReferences
   }
 }
 
-class $$ProjectsNewTableFilterComposer
-    extends Composer<_$AppDatabase, $ProjectsNewTable> {
-  $$ProjectsNewTableFilterComposer({
+class $$ProjectsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProjectsTable> {
+  $$ProjectsTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -6297,9 +5023,9 @@ class $$ProjectsNewTableFilterComposer
   }
 }
 
-class $$ProjectsNewTableOrderingComposer
-    extends Composer<_$AppDatabase, $ProjectsNewTable> {
-  $$ProjectsNewTableOrderingComposer({
+class $$ProjectsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProjectsTable> {
+  $$ProjectsTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -6345,9 +5071,9 @@ class $$ProjectsNewTableOrderingComposer
   }
 }
 
-class $$ProjectsNewTableAnnotationComposer
-    extends Composer<_$AppDatabase, $ProjectsNewTable> {
-  $$ProjectsNewTableAnnotationComposer({
+class $$ProjectsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProjectsTable> {
+  $$ProjectsTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -6393,28 +5119,28 @@ class $$ProjectsNewTableAnnotationComposer
   }
 }
 
-class $$ProjectsNewTableTableManager extends RootTableManager<
+class $$ProjectsTableTableManager extends RootTableManager<
     _$AppDatabase,
-    $ProjectsNewTable,
-    DbProjectNew,
-    $$ProjectsNewTableFilterComposer,
-    $$ProjectsNewTableOrderingComposer,
-    $$ProjectsNewTableAnnotationComposer,
-    $$ProjectsNewTableCreateCompanionBuilder,
-    $$ProjectsNewTableUpdateCompanionBuilder,
-    (DbProjectNew, $$ProjectsNewTableReferences),
-    DbProjectNew,
+    $ProjectsTable,
+    DbProject,
+    $$ProjectsTableFilterComposer,
+    $$ProjectsTableOrderingComposer,
+    $$ProjectsTableAnnotationComposer,
+    $$ProjectsTableCreateCompanionBuilder,
+    $$ProjectsTableUpdateCompanionBuilder,
+    (DbProject, $$ProjectsTableReferences),
+    DbProject,
     PrefetchHooks Function({bool imageId})> {
-  $$ProjectsNewTableTableManager(_$AppDatabase db, $ProjectsNewTable table)
+  $$ProjectsTableTableManager(_$AppDatabase db, $ProjectsTable table)
       : super(TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$ProjectsNewTableFilterComposer($db: db, $table: table),
+              $$ProjectsTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$ProjectsNewTableOrderingComposer($db: db, $table: table),
+              $$ProjectsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$ProjectsNewTableAnnotationComposer($db: db, $table: table),
+              $$ProjectsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
             Value<String> title = const Value.absent(),
@@ -6424,7 +5150,7 @@ class $$ProjectsNewTableTableManager extends RootTableManager<
             Value<int> updatedAt = const Value.absent(),
             Value<int?> imageId = const Value.absent(),
           }) =>
-              ProjectsNewCompanion(
+              ProjectsCompanion(
             id: id,
             title: title,
             author: author,
@@ -6442,7 +5168,7 @@ class $$ProjectsNewTableTableManager extends RootTableManager<
             required int updatedAt,
             Value<int?> imageId = const Value.absent(),
           }) =>
-              ProjectsNewCompanion.insert(
+              ProjectsCompanion.insert(
             id: id,
             title: title,
             author: author,
@@ -6452,10 +5178,8 @@ class $$ProjectsNewTableTableManager extends RootTableManager<
             imageId: imageId,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (
-                    e.readTable(table),
-                    $$ProjectsNewTableReferences(db, table, e)
-                  ))
+              .map((e) =>
+                  (e.readTable(table), $$ProjectsTableReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: ({imageId = false}) {
             return PrefetchHooks(
@@ -6479,9 +5203,9 @@ class $$ProjectsNewTableTableManager extends RootTableManager<
                     currentTable: table,
                     currentColumn: table.imageId,
                     referencedTable:
-                        $$ProjectsNewTableReferences._imageIdTable(db),
+                        $$ProjectsTableReferences._imageIdTable(db),
                     referencedColumn:
-                        $$ProjectsNewTableReferences._imageIdTable(db).id,
+                        $$ProjectsTableReferences._imageIdTable(db).id,
                   ) as T;
                 }
 
@@ -6495,17 +5219,17 @@ class $$ProjectsNewTableTableManager extends RootTableManager<
         ));
 }
 
-typedef $$ProjectsNewTableProcessedTableManager = ProcessedTableManager<
+typedef $$ProjectsTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
-    $ProjectsNewTable,
-    DbProjectNew,
-    $$ProjectsNewTableFilterComposer,
-    $$ProjectsNewTableOrderingComposer,
-    $$ProjectsNewTableAnnotationComposer,
-    $$ProjectsNewTableCreateCompanionBuilder,
-    $$ProjectsNewTableUpdateCompanionBuilder,
-    (DbProjectNew, $$ProjectsNewTableReferences),
-    DbProjectNew,
+    $ProjectsTable,
+    DbProject,
+    $$ProjectsTableFilterComposer,
+    $$ProjectsTableOrderingComposer,
+    $$ProjectsTableAnnotationComposer,
+    $$ProjectsTableCreateCompanionBuilder,
+    $$ProjectsTableUpdateCompanionBuilder,
+    (DbProject, $$ProjectsTableReferences),
+    DbProject,
     PrefetchHooks Function({bool imageId})>;
 
 class $AppDatabaseManager {
@@ -6513,8 +5237,6 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$PalettesTableTableManager get palettes =>
       $$PalettesTableTableManager(_db, _db.palettes);
-  $$ProjectsTableTableManager get projects =>
-      $$ProjectsTableTableManager(_db, _db.projects);
   $$PaletteColorsTableTableManager get paletteColors =>
       $$PaletteColorsTableTableManager(_db, _db.paletteColors);
   $$VendorColorsTableTableManager get vendorColors =>
@@ -6527,6 +5249,6 @@ class $AppDatabaseManager {
       $$SettingsTableTableManager(_db, _db.settings);
   $$ImagesTableTableManager get images =>
       $$ImagesTableTableManager(_db, _db.images);
-  $$ProjectsNewTableTableManager get projectsNew =>
-      $$ProjectsNewTableTableManager(_db, _db.projectsNew);
+  $$ProjectsTableTableManager get projects =>
+      $$ProjectsTableTableManager(_db, _db.projects);
 }

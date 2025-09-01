@@ -5,19 +5,18 @@ class ProjectsNewRepository {
   final AppDatabase _db;
   ProjectsNewRepository(this._db);
 
-  Stream<List<DbProjectNew>> watchAll() => _db.select(_db.projectsNew).watch();
+  Stream<List<DbProject>> watchAll() => _db.select(_db.projects).watch();
 
-  Future<List<DbProjectNew>> getAll() => _db.select(_db.projectsNew).get();
+  Future<List<DbProject>> getAll() => _db.select(_db.projects).get();
 
-  Stream<DbProjectNew> watchById(int id) =>
-      (_db.select(_db.projectsNew)..where((p) => p.id.equals(id)))
-          .watchSingle();
+  Stream<DbProject> watchById(int id) =>
+      (_db.select(_db.projects)..where((p) => p.id.equals(id))).watchSingle();
 
-  Future<DbProjectNew> getById(int id) =>
-      (_db.select(_db.projectsNew)..where((p) => p.id.equals(id))).getSingle();
+  Future<DbProject> getById(int id) =>
+      (_db.select(_db.projects)..where((p) => p.id.equals(id))).getSingle();
 
-  Future<int> insert(ProjectsNewCompanion project) =>
-      _db.into(_db.projectsNew).insert(project);
+  Future<int> insert(ProjectsCompanion project) =>
+      _db.into(_db.projects).insert(project);
 
   Future<int> insertDraft({
     required String title,
@@ -28,7 +27,7 @@ class ProjectsNewRepository {
     int? updatedAt,
   }) {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final data = ProjectsNewCompanion.insert(
+    final data = ProjectsCompanion.insert(
       title: title,
       author: Value(author),
       status: Value(status),
@@ -36,13 +35,13 @@ class ProjectsNewRepository {
       updatedAt: updatedAt ?? now,
       imageId: Value(imageId),
     );
-    return _db.into(_db.projectsNew).insert(data);
+    return _db.into(_db.projects).insert(data);
   }
 
-  Future<void> update(ProjectsNewCompanion project) =>
-      (_db.update(_db.projectsNew)..where((p) => p.id.equals(project.id.value)))
+  Future<void> update(ProjectsCompanion project) =>
+      (_db.update(_db.projects)..where((p) => p.id.equals(project.id.value)))
           .write(project);
 
   Future<void> delete(int id) =>
-      (_db.delete(_db.projectsNew)..where((p) => p.id.equals(id))).go();
+      (_db.delete(_db.projects)..where((p) => p.id.equals(id))).go();
 }
