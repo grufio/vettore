@@ -13,9 +13,6 @@
 <svg version="1.1" id="icon" xmlns:x="&ns_extend;" xmlns:i="&ns_ai;" xmlns:graph="&ns_graphs;"
 	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 32 32"
 	 style="enable-background:new 0 0 32 32;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:none;}
-</style>
 <switch>
 	<foreignObject requiredExtensions="&ns_ai;" x="0" y="0" width="1" height="1">
 		<i:aipgfRef  xlink:href="#adobe_illustrator_pgf">
@@ -28,7 +25,7 @@
 			l1.4,1.4l1.5-1.5c0.5,0.3,1.1,0.6,1.8,0.7V29h2v-2.1c0.6-0.1,1.2-0.4,1.8-0.7l1.5,1.5l1.4-1.4l-1.5-1.5c0.3-0.5,0.6-1.1,0.7-1.8
 			H31z M24,25c-1.7,0-3-1.3-3-3s1.3-3,3-3s3,1.3,3,3S25.7,25,24,25z"/>
 		<path d="M20,10h5.2C21.9,4.9,15.1,3.5,10,6.8c-3.1,2-5,5.5-5,9.2H3C3,8.8,8.8,3,16,3c3.9,0,7.5,1.7,10,4.7V4h2v8h-8V10z"/>
-		<rect id="_x3C_Transparent_Rectangle_x3E__589_" class="st0" width="32" height="32"/>
+		<rect id="_x3C_Transparent_Rectangle_x3E__589_" width="32" height="32"/>
 	</g>
 </switch>
 <i:aipgf  id="adobe_illustrator_pgf" i:pgfEncoding="zstd/base64" i:pgfVersion="24">
