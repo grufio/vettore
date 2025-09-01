@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart';
 import 'package:vettore/data/database.dart';
 
-class ProjectsNewRepository {
+class ProjectRepository {
   final AppDatabase _db;
-  ProjectsNewRepository(this._db);
+  ProjectRepository(this._db);
 
   Stream<List<DbProject>> watchAll() => _db.select(_db.projects).watch();
 

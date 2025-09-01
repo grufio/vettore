@@ -3,6 +3,7 @@ import 'package:macos_ui/macos_ui.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'dart:io' show Platform;
 import 'package:window_manager/window_manager.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_overview.dart';
 import 'theme/app_theme_colors.dart';
@@ -16,7 +17,7 @@ Future<void> main() async {
     await WindowManipulator.initialize();
   }
 
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 
   // Only perform desktop window setup on macOS.
   if (Platform.isMacOS) {

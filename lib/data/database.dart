@@ -182,20 +182,9 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(settings);
         }
         if (from < 13) {
+          // Create new tables directly when upgrading from very old versions.
           await m.createTable(images);
-          await m.createTable(projectsNew);
-          await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_projects_new_updatedAt ON projects_new(updatedAt)');
-          await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_projects_new_title ON projects_new(title)');
-          await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_projects_new_status ON projects_new(status)');
-        }
-        if (from < 14) {
-          // Drop old legacy projects table if present, then rename
-          await customStatement('DROP TABLE IF EXISTS projects');
-          await customStatement('ALTER TABLE projects_new RENAME TO projects');
-          // Recreate indexes under new name
+          await m.createTable(projects);
           await customStatement(
               'CREATE INDEX IF NOT EXISTS idx_projects_updatedAt ON projects(updatedAt)');
           await customStatement(

@@ -4,6 +4,7 @@ import 'package:vettore/widgets/input_value_type.dart';
 
 class InputRowFull extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final String? placeholder;
   final String? suffixText;
   final String prefixIconAsset;
@@ -13,6 +14,7 @@ class InputRowFull extends StatelessWidget {
   const InputRowFull({
     super.key,
     required this.controller,
+    this.focusNode,
     this.placeholder,
     this.suffixText,
     this.prefixIconAsset = 'assets/icons/32/document--blank.svg',
@@ -25,6 +27,7 @@ class InputRowFull extends StatelessWidget {
     return SectionInput(
       full: InputValueType.text(
         controller: controller,
+        focusNode: focusNode,
         placeholder: placeholder,
         suffixText: suffixText,
         prefixIconAsset: prefixIconAsset,

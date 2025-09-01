@@ -5,8 +5,7 @@ import 'package:vettore/repositories/project_repository.dart';
 import 'package:vettore/services/project_service.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/services/ai_service.dart';
-import 'package:vettore/repositories/project_repository.dart';
-import 'package:vettore/services/project_service.dart';
+// duplicate imports removed
 
 //-
 // Database Provider
@@ -28,16 +27,14 @@ final paletteRepositoryProvider = Provider<PaletteRepository>((ref) {
   return PaletteRepository(db);
 });
 
-final projectsNewRepositoryProvider = Provider<ProjectsRepository>((ref) {
-  final db = ref.watch(appDatabaseProvider);
-  return ProjectsRepository(db);
-});
+// removed legacy projectsNew provider
 
 //-
 // Service Providers
 //-
 final projectServiceProvider = Provider<ProjectService>((ref) {
-  return ProjectService();
+  final repo = ref.watch(projectRepositoryProvider);
+  return ProjectService(repo: repo);
 });
 
 final aiServiceProvider = Provider<AIService>((ref) {
@@ -45,7 +42,4 @@ final aiServiceProvider = Provider<AIService>((ref) {
   return AIService(settingsService: settingsService);
 });
 
-final projectNewServiceProvider = Provider<ProjectService>((ref) {
-  final repo = ref.watch(projectsNewRepositoryProvider);
-  return ProjectService(repo: repo);
-});
+// removed legacy projectNew service provider

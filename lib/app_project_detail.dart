@@ -1,6 +1,8 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
@@ -12,21 +14,26 @@ import 'package:vettore/widgets/section_input.dart';
 import 'package:vettore/widgets/button_app.dart';
 import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/widgets/input_row_full.dart';
+import 'package:vettore/providers/application_providers.dart';
+import 'package:vettore/data/database.dart';
 
-class AppProjectDetailPage extends StatefulWidget {
+class AppProjectDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
   final ValueChanged<int>? onNavigateTab;
+  final int? projectId; // optional for now; when null we load/create first
   const AppProjectDetailPage({
     super.key,
     this.initialActiveIndex = 1,
     this.onNavigateTab,
+    this.projectId,
   });
 
   @override
-  State<AppProjectDetailPage> createState() => _AppProjectDetailPageState();
+  ConsumerState<AppProjectDetailPage> createState() =>
+      _AppProjectDetailPageState();
 }
 
-class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
+class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   static const double _kToolbarHeight = 40.0;
 
   late int _activeIndex;
@@ -36,14 +43,32 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
   late final TextEditingController _inputValueController2;
   late final TextEditingController _singleInputController;
   late final TextEditingController _projectController;
+  int? _currentProjectId;
   double _rightPanelWidth = 260.0;
-  final _tabs = <GrufioTabData>[
-    const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
-    const GrufioTabData(
-        iconPath: 'assets/icons/32/color-palette.svg', label: 'Palette'),
-    const GrufioTabData(
-        iconPath: 'assets/icons/32/color-palette.svg', label: 'Example'),
-  ];
+  List<GrufioTabData> get _tabs {
+    // Base tabs: Home, Palette, Example
+    final base = <GrufioTabData>[
+      const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
+      const GrufioTabData(
+          iconPath: 'assets/icons/32/color-palette.svg', label: 'Palette'),
+      const GrufioTabData(
+          iconPath: 'assets/icons/32/color-palette.svg', label: 'Example'),
+    ];
+    if (_currentProjectId != null) {
+      final projectLabel = (_projectController.text.isNotEmpty)
+          ? _projectController.text
+          : 'Untitled';
+      // Insert the project tab right after 'Palette' to match overview insertion
+      base.insert(
+        2,
+        GrufioTabData(
+          iconPath: 'assets/icons/32/color-palette.svg',
+          label: projectLabel,
+        ),
+      );
+    }
+    return base;
+  }
 
   void _onTabSelected(int i) {
     setState(() => _activeIndex = i);
@@ -58,6 +83,7 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
     _inputValueController2 = TextEditingController();
     _singleInputController = TextEditingController();
     _projectController = TextEditingController();
+    _initProject();
   }
 
   @override
@@ -151,9 +177,10 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
                           children: [
                             InputRowFull(
                               controller: _projectController,
+                              focusNode: FocusNode()..requestFocus(),
                               placeholder: null,
                               suffixText: null,
-                              onActionTap: () {},
+                              onActionTap: _saveProjectTitle,
                             ),
                           ],
                         ),
@@ -203,6 +230,39 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
 }
 
 extension on _AppProjectDetailPageState {
+  Future<void> _initProject() async {
+    // Determine project to load: prefer explicit id, else load first project if any
+    final repo = ref.read(projectRepositoryProvider);
+    try {
+      if (widget.projectId != null) {
+        _currentProjectId = widget.projectId;
+        final p = await repo.getById(widget.projectId!);
+        _projectController.text = p.title;
+        return;
+      }
+      final all = await repo.getAll();
+      if (all.isNotEmpty) {
+        final p = all.first;
+        _currentProjectId = p.id;
+        _projectController.text = p.title;
+      }
+    } catch (_) {
+      // Ignore load errors for now; keep empty controller
+    }
+  }
+
+  Future<void> _saveProjectTitle() async {
+    if (_currentProjectId == null) return;
+    final repo = ref.read(projectRepositoryProvider);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final companion = ProjectsCompanion(
+      id: Value(_currentProjectId!),
+      title: Value(_projectController.text),
+      updatedAt: Value(now),
+    );
+    await repo.update(companion);
+  }
+
   Widget _buildDetailBody() {
     return const ColoredBox(
       color: kGrey10,

@@ -1,8 +1,8 @@
-import 'package:vettore/repositories/project_new_repository.dart';
+import 'package:vettore/repositories/project_repository.dart';
 
-class ProjectNewService {
-  final ProjectsNewRepository repo;
-  ProjectNewService({required this.repo});
+class ProjectService {
+  final ProjectRepository repo;
+  ProjectService({required this.repo});
 
   Future<int> createDraft(String title, {String? author}) {
     return repo.insertDraft(title: title, author: author);

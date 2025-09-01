@@ -14,6 +14,10 @@ import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/app_project_detail.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vettore/providers/application_providers.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:vettore/data/database.dart';
 import 'package:vettore/widgets/preview_gallery.dart';
 
 const double _kToolbarHeight = 40.0;
@@ -61,6 +65,7 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   bool _showDetail = false;
   String _activeFilterId = 'completed';
   double _sidePanelWidth = 260.0;
+  int? _newProjectIdForDetail;
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
     const GrufioTabData(
@@ -94,17 +99,38 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   }
 
   void _onAddTab() {
-    final int paletteIndex = _tabs.indexWhere((t) => t.label == 'Palette');
-    final int insertIndex = paletteIndex >= 0 ? paletteIndex + 1 : _tabs.length;
-    setState(() {
-      _tabs.insert(
-        insertIndex,
-        const GrufioTabData(
-          iconPath: 'assets/icons/32/color-palette.svg',
-          label: 'Example',
-        ),
-      );
-      _activeIndex = insertIndex;
+    // Create an Untitled project, then insert a tab labeled with its title
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final container = ProviderScope.containerOf(context);
+      final repo = container.read(projectRepositoryProvider);
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final id = await repo.insert(ProjectsCompanion.insert(
+        title: 'Untitled',
+        author: const Value(null),
+        status: const Value('draft'),
+        createdAt: now,
+        updatedAt: now,
+        imageId: const Value(null),
+      ));
+      // Insert new tab labeled with project title and navigate to detail
+      if (mounted) {
+        setState(() {
+          final int paletteIndex =
+              _tabs.indexWhere((t) => t.label == 'Palette');
+          final int insertIndex =
+              paletteIndex >= 0 ? paletteIndex + 1 : _tabs.length;
+          _tabs.insert(
+            insertIndex,
+            const GrufioTabData(
+              iconPath: 'assets/icons/32/color-palette.svg',
+              label: 'Untitled',
+            ),
+          );
+          _activeIndex = insertIndex;
+          _showDetail = true;
+          _newProjectIdForDetail = id;
+        });
+      }
     });
   }
 
@@ -123,6 +149,7 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
               });
             }
           },
+          projectId: _newProjectIdForDetail,
         );
       }
       return ColoredBox(
