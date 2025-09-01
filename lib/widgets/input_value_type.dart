@@ -1,4 +1,12 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart'
+    show
+        Material,
+        MaterialType,
+        TextField,
+        InputDecoration,
+        InputBorder,
+        materialTextSelectionControls;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
@@ -11,7 +19,7 @@ class InputValueType extends StatefulWidget {
   final TextAlign textAlign;
   final bool autofocus;
   final String? placeholder;
-  final String suffixText;
+  final String? suffixText;
 
   const InputValueType({
     super.key,
@@ -22,7 +30,7 @@ class InputValueType extends StatefulWidget {
     this.textAlign = TextAlign.start,
     this.autofocus = false,
     this.placeholder,
-    this.suffixText = 'px',
+    this.suffixText,
   });
 
   @override
@@ -46,9 +54,11 @@ class _InputValueTypeState extends State<InputValueType> {
     };
     _focusListener = () {
       if (!mounted) return;
-      // When focus is gained, select all content so it shows highlighted and is editable.
       if (_focusNode.hasFocus) {
-        _selectAll();
+        // Select all on focus
+        WidgetsBinding.instance.addPostFrameCallback((_) => _selectAll());
+      } else {
+        _clearSelection();
       }
       setState(() {});
     };
@@ -98,47 +108,66 @@ class _InputValueTypeState extends State<InputValueType> {
           ),
           const SizedBox(width: 8.0),
           Expanded(
-            child: Stack(
-              alignment: Alignment.centerLeft,
-              children: [
-                if ((_controller.text.isEmpty) &&
-                    !_focusNode.hasFocus &&
-                    (widget.placeholder != null))
-                  IgnorePointer(
-                    child: Text(
-                      widget.placeholder!,
-                      style: placeholderStyle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.text,
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  if ((_controller.text.isEmpty) &&
+                      !_focusNode.hasFocus &&
+                      (widget.placeholder != null))
+                    IgnorePointer(
+                      child: Text(
+                        widget.placeholder!,
+                        style: placeholderStyle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  Material(
+                    type: MaterialType.transparency,
+                    child: TextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      style: textStyle,
+                      cursorColor: kGrey100,
+                      decoration: const InputDecoration(
+                        isCollapsed: true,
+                        isDense: true,
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      textAlign: widget.textAlign,
+                      autofocus: widget.autofocus,
+                      onChanged: widget.onChanged,
+                      onSubmitted: widget.onSubmitted,
+                      selectionControls: materialTextSelectionControls,
                     ),
                   ),
-                EditableText(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  style: textStyle,
-                  cursorColor: kGrey100,
-                  backgroundCursorColor: kGrey10,
-                  selectionColor: kInputBackground,
-                  textAlign: widget.textAlign,
-                  autofocus: widget.autofocus,
-                  onChanged: widget.onChanged,
-                  onSubmitted: widget.onSubmitted,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-          const SizedBox(width: 8.0),
-          Text(
-            widget.suffixText,
-            style: appTextStyles.bodyM.copyWith(color: kGrey70, height: 1.0),
-          ),
+          if (widget.suffixText != null) ...[
+            const SizedBox(width: 8.0),
+            Text(
+              widget.suffixText!,
+              style: appTextStyles.bodyM.copyWith(color: kGrey70, height: 1.0),
+            ),
+          ],
         ],
       ),
     );
   }
 
+  void _clearSelection() {
+    final int caret =
+        _controller.selection.extentOffset.clamp(0, _controller.text.length);
+    _controller.selection = TextSelection.collapsed(offset: caret);
+  }
+
   void _selectAll() {
-    final String text = _controller.text;
+    final text = _controller.text;
     _controller.selection =
         TextSelection(baseOffset: 0, extentOffset: text.length);
   }

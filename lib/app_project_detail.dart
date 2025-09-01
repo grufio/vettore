@@ -34,6 +34,7 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
   late final TextEditingController _inputValueController;
   late final TextEditingController _inputValueController2;
   late final TextEditingController _singleInputController;
+  late final TextEditingController _projectController;
   double _rightPanelWidth = 260.0;
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
@@ -55,6 +56,7 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
     _inputValueController = TextEditingController(text: '1024');
     _inputValueController2 = TextEditingController();
     _singleInputController = TextEditingController();
+    _projectController = TextEditingController();
   }
 
   @override
@@ -62,6 +64,7 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
     _inputValueController.dispose();
     _inputValueController2.dispose();
     _singleInputController.dispose();
+    _projectController.dispose();
     super.dispose();
   }
 
@@ -143,16 +146,32 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SectionSidebar(
+                          title: 'Projekt',
+                          children: [
+                            SectionInput(
+                              full: InputValueType(
+                                controller: _projectController,
+                                placeholder: null,
+                                suffixText: null,
+                              ),
+                              actionIconAsset:
+                                  'assets/icons/32/color-palette.svg',
+                            ),
+                          ],
+                        ),
+                        SectionSidebar(
                           title: 'Title',
                           children: [
                             SectionInput(
                               left: InputValueType(
                                 controller: _inputValueController,
                                 placeholder: null,
+                                suffixText: 'px',
                               ),
                               right: InputValueType(
                                 controller: _inputValueController2,
                                 placeholder: null,
+                                suffixText: 'px',
                               ),
                               actionIconAsset: null,
                             ),
@@ -160,6 +179,7 @@ class _AppProjectDetailPageState extends State<AppProjectDetailPage> {
                               left: InputValueType(
                                 controller: _singleInputController,
                                 placeholder: null,
+                                suffixText: 'px',
                               ),
                               right: null,
                               actionIconAsset: null,

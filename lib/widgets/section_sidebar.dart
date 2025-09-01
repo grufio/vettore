@@ -88,35 +88,49 @@ class SectionInput extends StatelessWidget {
   }
 }
 
-class _ReservedActionIcon extends StatelessWidget {
+class _ReservedActionIcon extends StatefulWidget {
   final String? asset;
   final VoidCallback? onTap;
 
   const _ReservedActionIcon({this.asset, this.onTap});
 
   @override
+  State<_ReservedActionIcon> createState() => _ReservedActionIconState();
+}
+
+class _ReservedActionIconState extends State<_ReservedActionIcon> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    final bool hasAsset = asset != null && asset!.isNotEmpty;
-    final Widget box = Container(
-      width: 24.0,
-      height: 24.0,
-      decoration: BoxDecoration(
-        color: hasAsset ? kGrey10 : kTransparent,
-        borderRadius: BorderRadius.circular(4.0),
+    final bool hasAsset = widget.asset != null && widget.asset!.isNotEmpty;
+
+    final Widget box = MouseRegion(
+      cursor: hasAsset ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Container(
+        width: 24.0,
+        height: 24.0,
+        decoration: BoxDecoration(
+          color: _hovered && hasAsset ? kGrey10 : kTransparent,
+          borderRadius: BorderRadius.circular(4.0),
+        ),
+        alignment: Alignment.center,
+        child: hasAsset
+            ? SvgPicture.asset(
+                widget.asset!,
+                width: 16.0,
+                height: 16.0,
+                colorFilter: ColorFilter.mode(
+                    _hovered ? kGrey100 : kGrey70, BlendMode.srcIn),
+              )
+            : null,
       ),
-      alignment: Alignment.center,
-      child: hasAsset
-          ? SvgPicture.asset(
-              asset!,
-              width: 16.0,
-              height: 16.0,
-              colorFilter: const ColorFilter.mode(kGrey70, BlendMode.srcIn),
-            )
-          : null,
     );
 
-    if (!hasAsset || onTap == null) return box;
-    return GestureDetector(
-        onTap: onTap, behavior: HitTestBehavior.opaque, child: box);
+    if (!hasAsset) return box;
+    if (widget.onTap == null) return box;
+    return GestureDetector(onTap: widget.onTap, child: box);
   }
 }
