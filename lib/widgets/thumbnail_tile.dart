@@ -40,10 +40,26 @@ class ThumbnailTile extends StatelessWidget {
             // Image preview uses available space above; ratio for consistent height
             AspectRatio(
               aspectRatio: 4 / 3,
-              child: Container(
-                color: kGrey20,
-              ),
+              child: (imageBytes != null && imageBytes!.isNotEmpty)
+                  ? Image.memory(
+                      imageBytes!,
+                      fit: BoxFit.cover, // fill area (cover)
+                      filterQuality: FilterQuality.none,
+                    )
+                  : Container(
+                      color: kGrey20,
+                      child: Center(
+                        child: SvgPicture.asset(
+                          'assets/icons/32/no-image.svg',
+                          width: 24,
+                          height: 24,
+                          colorFilter:
+                              const ColorFilter.mode(kGrey70, BlendMode.srcIn),
+                        ),
+                      ),
+                    ),
             ),
+            Container(height: 1.0, color: kBordersColor),
             _Footer(
               height: footerHeight,
               lines: lines,

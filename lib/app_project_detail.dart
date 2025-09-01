@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' show Value;
+import 'dart:typed_data';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
@@ -10,10 +11,12 @@ import 'package:vettore/widgets/input_value_type.dart';
 import 'package:vettore/widgets/section_sidebar.dart';
 import 'package:vettore/widgets/section_input.dart';
 import 'package:vettore/widgets/button_app.dart';
-import 'package:vettore/widgets/image_upload_text.dart';
+// import 'package:vettore/widgets/image_upload_text.dart';
+import 'package:vettore/widgets/image_upload_area.dart';
 import 'package:vettore/widgets/input_row_full.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/data/database.dart';
+import 'package:image/image.dart' as img;
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -192,6 +195,45 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
 }
 
 extension on _AppProjectDetailPageState {
+  Future<void> _handleImageBytes(Uint8List bytes) async {
+    if (_currentProjectId == null) return;
+    // Decode to get dimensions
+    final decoded = img.decodeImage(bytes);
+    final int? width = decoded?.width;
+    final int? height = decoded?.height;
+    final imagesDao = ref.read(appDatabaseProvider);
+    // Insert image row
+    final imageId = await imagesDao.into(imagesDao.images).insert(
+          ImagesCompanion.insert(
+            origSrc: Value(bytes),
+            origBytes: Value(bytes.length),
+            origWidth: width != null ? Value(width) : const Value.absent(),
+            origHeight: height != null ? Value(height) : const Value.absent(),
+            // unique colors unknown here
+            thumbnail: const Value.absent(),
+            mimeType: const Value('image'),
+            convSrc: const Value.absent(),
+            convBytes: const Value.absent(),
+            convWidth: const Value.absent(),
+            convHeight: const Value.absent(),
+            convUniqueColors: const Value.absent(),
+            origUniqueColors: const Value.absent(),
+          ),
+        );
+    // Point project to this image
+    final repo = ref.read(projectRepositoryProvider);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await repo.update(
+      ProjectsCompanion(
+        id: Value(_currentProjectId!),
+        imageId: Value(imageId),
+        updatedAt: Value(now),
+      ),
+    );
+  }
+
+  // Dialog upload handled inside ImageUploadArea
+
   Future<void> _initProject() async {
     // Determine project to load: prefer explicit id, else load first project if any
     final repo = ref.read(projectRepositoryProvider);
@@ -228,10 +270,12 @@ extension on _AppProjectDetailPageState {
   }
 
   Widget _buildDetailBody() {
-    return const ColoredBox(
+    return ColoredBox(
       color: kGrey10,
       child: Center(
-        child: ImageUploadText(),
+        child: ImageUploadArea(
+          onBytesSelected: (bytes) => _handleImageBytes(bytes),
+        ),
       ),
     );
   }

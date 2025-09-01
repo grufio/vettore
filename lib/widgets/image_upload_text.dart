@@ -2,16 +2,21 @@ import 'dart:typed_data';
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class ImageUploadText extends StatefulWidget {
   final Future<void> Function(Uint8List bytes)? onImageDropped;
   final VoidCallback? onUploadTap;
+  final String? leadingIconAsset;
+  final double leadingIconSize;
 
   const ImageUploadText({
     super.key,
     this.onImageDropped,
     this.onUploadTap,
+    this.leadingIconAsset,
+    this.leadingIconSize = 64.0,
   });
 
   @override
@@ -47,6 +52,18 @@ class _ImageUploadTextState extends State<ImageUploadText> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (widget.leadingIconAsset != null) ...[
+                  Center(
+                    child: SvgPicture.asset(
+                      widget.leadingIconAsset!,
+                      width: widget.leadingIconSize,
+                      height: widget.leadingIconSize,
+                      colorFilter:
+                          const ColorFilter.mode(kGrey70, BlendMode.srcIn),
+                    ),
+                  ),
+                  const SizedBox(height: _lineHeightPx),
+                ],
                 Text(
                   'No image available.',
                   style: const TextStyle(

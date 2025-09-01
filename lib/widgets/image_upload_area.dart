@@ -1,0 +1,111 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/widgets.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/widgets/image_upload_text.dart';
+import 'package:vettore/widgets/snackbar_image.dart';
+
+class ImageUploadArea extends StatefulWidget {
+  final Future<void> Function(Uint8List bytes) onBytesSelected;
+  final Uint8List? initialBytes;
+  final List<String> allowedExtensions;
+
+  const ImageUploadArea({
+    super.key,
+    required this.onBytesSelected,
+    this.initialBytes,
+    this.allowedExtensions = const ['png', 'jpg', 'jpeg'],
+  });
+
+  @override
+  State<ImageUploadArea> createState() => _ImageUploadAreaState();
+}
+
+class _ImageUploadAreaState extends State<ImageUploadArea> {
+  Uint8List? _bytes;
+  late final PhotoViewController _controller;
+  late final PhotoViewScaleStateController _scaleStateController;
+
+  @override
+  void initState() {
+    super.initState();
+    _bytes = widget.initialBytes;
+    _controller = PhotoViewController();
+    _scaleStateController = PhotoViewScaleStateController();
+  }
+
+  Future<void> _selectBytes(Uint8List bytes) async {
+    if (!mounted) return;
+    setState(() => _bytes = bytes);
+    await widget.onBytesSelected(bytes);
+  }
+
+  Future<void> _pickViaDialog() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: widget.allowedExtensions,
+      withData: true,
+    );
+    final file = result?.files.first;
+    if (file?.bytes != null) {
+      await _selectBytes(file!.bytes!);
+    }
+  }
+
+  void _zoomIn() {
+    final currentScale = _controller.scale ?? 1.0;
+    _controller.scale = currentScale + 0.25;
+  }
+
+  void _zoomOut() {
+    final currentScale = _controller.scale ?? 1.0;
+    final next = currentScale - 0.25;
+    _controller.scale = next < 0.25 ? 0.25 : next;
+  }
+
+  void _fitToScreen() {
+    _scaleStateController.scaleState = PhotoViewScaleState.initial;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_bytes == null) {
+      return Center(
+        child: ImageUploadText(
+          onImageDropped: (bytes) => _selectBytes(bytes),
+          onUploadTap: _pickViaDialog,
+        ),
+      );
+    }
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ClipRect(
+          child: PhotoView(
+            imageProvider: MemoryImage(_bytes!),
+            controller: _controller,
+            scaleStateController: _scaleStateController,
+            initialScale: PhotoViewComputedScale.contained,
+            minScale: PhotoViewComputedScale.contained,
+            maxScale: PhotoViewComputedScale.covered * 4.0,
+            backgroundDecoration: const BoxDecoration(color: kGrey10),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 16.0,
+          child: Center(
+            child: SnackbarImage(
+              onZoomIn: _zoomIn,
+              onZoomOut: _zoomOut,
+              onFitToScreen: _fitToScreen,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

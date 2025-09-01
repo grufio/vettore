@@ -351,15 +351,21 @@ class _HomeGalleryContainer extends ConsumerWidget {
               itemCount: projects.length,
               itemBuilder: (context, index) {
                 final p = projects[index];
-                return GestureDetector(
-                  onDoubleTap: () => onOpenProject?.call(p.id),
-                  child: ThumbnailTile(
-                    imageBytes: Uint8List(0),
-                    footerHeight: 72.0,
-                    lines: [p.title, '324x240px', '30.12.2005, 12:24'],
-                    textPadding: 12.0,
-                    lineSpacing: 12.0,
-                  ),
+                return FutureBuilder<Uint8List?>(
+                  future: _fetchImageBytes(ref, p.imageId),
+                  builder: (context, snap) {
+                    final bytes = snap.data;
+                    return GestureDetector(
+                      onDoubleTap: () => onOpenProject?.call(p.id),
+                      child: ThumbnailTile(
+                        imageBytes: bytes,
+                        footerHeight: 72.0,
+                        lines: [p.title, '324x240px', '30.12.2005, 12:24'],
+                        textPadding: 12.0,
+                        lineSpacing: 12.0,
+                      ),
+                    );
+                  },
                 );
               },
             );
@@ -367,5 +373,13 @@ class _HomeGalleryContainer extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Future<Uint8List?> _fetchImageBytes(WidgetRef ref, int? imageId) async {
+    if (imageId == null) return null;
+    final db = ref.read(appDatabaseProvider);
+    final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
+        .getSingleOrNull();
+    return row?.origSrc;
   }
 }
