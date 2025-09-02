@@ -15,20 +15,24 @@ import 'package:vettore/widgets/button_app.dart';
 import 'package:vettore/widgets/image_upload_area.dart';
 import 'package:vettore/widgets/input_row_full.dart';
 import 'package:vettore/providers/application_providers.dart';
+import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/data/database.dart';
 import 'package:image/image.dart' as img;
+import 'dart:async';
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
   final ValueChanged<int>? onNavigateTab;
   final int? projectId; // optional for now; when null we load/create first
   final ValueChanged<String>? onProjectTitleSaved;
+  final ValueChanged<int>? onDeleteProject;
   const AppProjectDetailPage({
     super.key,
     this.initialActiveIndex = 1,
     this.onNavigateTab,
     this.projectId,
     this.onProjectTitleSaved,
+    this.onDeleteProject,
   });
 
   @override
@@ -45,15 +49,24 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   late final TextEditingController _singleInputController;
   late final TextEditingController _projectController;
   int? _currentProjectId;
-  double _rightPanelWidth = 260.0;
+  double _rightPanelWidth = 320.0;
+  bool _hasImage = false;
+  late final FocusNode _projectTitleFocusNode;
+  StreamSubscription<DbProject?>? _projectSub;
 
   @override
   void initState() {
     super.initState();
-    _inputValueController = TextEditingController(text: '1024');
+    _inputValueController = TextEditingController();
     _inputValueController2 = TextEditingController();
     _singleInputController = TextEditingController();
     _projectController = TextEditingController();
+    _projectTitleFocusNode = FocusNode();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _projectTitleFocusNode.requestFocus();
+      }
+    });
     _initProject();
   }
 
@@ -63,6 +76,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     _inputValueController2.dispose();
     _singleInputController.dispose();
     _projectController.dispose();
+    _projectTitleFocusNode.dispose();
+    _projectSub?.cancel();
     super.dispose();
   }
 
@@ -75,6 +90,14 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
         navigationBar: CupertinoNavigationBar(middle: Text('Project Detail')),
         child: Center(child: Text('Project Detail')),
       );
+    }
+
+    bool hasImage = false;
+    if (_currentProjectId != null) {
+      final projectAsync = ref.watch(projectStreamProvider(_currentProjectId!));
+      projectAsync.whenData((state) {
+        hasImage = state.project.imageId != null;
+      });
     }
 
     return ColoredBox(
@@ -131,7 +154,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                     },
                     onResetWidth: () {
                       setState(() {
-                        _rightPanelWidth = 280.0;
+                        _rightPanelWidth = 320.0;
                       });
                     },
                     child: Column(
@@ -142,43 +165,66 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                           children: [
                             InputRowFull(
                               controller: _projectController,
-                              focusNode: FocusNode()..requestFocus(),
+                              focusNode: _projectTitleFocusNode,
                               placeholder: null,
                               suffixText: null,
                               onActionTap: _saveProjectTitle,
                             ),
                           ],
                         ),
-                        SectionSidebar(
-                          title: 'Title',
-                          children: [
-                            SectionInput(
-                              left: InputValueType(
-                                controller: _inputValueController,
-                                placeholder: null,
-                                suffixText: 'px',
-                              ),
-                              right: InputValueType(
-                                controller: _inputValueController2,
-                                placeholder: null,
-                                suffixText: 'px',
-                              ),
-                              actionIconAsset: null,
-                            ),
-                            SectionInput(
-                              left: InputValueType(
-                                controller: _singleInputController,
-                                placeholder: null,
-                                suffixText: 'px',
-                              ),
-                              right: null,
-                              actionIconAsset: null,
-                            ),
-                            SectionInput(
-                              full: AddProjectButton(onTap: () {}),
-                              actionIconAsset: null,
-                            ),
-                          ],
+                        StreamBuilder<DbProject?>(
+                          stream: (_currentProjectId != null)
+                              ? ref
+                                  .watch(projectRepositoryProvider)
+                                  .watchById(_currentProjectId!)
+                              : const Stream.empty(),
+                          builder: (context, snapshot) {
+                            final bool hasImage =
+                                (snapshot.data?.imageId != null);
+                            return SectionSidebar(
+                              title: 'Title',
+                              children: [
+                                SectionInput(
+                                  left: InputValueType(
+                                    key: const ValueKey('width'),
+                                    controller: _inputValueController,
+                                    placeholder: hasImage ? null : 'Width',
+                                    suffixText: 'px',
+                                    readOnly: !hasImage,
+                                  ),
+                                  right: InputValueType(
+                                    key: const ValueKey('height'),
+                                    controller: _inputValueController2,
+                                    placeholder: hasImage ? null : 'Height',
+                                    suffixText: 'px',
+                                    readOnly: !hasImage,
+                                  ),
+                                  actionIconAsset: null,
+                                ),
+                                SectionInput(
+                                  left: InputValueType(
+                                    controller: _singleInputController,
+                                    placeholder: null,
+                                    suffixText: 'px',
+                                  ),
+                                  right: null,
+                                  actionIconAsset: null,
+                                ),
+                                SectionInput(
+                                  full: DeleteProjectButton(onTap: () async {
+                                    if (_currentProjectId == null) return;
+                                    final id = _currentProjectId!;
+                                    await ref
+                                        .read(projectRepositoryProvider)
+                                        .delete(id);
+                                    if (!mounted) return;
+                                    widget.onDeleteProject?.call(id);
+                                  }),
+                                  actionIconAsset: null,
+                                ),
+                              ],
+                            );
+                          },
                         ),
                         const Expanded(child: SizedBox.shrink()),
                       ],
@@ -230,6 +276,7 @@ extension on _AppProjectDetailPageState {
         updatedAt: Value(now),
       ),
     );
+    if (mounted) setState(() => _hasImage = true);
   }
 
   // Dialog upload handled inside ImageUploadArea
@@ -242,6 +289,8 @@ extension on _AppProjectDetailPageState {
         _currentProjectId = widget.projectId;
         final p = await repo.getById(widget.projectId!);
         _projectController.text = p.title;
+        _hasImage = p.imageId != null;
+        _subscribeToProject(_currentProjectId!);
         return;
       }
       final all = await repo.getAll();
@@ -249,6 +298,8 @@ extension on _AppProjectDetailPageState {
         final p = all.first;
         _currentProjectId = p.id;
         _projectController.text = p.title;
+        _hasImage = p.imageId != null;
+        _subscribeToProject(_currentProjectId!);
       }
     } catch (_) {
       // Ignore load errors for now; keep empty controller
@@ -267,6 +318,22 @@ extension on _AppProjectDetailPageState {
     await repo.update(companion);
     // Notify shell to update tab label
     widget.onProjectTitleSaved?.call(_projectController.text);
+  }
+
+  void _subscribeToProject(int projectId) {
+    _projectSub?.cancel();
+    _projectSub =
+        ref.read(projectRepositoryProvider).watchById(projectId).listen((p) {
+      if (!mounted) return;
+      if (p == null) {
+        setState(() => _hasImage = false);
+        return;
+      }
+      final nextHasImage = p.imageId != null;
+      if (nextHasImage != _hasImage) {
+        setState(() => _hasImage = nextHasImage);
+      }
+    });
   }
 
   Widget _buildDetailBody() {

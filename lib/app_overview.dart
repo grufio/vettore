@@ -59,8 +59,12 @@ class GrufioTabsApp extends StatelessWidget {
 class AppOverviewPage extends StatefulWidget {
   final bool showHeader;
   final ValueChanged<int>? onOpenProject;
+  final VoidCallback? onAddProject;
   const AppOverviewPage(
-      {super.key, this.showHeader = true, this.onOpenProject});
+      {super.key,
+      this.showHeader = true,
+      this.onOpenProject,
+      this.onAddProject});
   @override
   State<AppOverviewPage> createState() => _AppOverviewPageState();
 }
@@ -189,7 +193,8 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                   children: [
                     ContentToolbar(
                       children: [
-                        AddProjectButton(onTap: () {}),
+                        AddProjectButton(
+                            onTap: widget.onAddProject ?? _onAddTab),
                       ],
                     ),
                     ContentFilterBar(
@@ -260,7 +265,8 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                           if (_activeIndex == 0)
                             ContentToolbar(
                               children: [
-                                AddProjectButton(onTap: () {}),
+                                AddProjectButton(
+                                    onTap: widget.onAddProject ?? _onAddTab),
                               ],
                             ),
                           if (_activeIndex == 0)

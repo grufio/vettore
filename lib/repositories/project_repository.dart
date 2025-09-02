@@ -9,8 +9,9 @@ class ProjectRepository {
 
   Future<List<DbProject>> getAll() => _db.select(_db.projects).get();
 
-  Stream<DbProject> watchById(int id) =>
-      (_db.select(_db.projects)..where((p) => p.id.equals(id))).watchSingle();
+  Stream<DbProject?> watchById(int id) =>
+      (_db.select(_db.projects)..where((p) => p.id.equals(id)))
+          .watchSingleOrNull();
 
   Future<DbProject> getById(int id) =>
       (_db.select(_db.projects)..where((p) => p.id.equals(id))).getSingle();

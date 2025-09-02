@@ -21,6 +21,7 @@ class InputValueType extends StatefulWidget {
   final String? placeholder;
   final String? suffixText;
   final String prefixIconAsset;
+  final bool readOnly;
 
   const InputValueType({
     super.key,
@@ -33,6 +34,7 @@ class InputValueType extends StatefulWidget {
     this.placeholder,
     this.suffixText,
     this.prefixIconAsset = 'assets/icons/32/color-palette.svg',
+    this.readOnly = false,
   });
 
   factory InputValueType.text({
@@ -58,6 +60,7 @@ class InputValueType extends StatefulWidget {
       placeholder: placeholder,
       suffixText: suffixText,
       prefixIconAsset: prefixIconAsset,
+      readOnly: false,
     );
   }
 
@@ -76,12 +79,17 @@ class _InputValueTypeState extends State<InputValueType> {
     super.initState();
     _controller = widget.controller ?? TextEditingController();
     _focusNode = widget.focusNode ?? FocusNode();
+    // Disallow focus when read-only
+    _focusNode.canRequestFocus = !widget.readOnly;
     _controllerListener = () {
       if (!mounted) return;
       setState(() {});
     };
     _focusListener = () {
       if (!mounted) return;
+      if (widget.readOnly) {
+        return;
+      }
       if (_focusNode.hasFocus) {
         // Select all on focus
         WidgetsBinding.instance.addPostFrameCallback((_) => _selectAll());
@@ -92,6 +100,22 @@ class _InputValueTypeState extends State<InputValueType> {
     };
     _controller.addListener(_controllerListener);
     _focusNode.addListener(_focusListener);
+  }
+
+  @override
+  void didUpdateWidget(covariant InputValueType oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.readOnly != widget.readOnly) {
+      _focusNode.canRequestFocus = !widget.readOnly;
+      if (widget.readOnly && _focusNode.hasFocus) {
+        _focusNode.unfocus();
+      }
+      // Clear any selection when switching to read-only to avoid blue highlight
+      if (widget.readOnly) {
+        final int end = _controller.text.length;
+        _controller.selection = const TextSelection.collapsed(offset: 0);
+      }
+    }
   }
 
   @override
@@ -109,22 +133,38 @@ class _InputValueTypeState extends State<InputValueType> {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle textStyle =
-        appTextStyles.bodyM.copyWith(color: kGrey100, height: 1.0);
+    final bool isReadOnly = widget.readOnly;
+    final TextStyle textStyle = appTextStyles.bodyM.copyWith(
+      color: isReadOnly ? kGrey70 : kGrey100,
+      height: 1.0,
+    );
     final TextStyle placeholderStyle = appTextStyles.bodyM.copyWith(
       color: kGrey70,
       fontStyle: FontStyle.italic,
       height: 1.0,
     );
 
+    // Ensure no selection highlight persists when read-only, even after rebuild/resize
+    if (isReadOnly) {
+      final sel = _controller.selection;
+      if (sel.start != sel.end || sel.baseOffset != sel.extentOffset) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _controller.selection = const TextSelection.collapsed(offset: 0);
+        });
+      }
+    }
+
     return Container(
       height: 24.0,
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       decoration: BoxDecoration(
-        color: kGrey10,
+        color: isReadOnly ? kWhite : kGrey10,
         borderRadius: BorderRadius.circular(4.0),
         border: Border.all(
-          color: _focusNode.hasFocus ? kInputFocus : kTransparent,
+          color: isReadOnly
+              ? kBordersColor
+              : (_focusNode.hasFocus ? kInputFocus : kTransparent),
           width: 1.0,
         ),
       ),
@@ -135,42 +175,52 @@ class _InputValueTypeState extends State<InputValueType> {
             widget.prefixIconAsset,
             width: 16.0,
             height: 16.0,
-            colorFilter: const ColorFilter.mode(kGrey70, BlendMode.srcIn),
+            colorFilter: ColorFilter.mode(
+                isReadOnly ? kGrey70 : kGrey70, BlendMode.srcIn),
           ),
           const SizedBox(width: 8.0),
           Expanded(
             child: MouseRegion(
-              cursor: SystemMouseCursors.text,
+              cursor: isReadOnly
+                  ? SystemMouseCursors.basic
+                  : SystemMouseCursors.text,
               child: Stack(
                 alignment: Alignment.centerLeft,
                 children: [
-                  if (_controller.text.isEmpty)
+                  if (_controller.text.isEmpty && widget.placeholder != null)
                     IgnorePointer(
                       child: Text(
-                        widget.placeholder ?? 'example',
+                        widget.placeholder!,
                         style: placeholderStyle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  Material(
-                    type: MaterialType.transparency,
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      style: textStyle,
-                      cursorColor: kGrey100,
-                      decoration: const InputDecoration(
-                        isCollapsed: true,
-                        isDense: true,
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
+                  IgnorePointer(
+                    ignoring: isReadOnly,
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        style: textStyle,
+                        cursorColor: isReadOnly ? kTransparent : kGrey100,
+                        decoration: const InputDecoration(
+                          isCollapsed: true,
+                          isDense: true,
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        textAlign: widget.textAlign,
+                        autofocus: isReadOnly ? false : widget.autofocus,
+                        onChanged: isReadOnly ? null : widget.onChanged,
+                        onSubmitted: isReadOnly ? null : widget.onSubmitted,
+                        readOnly: isReadOnly,
+                        enableInteractiveSelection: !isReadOnly,
+                        showCursor: !isReadOnly,
+                        selectionControls: materialTextSelectionControls,
+                        enabled: !isReadOnly,
                       ),
-                      textAlign: widget.textAlign,
-                      autofocus: widget.autofocus,
-                      onChanged: widget.onChanged,
-                      onSubmitted: widget.onSubmitted,
-                      selectionControls: materialTextSelectionControls,
                     ),
                   ),
                 ],
@@ -181,7 +231,8 @@ class _InputValueTypeState extends State<InputValueType> {
             const SizedBox(width: 8.0),
             Text(
               widget.suffixText!,
-              style: appTextStyles.bodyM.copyWith(color: kGrey70, height: 1.0),
+              style: appTextStyles.bodyM
+                  .copyWith(color: isReadOnly ? kGrey70 : kGrey70, height: 1.0),
             ),
           ],
         ],

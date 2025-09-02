@@ -127,6 +127,7 @@ class _AppShellState extends State<_AppShell> {
             child: (_activeIndex == 0)
                 ? AppOverviewPage(
                     showHeader: false,
+                    onAddProject: _handleAddTab,
                     onOpenProject: (projectId) {
                       // If already open, select its tab; else create a new tab
                       final existingIndex = _tabs.indexWhere((t) =>
@@ -166,6 +167,23 @@ class _AppShellState extends State<_AppShell> {
                           projectId: current.projectId,
                         );
                         setState(() {});
+                      }
+                    },
+                    onDeleteProject: (deletedId) {
+                      // Remove the tab associated with this project and go Home
+                      final idx = _tabs.indexWhere((t) =>
+                          t.projectId != null && t.projectId == deletedId);
+                      if (idx != -1) {
+                        setState(() {
+                          _tabs.removeAt(idx);
+                          _currentProjectId = null;
+                          _activeIndex = 0;
+                        });
+                      } else {
+                        setState(() {
+                          _currentProjectId = null;
+                          _activeIndex = 0;
+                        });
                       }
                     },
                   ),

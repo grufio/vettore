@@ -59,7 +59,6 @@ class ThumbnailTile extends StatelessWidget {
                       ),
                     ),
             ),
-            Container(height: 1.0, color: kBordersColor),
             _Footer(
               height: footerHeight,
               lines: lines,

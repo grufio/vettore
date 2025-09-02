@@ -22,7 +22,7 @@ class IsolateVectorObject {
 
 // A state class to hold the project data and its decoded image.
 class ProjectState extends Equatable {
-  final Project project;
+  final DbProject project;
   final Image? decodedImage;
 
   const ProjectState({required this.project, this.decodedImage});
@@ -35,18 +35,27 @@ class ProjectState extends Equatable {
 final projectStreamProvider =
     StreamProvider.autoDispose.family<ProjectState, int>((ref, projectId) {
   final projectRepository = ref.watch(projectRepositoryProvider);
+  final db = ref.watch(appDatabaseProvider);
 
-  // Return a new stream that transforms the Project stream into a ProjectState stream
-  return projectRepository.watchProject(projectId).asyncMap((project) async {
+  // Return a new stream that transforms the DbProject stream into a ProjectState stream
+  return projectRepository
+      .watchById(projectId)
+      .where((p) => p != null)
+      .cast<DbProject>()
+      .asyncMap((project) async {
     Image? decodedImage;
-    if (project.imageData.isNotEmpty) {
+    if (project.imageId != null) {
       try {
-        final codec = await instantiateImageCodec(project.imageData);
-        final frame = await codec.getNextFrame();
-        decodedImage = frame.image;
-      } catch (e) {
-        // The stream will continue, but with a null image.
-      }
+        final row = await (db.select(db.images)
+              ..where((t) => t.id.equals(project.imageId!)))
+            .getSingleOrNull();
+        final bytes = row?.convSrc ?? row?.origSrc;
+        if (bytes != null && bytes.isNotEmpty) {
+          final codec = await instantiateImageCodec(bytes);
+          final frame = await codec.getNextFrame();
+          decodedImage = frame.image;
+        }
+      } catch (_) {}
     }
     return ProjectState(project: project, decodedImage: decodedImage);
   });
@@ -69,20 +78,13 @@ class ProjectLogic {
   /// generate the vector grid.
   Future<void> quantizeImage() async {
     final projectRepository = ref.read(projectRepositoryProvider);
-    final paletteRepository = ref.read(paletteRepositoryProvider);
     final settings = ref.read(settingsServiceProvider);
-    final project = await projectRepository.getProject(projectId);
-    int paletteId = project.paletteId ?? -1;
+    final db = ref.read(appDatabaseProvider);
+    final project = await projectRepository.getById(projectId);
+
+    if (project.imageId == null) return;
 
     try {
-      if (project.paletteId == null) {
-        final newPalette = PalettesCompanion.insert(
-          name: '${project.name} Palette',
-          thumbnail: Value(project.thumbnailData),
-        );
-        paletteId = await paletteRepository.addPalette(newPalette, []);
-      }
-
       final tempDir = await getTemporaryDirectory();
       final scriptPath = '${tempDir.path}/quantize.py';
       final scriptContent = await rootBundle.loadString('scripts/quantize.py');
@@ -90,9 +92,12 @@ class ProjectLogic {
 
       final inputPath = '${tempDir.path}/temp_in.png';
       final outputPath = '${tempDir.path}/temp_out.png';
-      // Use the resized image data if available, otherwise fall back to the main image data.
-      await File(inputPath)
-          .writeAsBytes(project.resizedImageData ?? project.imageData);
+      final imageRow = await (db.select(db.images)
+            ..where((t) => t.id.equals(project.imageId!)))
+          .getSingle();
+      final inputBytes = imageRow.convSrc ?? imageRow.origSrc;
+      if (inputBytes == null || inputBytes.isEmpty) return;
+      await File(inputPath).writeAsBytes(inputBytes);
 
       final result = await Process.run('python3', [
         scriptPath,
@@ -114,47 +119,23 @@ class ProjectLogic {
       final paletteList =
           (jsonDecode(paletteJson) as List).map((c) => c as List).toList();
 
-      await Future.wait([
-        File(scriptPath).delete(),
-        File(inputPath).delete(),
-        File(outputPath).delete()
-      ]);
-
-      final newColors = paletteList.map((color) {
-        final r = color[0] as int;
-        final g = color[1] as int;
-        final b = color[2] as int;
-        final c = Color.fromARGB(255, r, g, b);
-        final hex =
-            '#${(c.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
-        return PaletteColorsCompanion.insert(
-          title: hex,
-          color: c.value,
-          paletteId: paletteId,
-        );
-      }).toList();
-
-      await paletteRepository.updatePaletteColors(paletteId, newColors);
-
-      // Decode the new image to get its actual dimensions
+      // Decode the new image to get its dimensions
       final img.Image? decodedQuantizedImage = img.decodeImage(newImageData);
       if (decodedQuantizedImage == null) {
         throw Exception('Could not decode the quantized image output.');
       }
 
-      final updatedProject = project.toCompanion(false).copyWith(
-            imageData: Value(newImageData),
-            resizedImageData:
-                Value(newImageData), // Ensure the cache is updated
-            imageWidth: Value(decodedQuantizedImage.width.toDouble()),
-            imageHeight: Value(decodedQuantizedImage.height.toDouble()),
-            isConverted:
-                const Value(true), // Mark as converted for the grid step
-            vectorObjects: const Value('[]'), // Clear old grid data
-            uniqueColorCount: Value(paletteList.length),
-            paletteId: Value(paletteId),
-          );
-      await projectRepository.updateProject(updatedProject);
+      await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
+          .write(ImagesCompanion(
+        convSrc: Value(newImageData),
+        convBytes: Value(newImageData.length),
+        convWidth: Value(decodedQuantizedImage.width),
+        convHeight: Value(decodedQuantizedImage.height),
+        convUniqueColors: Value(paletteList.length),
+      ));
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await projectRepository.update(
+          ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)));
     } catch (e) {
       // Re-throw the exception to be caught by the UI layer if needed.
       rethrow;
@@ -164,44 +145,17 @@ class ProjectLogic {
   /// Generates the vector grid from the currently converted image data.
   /// This should only be called after `quantizeImage` has been successfully run.
   Future<void> generateGrid() async {
-    final projectRepository = ref.read(projectRepositoryProvider);
-    final project = await projectRepository.getProject(projectId);
-
-    if (!project.isConverted) {
-      return;
-    }
-
-    try {
-      final img.Image? imageToConvert = img.decodeImage(project.imageData);
-      if (imageToConvert == null) {
-        throw Exception('Could not decode converted image.');
-      }
-
-      final List<IsolateVectorObject> vectorObjects = [];
-      for (final p in imageToConvert) {
-        final c =
-            Color.fromARGB(p.a.toInt(), p.r.toInt(), p.g.toInt(), p.b.toInt());
-        vectorObjects.add(IsolateVectorObject(p.x, p.y, c.value));
-      }
-      final vectorObjectsJson = jsonEncode(vectorObjects);
-
-      final updatedProject = project.toCompanion(false).copyWith(
-            vectorObjects: Value(vectorObjectsJson),
-            imageWidth: Value(imageToConvert.width.toDouble()),
-            imageHeight: Value(imageToConvert.height.toDouble()),
-          );
-      await projectRepository.updateProject(updatedProject);
-    } catch (e) {
-      rethrow;
-    }
+    // Not supported with current schema; no persistent vector storage.
+    return;
   }
 
   Future<void> updateImage(
       double scalePercent, FilterQuality filterQuality) async {
     final projectRepository = ref.read(projectRepositoryProvider);
-    final project = await projectRepository.getProject(projectId);
+    final db = ref.read(appDatabaseProvider);
+    final project = await projectRepository.getById(projectId);
 
-    if (project.originalImageData == null) {
+    if (project.imageId == null) {
       return;
     }
 
@@ -217,7 +171,12 @@ class ProjectLogic {
       // 2. Write the original image to a temp input file
       final inputPath = '${tempDir.path}/resize_in.png';
       final inputFile = File(inputPath);
-      await inputFile.writeAsBytes(project.originalImageData!);
+      final imageRow = await (db.select(db.images)
+            ..where((t) => t.id.equals(project.imageId!)))
+          .getSingle();
+      final orig = imageRow.origSrc;
+      if (orig == null || orig.isEmpty) return;
+      await inputFile.writeAsBytes(orig);
 
       // 3. Define the output path
       final outputPath = '${tempDir.path}/resize_out.png';
@@ -250,7 +209,7 @@ class ProjectLogic {
       await inputFile.delete();
       await File(outputPath).delete();
 
-      // This part remains similar: calculate unique colors and update the DB
+      // Calculate unique colors for info
       int uniqueColorCount = 0;
       final image = img.decodeImage(newImageData);
       if (image != null) {
@@ -262,17 +221,17 @@ class ProjectLogic {
         uniqueColorCount = colors.length;
       }
 
-      final updatedProject = project.toCompanion(false).copyWith(
-            imageData: Value(newImageData),
-            resizedImageData: Value(newImageData),
-            imageWidth: Value(newWidth),
-            imageHeight: Value(newHeight),
-            filterQualityIndex: Value(filterQuality.index),
-            isConverted: const Value(false),
-            vectorObjects: const Value('[]'),
-            uniqueColorCount: Value(uniqueColorCount),
-          );
-      await projectRepository.updateProject(updatedProject);
+      await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
+          .write(ImagesCompanion(
+        convSrc: Value(newImageData),
+        convBytes: Value(newImageData.length),
+        convWidth: Value(newWidth.toInt()),
+        convHeight: Value(newHeight.toInt()),
+        convUniqueColors: Value(uniqueColorCount),
+      ));
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await projectRepository.update(
+          ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)));
     } catch (e) {
       rethrow;
     }
@@ -280,17 +239,18 @@ class ProjectLogic {
 
   Future<void> resetImage() async {
     final projectRepository = ref.read(projectRepositoryProvider);
-    final paletteRepository = ref.read(paletteRepositoryProvider);
-    final project = await projectRepository.getProject(projectId);
+    final db = ref.read(appDatabaseProvider);
+    final project = await projectRepository.getById(projectId);
 
-    // If the project has an associated palette, delete it.
-    if (project.paletteId != null) {
-      await paletteRepository.deletePalette(project.paletteId!);
-    }
+    if (project.imageId == null) return;
 
     int uniqueColorCount = 0;
-    if (project.originalImageData != null) {
-      final image = img.decodeImage(project.originalImageData!);
+    final imageRow = await (db.select(db.images)
+          ..where((t) => t.id.equals(project.imageId!)))
+        .getSingleOrNull();
+    final orig = imageRow?.origSrc;
+    if (orig != null) {
+      final image = img.decodeImage(orig);
       if (image != null) {
         final colors = <int>{};
         for (final p in image) {
@@ -301,17 +261,15 @@ class ProjectLogic {
       }
     }
 
-    final updatedProject = project.toCompanion(false).copyWith(
-          imageData: Value(project.originalImageData!),
-          resizedImageData: Value(project.originalImageData!),
-          imageWidth: Value(project.originalImageWidth!),
-          imageHeight: Value(project.originalImageHeight!),
-          filterQualityIndex: const Value(1), // Default high quality
-          isConverted: const Value(false),
-          vectorObjects: const Value('[]'),
-          uniqueColorCount: Value(uniqueColorCount),
-          paletteId: const Value(null),
-        );
-    await projectRepository.updateProject(updatedProject);
+    await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
+        .write(const ImagesCompanion(
+      convSrc: Value.absent(),
+      convBytes: Value.absent(),
+      convWidth: Value.absent(),
+      convHeight: Value.absent(),
+    ));
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await projectRepository
+        .update(ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)));
   }
 }
