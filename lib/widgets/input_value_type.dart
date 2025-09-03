@@ -8,6 +8,9 @@ import 'package:flutter/material.dart'
         InputBorder,
         materialTextSelectionControls;
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/services.dart'
+    show RawKeyEvent, RawKeyDownEvent, LogicalKeyboardKey;
+import 'dart:async';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
@@ -26,6 +29,7 @@ class InputValueType extends StatefulWidget {
   final List<String>? dropdownItems;
   final String? selectedItem;
   final ValueChanged<String>? onItemSelected;
+  final InputDropdownController? dropdownController;
 
   const InputValueType({
     super.key,
@@ -42,6 +46,7 @@ class InputValueType extends StatefulWidget {
     this.dropdownItems,
     this.selectedItem,
     this.onItemSelected,
+    this.dropdownController,
   });
 
   factory InputValueType.text({
@@ -75,15 +80,52 @@ class InputValueType extends StatefulWidget {
   State<InputValueType> createState() => _InputValueTypeState();
 }
 
+class InputDropdownController {
+  late VoidCallback _open;
+  late VoidCallback _close;
+  late VoidCallback _toggle;
+  late VoidCallback _next;
+  late VoidCallback _prev;
+  late VoidCallback _confirm;
+
+  void _attach(
+    VoidCallback open,
+    VoidCallback close,
+    VoidCallback toggle,
+    VoidCallback next,
+    VoidCallback prev,
+    VoidCallback confirm,
+  ) {
+    _open = open;
+    _close = close;
+    _toggle = toggle;
+    _next = next;
+    _prev = prev;
+    _confirm = confirm;
+  }
+
+  void open() => _open();
+  void close() => _close();
+  void toggle() => _toggle();
+  void highlightNext() => _next();
+  void highlightPrev() => _prev();
+  void confirm() => _confirm();
+}
+
 class _InputValueTypeState extends State<InputValueType> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
+  final FocusNode _keyboardNode = FocusNode();
   late final VoidCallback _controllerListener;
   late final VoidCallback _focusListener;
   final LayerLink _layerLink = LayerLink();
+  final GlobalKey _targetKey = GlobalKey();
   OverlayEntry? _dropdownEntry;
   bool get _hasDropdown =>
       (widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty);
+  int _highlightIndex = -1;
+  String _typeAheadBuffer = '';
+  Timer? _typeAheadClearTimer;
 
   @override
   void initState() {
@@ -111,6 +153,15 @@ class _InputValueTypeState extends State<InputValueType> {
     };
     _controller.addListener(_controllerListener);
     _focusNode.addListener(_focusListener);
+    // Attach controller if present
+    widget.dropdownController?._attach(
+      () => _dropdownEntry == null ? _toggleDropdown() : null,
+      _removeDropdown,
+      _toggleDropdown,
+      _highlightNext,
+      _highlightPrev,
+      _confirmSelection,
+    );
   }
 
   @override
@@ -133,6 +184,8 @@ class _InputValueTypeState extends State<InputValueType> {
     _controller.removeListener(_controllerListener);
     _focusNode.removeListener(_focusListener);
     _removeDropdown();
+    _keyboardNode.dispose();
+    _typeAheadClearTimer?.cancel();
     if (widget.controller == null) {
       _controller.dispose();
     }
@@ -169,6 +222,7 @@ class _InputValueTypeState extends State<InputValueType> {
     return CompositedTransformTarget(
       link: _layerLink,
       child: Container(
+        key: _targetKey,
         height: 24.0,
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         decoration: BoxDecoration(
@@ -196,54 +250,82 @@ class _InputValueTypeState extends State<InputValueType> {
                 cursor: isReadOnly
                     ? SystemMouseCursors.basic
                     : SystemMouseCursors.text,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: () {
-                    if (_hasDropdown && !isReadOnly) {
-                      _toggleDropdown();
+                child: RawKeyboardListener(
+                  focusNode: _keyboardNode,
+                  onKey: (RawKeyEvent ev) {
+                    if (ev is! RawKeyDownEvent) return;
+                    if (!_hasDropdown) return;
+                    if (_dropdownEntry == null) return;
+                    final key = ev.logicalKey;
+                    if (key == LogicalKeyboardKey.arrowDown) {
+                      _highlightNext();
+                    } else if (key == LogicalKeyboardKey.arrowUp) {
+                      _highlightPrev();
+                    } else if (key == LogicalKeyboardKey.home) {
+                      _highlightHome();
+                    } else if (key == LogicalKeyboardKey.end) {
+                      _highlightEnd();
+                    } else if (key == LogicalKeyboardKey.enter) {
+                      _confirmSelection();
+                    } else if (key == LogicalKeyboardKey.escape) {
+                      _removeDropdown();
+                    } else {
+                      final label = key.keyLabel;
+                      if (label.length == 1) {
+                        _handleTypeAhead(label);
+                      }
                     }
                   },
-                  child: Stack(
-                    alignment: Alignment.centerLeft,
-                    children: [
-                      if (_controller.text.isEmpty &&
-                          widget.placeholder != null)
-                        IgnorePointer(
-                          child: Text(
-                            widget.placeholder!,
-                            style: placeholderStyle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      IgnorePointer(
-                        ignoring: isReadOnly,
-                        child: Material(
-                          type: MaterialType.transparency,
-                          child: TextField(
-                            controller: _controller,
-                            focusNode: _focusNode,
-                            style: textStyle,
-                            cursorColor: isReadOnly ? kTransparent : kGrey100,
-                            decoration: const InputDecoration(
-                              isCollapsed: true,
-                              isDense: true,
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () {
+                      if (_hasDropdown && !isReadOnly) {
+                        _toggleDropdown();
+                      }
+                    },
+                    child: Stack(
+                      alignment: Alignment.centerLeft,
+                      children: [
+                        if (_controller.text.isEmpty &&
+                            widget.placeholder != null)
+                          IgnorePointer(
+                            child: Text(
+                              widget.placeholder!,
+                              style: placeholderStyle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            textAlign: widget.textAlign,
-                            autofocus: isReadOnly ? false : widget.autofocus,
-                            onChanged: isReadOnly ? null : widget.onChanged,
-                            onSubmitted: isReadOnly ? null : widget.onSubmitted,
-                            readOnly: isReadOnly,
-                            enableInteractiveSelection: !isReadOnly,
-                            showCursor: !isReadOnly,
-                            selectionControls: materialTextSelectionControls,
-                            enabled: !isReadOnly,
+                          ),
+                        IgnorePointer(
+                          ignoring: isReadOnly,
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: TextField(
+                              controller: _controller,
+                              focusNode: _focusNode,
+                              style: textStyle,
+                              cursorColor: isReadOnly ? kTransparent : kGrey100,
+                              decoration: const InputDecoration(
+                                isCollapsed: true,
+                                isDense: true,
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              textAlign: widget.textAlign,
+                              autofocus: isReadOnly ? false : widget.autofocus,
+                              onChanged: isReadOnly ? null : widget.onChanged,
+                              onSubmitted:
+                                  isReadOnly ? null : widget.onSubmitted,
+                              readOnly: isReadOnly,
+                              enableInteractiveSelection: !isReadOnly,
+                              showCursor: !isReadOnly,
+                              selectionControls: materialTextSelectionControls,
+                              enabled: !isReadOnly,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -283,9 +365,16 @@ class _InputValueTypeState extends State<InputValueType> {
   }
 
   void _toggleDropdown() {
-    if (_dropdownEntry == null) {
-      _dropdownEntry = _createDropdown();
+    final bool needsInsert = !(_dropdownEntry?.mounted ?? false);
+    _dropdownEntry ??= _createDropdown();
+    if (needsInsert) {
       Overlay.of(context).insert(_dropdownEntry!);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_dropdownEntry?.mounted ?? false) {
+          _keyboardNode.requestFocus();
+        }
+      });
     } else {
       _removeDropdown();
     }
@@ -293,13 +382,31 @@ class _InputValueTypeState extends State<InputValueType> {
 
   void _removeDropdown() {
     _dropdownEntry?.remove();
-    _dropdownEntry = null;
   }
 
   OverlayEntry _createDropdown() {
-    final items = widget.dropdownItems!;
-    return OverlayEntry(
+    final items = widget.dropdownItems ?? const <String>[];
+    _highlightIndex = items.indexOf(widget.selectedItem ?? '');
+    if (_highlightIndex < 0 && items.isNotEmpty) _highlightIndex = 0;
+    _dropdownEntry = OverlayEntry(
       builder: (context) {
+        final Size screenSize = MediaQuery.of(context).size;
+        double offsetY = 28;
+        const double itemHeight = 28.0;
+        const int maxVisible = 8;
+        final int visibleCount =
+            items.length < maxVisible ? items.length : maxVisible;
+        final double estimatedPanelHeight = 8 + (visibleCount * itemHeight) + 8;
+        final RenderBox? targetBox =
+            _targetKey.currentContext?.findRenderObject() as RenderBox?;
+        if (targetBox != null) {
+          final Offset topLeft = targetBox.localToGlobal(Offset.zero);
+          final double targetBottom = topLeft.dy + targetBox.size.height;
+          final double spaceBelow = screenSize.height - targetBottom;
+          if (spaceBelow < estimatedPanelHeight + 8) {
+            offsetY = -(estimatedPanelHeight + 4);
+          }
+        }
         return Positioned.fill(
           child: Stack(
             children: [
@@ -309,10 +416,15 @@ class _InputValueTypeState extends State<InputValueType> {
               CompositedTransformFollower(
                 link: _layerLink,
                 showWhenUnlinked: false,
-                offset: const Offset(0, 28),
+                offset: Offset(0, offsetY),
                 child: _DropdownPanel(
                   items: items,
                   selected: widget.selectedItem,
+                  highlightedIndex: _highlightIndex,
+                  onHighlight: (i) {
+                    setState(() => _highlightIndex = i);
+                    _dropdownEntry?.markNeedsBuild();
+                  },
                   onSelect: (value) {
                     widget.onItemSelected?.call(value);
                     _controller.text = value;
@@ -326,6 +438,65 @@ class _InputValueTypeState extends State<InputValueType> {
         );
       },
     );
+    return _dropdownEntry!;
+  }
+
+  void _highlightNext() {
+    final items = widget.dropdownItems!;
+    if (items.isEmpty) return;
+    setState(() => _highlightIndex = (_highlightIndex + 1) % items.length);
+    _dropdownEntry?.markNeedsBuild();
+  }
+
+  void _highlightPrev() {
+    final items = widget.dropdownItems!;
+    if (items.isEmpty) return;
+    setState(() =>
+        _highlightIndex = (_highlightIndex - 1 + items.length) % items.length);
+    _dropdownEntry?.markNeedsBuild();
+  }
+
+  void _highlightHome() {
+    final items = widget.dropdownItems!;
+    if (items.isEmpty) return;
+    setState(() => _highlightIndex = 0);
+    _dropdownEntry?.markNeedsBuild();
+  }
+
+  void _highlightEnd() {
+    final items = widget.dropdownItems!;
+    if (items.isEmpty) return;
+    setState(() => _highlightIndex = items.length - 1);
+    _dropdownEntry?.markNeedsBuild();
+  }
+
+  void _confirmSelection() {
+    final items = widget.dropdownItems!;
+    if (_highlightIndex < 0 || _highlightIndex >= items.length) return;
+    final value = items[_highlightIndex];
+    widget.onItemSelected?.call(value);
+    _controller.text = value;
+    _removeDropdown();
+    setState(() {});
+  }
+
+  void _handleTypeAhead(String ch) {
+    final String c = ch.toLowerCase();
+    if (!RegExp(r'^[a-z0-9]$').hasMatch(c)) return;
+    _typeAheadBuffer += c;
+    _typeAheadClearTimer?.cancel();
+    _typeAheadClearTimer =
+        Timer(const Duration(milliseconds: 800), () => _typeAheadBuffer = '');
+    final items = widget.dropdownItems!;
+    int idx =
+        items.indexWhere((s) => s.toLowerCase().startsWith(_typeAheadBuffer));
+    if (idx < 0) {
+      idx = items.indexWhere((s) => s.toLowerCase().startsWith(c));
+    }
+    if (idx >= 0) {
+      setState(() => _highlightIndex = idx);
+      _dropdownEntry?.markNeedsBuild();
+    }
   }
 }
 
@@ -333,36 +504,46 @@ class _DropdownPanel extends StatelessWidget {
   final List<String> items;
   final String? selected;
   final ValueChanged<String> onSelect;
+  final int highlightedIndex;
+  final ValueChanged<int> onHighlight;
 
   const _DropdownPanel({
     required this.items,
     required this.selected,
     required this.onSelect,
+    required this.highlightedIndex,
+    required this.onHighlight,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: kTransparent,
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 280, minWidth: 160),
-        padding: const EdgeInsets.all(8.0),
-        decoration: BoxDecoration(
-          color: kGrey100, // black background
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final value = items[index];
-            final bool isSelected = selected == value;
-            return _DropdownItem(
-              label: value,
-              isSelected: isSelected,
-              onTap: () => onSelect(value),
-            );
-          },
+      child: Semantics(
+        container: true,
+        label: 'Options',
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 280, minWidth: 160),
+          padding: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            color: kGrey100, // black background
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final value = items[index];
+              final bool isSelected = selected == value;
+              return _DropdownItem(
+                label: value,
+                isSelected: isSelected,
+                highlighted: index == highlightedIndex,
+                onHover: () => onHighlight(index),
+                onTap: () => onSelect(value),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -372,9 +553,15 @@ class _DropdownPanel extends StatelessWidget {
 class _DropdownItem extends StatefulWidget {
   final String label;
   final bool isSelected;
+  final bool highlighted;
   final VoidCallback onTap;
+  final VoidCallback onHover;
   const _DropdownItem(
-      {required this.label, required this.isSelected, required this.onTap});
+      {required this.label,
+      required this.isSelected,
+      required this.highlighted,
+      required this.onTap,
+      required this.onHover});
 
   @override
   State<_DropdownItem> createState() => _DropdownItemState();
@@ -386,47 +573,58 @@ class _DropdownItemState extends State<_DropdownItem> {
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
+      onEnter: (_) {
+        widget.onHover();
+        setState(() => _hover = true);
+      },
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 2.0),
-          padding: const EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            color: _hover ? kInputBackground : kTransparent,
-            borderRadius: BorderRadius.circular(4.0),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 16.0,
-                height: 16.0,
-                child: widget.isSelected
-                    ? SvgPicture.asset(
-                        'assets/icons/32/checkmark.svg',
-                        width: 16.0,
-                        height: 16.0,
-                        colorFilter:
-                            const ColorFilter.mode(kWhite, BlendMode.srcIn),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              const SizedBox(width: 8.0),
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: const TextStyle(
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.w400,
-                    color: kWhite,
-                    height: 1.0,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+        child: Semantics(
+          button: true,
+          selected: widget.isSelected,
+          label: widget.label,
+          onTap: widget.onTap,
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 2.0),
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: (widget.highlighted || _hover)
+                  ? kInputBackground
+                  : kTransparent,
+              borderRadius: BorderRadius.circular(4.0),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 16.0,
+                  height: 16.0,
+                  child: widget.isSelected
+                      ? SvgPicture.asset(
+                          'assets/icons/32/checkmark.svg',
+                          width: 16.0,
+                          height: 16.0,
+                          colorFilter:
+                              const ColorFilter.mode(kWhite, BlendMode.srcIn),
+                        )
+                      : const SizedBox.shrink(),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8.0),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: const TextStyle(
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.w400,
+                      color: kWhite,
+                      height: 1.0,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
