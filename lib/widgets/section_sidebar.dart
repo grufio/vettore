@@ -18,7 +18,7 @@ class SectionSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.only(
-          top: 8.0, left: 12.0, right: 12.0, bottom: 12.0),
+          top: 12.0, left: 12.0, right: 12.0, bottom: 12.0),
       decoration: const BoxDecoration(
         color: kWhite,
         border: Border(

@@ -16,6 +16,7 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/app_project_detail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/providers/application_providers.dart';
+import 'package:vettore/providers/project_provider.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:vettore/data/database.dart';
 // import 'package:vettore/widgets/preview_gallery.dart';
@@ -174,10 +175,10 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                 topPadding: 8.0,
                 horizontalPadding: 16.0,
                 resizable: true,
-                minWidth: 100.0,
-                maxWidth: 300.0,
+                minWidth: 200.0,
+                maxWidth: 400.0,
                 onResizeDelta: (dx) => setState(() {
-                  _sidePanelWidth = (_sidePanelWidth + dx).clamp(100.0, 300.0);
+                  _sidePanelWidth = (_sidePanelWidth + dx).clamp(200.0, 400.0);
                 }),
                 onResetWidth: () => setState(() {
                   _sidePanelWidth = 280.0;
@@ -244,11 +245,11 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                         topPadding: 8.0,
                         horizontalPadding: 16.0,
                         resizable: true,
-                        minWidth: 100.0,
-                        maxWidth: 300.0,
+                        minWidth: 200.0,
+                        maxWidth: 400.0,
                         onResizeDelta: (dx) => setState(() {
                           _sidePanelWidth =
-                              (_sidePanelWidth + dx).clamp(100.0, 300.0);
+                              (_sidePanelWidth + dx).clamp(200.0, 400.0);
                         }),
                         onResetWidth: () => setState(() {
                           _sidePanelWidth = 280.0;
@@ -339,39 +340,36 @@ class _HomeGalleryContainer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final repo = ref.watch(projectRepositoryProvider);
-    return StreamBuilder<List<DbProject>>(
-      stream: repo.watchAll(),
-      builder: (context, snapshot) {
-        final projects = snapshot.data ?? const <DbProject>[];
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final double width = constraints.maxWidth;
-            final int columns =
-                width.isFinite ? (width / 280.0).floor().clamp(1, 12) : 3;
-            return MasonryGridView.count(
-              crossAxisCount: columns,
-              mainAxisSpacing: 16.0,
-              crossAxisSpacing: 16.0,
-              padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
-              itemCount: projects.length,
-              itemBuilder: (context, index) {
-                final p = projects[index];
-                return FutureBuilder<Uint8List?>(
-                  future: _fetchImageBytes(ref, p.imageId),
-                  builder: (context, snap) {
-                    final bytes = snap.data;
-                    return GestureDetector(
-                      onDoubleTap: () => onOpenProject?.call(p.id),
-                      child: ThumbnailTile(
-                        imageBytes: bytes,
-                        footerHeight: 72.0,
-                        lines: [p.title, '324x240px', '30.12.2005, 12:24'],
-                        textPadding: 12.0,
-                        lineSpacing: 12.0,
-                      ),
-                    );
-                  },
+    final projectsAsync = ref.watch(projectsStreamProvider);
+    final projects = projectsAsync.asData?.value ?? const <DbProject>[];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+        final int columns =
+            width.isFinite ? (width / 280.0).floor().clamp(1, 12) : 3;
+        return MasonryGridView.count(
+          crossAxisCount: columns,
+          mainAxisSpacing: 16.0,
+          crossAxisSpacing: 16.0,
+          padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
+          itemCount: projects.length,
+          itemBuilder: (context, index) {
+            final p = projects[index];
+            return Consumer(
+              builder: (context, ref, _) {
+                final bytesAsync = (p.imageId != null)
+                    ? ref.watch(imageBytesProvider(p.imageId!))
+                    : const AsyncValue<Uint8List?>.data(null);
+                final bytes = bytesAsync.asData?.value;
+                return GestureDetector(
+                  onDoubleTap: () => onOpenProject?.call(p.id),
+                  child: ThumbnailTile(
+                    imageBytes: bytes,
+                    footerHeight: 72.0,
+                    lines: [p.title, '324x240px', '30.12.2005, 12:24'],
+                    textPadding: 12.0,
+                    lineSpacing: 12.0,
+                  ),
                 );
               },
             );
@@ -379,13 +377,5 @@ class _HomeGalleryContainer extends ConsumerWidget {
         );
       },
     );
-  }
-
-  Future<Uint8List?> _fetchImageBytes(WidgetRef ref, int? imageId) async {
-    if (imageId == null) return null;
-    final db = ref.read(appDatabaseProvider);
-    final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
-        .getSingleOrNull();
-    return row?.origSrc;
   }
 }

@@ -68,6 +68,7 @@ class _AppShellState extends State<_AppShell> {
         iconPath: 'assets/icons/32/home.svg', width: 40, projectId: null),
   ];
   int? _currentProjectId;
+  bool _adding = false;
 
   void _handleSelect(int i) {
     setState(() => _activeIndex = i);
@@ -83,6 +84,8 @@ class _AppShellState extends State<_AppShell> {
   }
 
   Future<void> _handleAddTab() async {
+    if (_adding) return;
+    setState(() => _adding = true);
     final container = ProviderScope.containerOf(context);
     final repo = container.read(projectRepositoryProvider);
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -108,6 +111,7 @@ class _AppShellState extends State<_AppShell> {
       );
       _activeIndex = _tabs.length - 1;
     });
+    setState(() => _adding = false);
   }
 
   @override

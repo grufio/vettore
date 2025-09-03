@@ -54,6 +54,11 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   late final FocusNode _projectTitleFocusNode;
   StreamSubscription<DbProject?>? _projectSub;
 
+  void _setHasImage(bool value) {
+    if (!mounted) return;
+    setState(() => _hasImage = value);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -92,13 +97,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
       );
     }
 
-    bool hasImage = false;
-    if (_currentProjectId != null) {
-      final projectAsync = ref.watch(projectStreamProvider(_currentProjectId!));
-      projectAsync.whenData((state) {
-        hasImage = state.project.imageId != null;
-      });
-    }
+    // Image presence is determined via DB stream in the body below
 
     return ColoredBox(
       color: kWhite,
@@ -141,7 +140,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                   SidePanel(
                     side: SidePanelSide.right,
                     width: _rightPanelWidth,
-                    topPadding: 8.0,
+                    topPadding: 0.0,
                     horizontalPadding: 16.0,
                     resizable: true,
                     minWidth: 200.0,
@@ -179,8 +178,32 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                   .watchById(_currentProjectId!)
                               : const Stream.empty(),
                           builder: (context, snapshot) {
-                            final bool hasImage =
-                                (snapshot.data?.imageId != null);
+                            final int? imageId = snapshot.data?.imageId;
+                            final bool hasImage = imageId != null;
+                            if (hasImage) {
+                              final dimsAsync =
+                                  ref.watch(imageDimensionsProvider(imageId));
+                              final dims = dimsAsync.asData?.value;
+                              if (dims != null) {
+                                final String w = (dims.$1 ?? '').toString();
+                                final String h = (dims.$2 ?? '').toString();
+                                if (w.isNotEmpty &&
+                                    _inputValueController.text != w) {
+                                  _inputValueController.text = w;
+                                }
+                                if (h.isNotEmpty &&
+                                    _inputValueController2.text != h) {
+                                  _inputValueController2.text = h;
+                                }
+                              }
+                            } else {
+                              if (_inputValueController.text.isNotEmpty) {
+                                _inputValueController.text = '';
+                              }
+                              if (_inputValueController2.text.isNotEmpty) {
+                                _inputValueController2.text = '';
+                              }
+                            }
                             return SectionSidebar(
                               title: 'Title',
                               children: [
@@ -211,15 +234,18 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                   actionIconAsset: null,
                                 ),
                                 SectionInput(
-                                  full: DeleteProjectButton(onTap: () async {
-                                    if (_currentProjectId == null) return;
-                                    final id = _currentProjectId!;
-                                    await ref
-                                        .read(projectRepositoryProvider)
-                                        .delete(id);
-                                    if (!mounted) return;
-                                    widget.onDeleteProject?.call(id);
-                                  }),
+                                  full: OutlinedActionButton(
+                                    label: 'Delete Project',
+                                    onTap: () async {
+                                      if (_currentProjectId == null) return;
+                                      final id = _currentProjectId!;
+                                      await ref
+                                          .read(projectRepositoryProvider)
+                                          .delete(id);
+                                      if (!mounted) return;
+                                      widget.onDeleteProject?.call(id);
+                                    },
+                                  ),
                                   actionIconAsset: null,
                                 ),
                               ],
@@ -276,7 +302,10 @@ extension on _AppProjectDetailPageState {
         updatedAt: Value(now),
       ),
     );
-    if (mounted) setState(() => _hasImage = true);
+    // Update local UI controllers with dimensions
+    if (width != null) _inputValueController.text = width.toString();
+    if (height != null) _inputValueController2.text = height.toString();
+    _setHasImage(true);
   }
 
   // Dialog upload handled inside ImageUploadArea
@@ -290,6 +319,12 @@ extension on _AppProjectDetailPageState {
         final p = await repo.getById(widget.projectId!);
         _projectController.text = p.title;
         _hasImage = p.imageId != null;
+        if (p.imageId != null) {
+          await _loadImageDimensions(p.imageId!);
+        } else {
+          _inputValueController.text = '';
+          _inputValueController2.text = '';
+        }
         _subscribeToProject(_currentProjectId!);
         return;
       }
@@ -299,6 +334,12 @@ extension on _AppProjectDetailPageState {
         _currentProjectId = p.id;
         _projectController.text = p.title;
         _hasImage = p.imageId != null;
+        if (p.imageId != null) {
+          await _loadImageDimensions(p.imageId!);
+        } else {
+          _inputValueController.text = '';
+          _inputValueController2.text = '';
+        }
         _subscribeToProject(_currentProjectId!);
       }
     } catch (_) {
@@ -326,24 +367,62 @@ extension on _AppProjectDetailPageState {
         ref.read(projectRepositoryProvider).watchById(projectId).listen((p) {
       if (!mounted) return;
       if (p == null) {
-        setState(() => _hasImage = false);
+        _inputValueController.text = '';
+        _inputValueController2.text = '';
+        _setHasImage(false);
         return;
       }
       final nextHasImage = p.imageId != null;
-      if (nextHasImage != _hasImage) {
-        setState(() => _hasImage = nextHasImage);
+      if (p.imageId != null) {
+        _loadImageDimensions(p.imageId!);
+      } else {
+        _inputValueController.text = '';
+        _inputValueController2.text = '';
       }
+      if (nextHasImage != _hasImage) _setHasImage(nextHasImage);
     });
   }
 
   Widget _buildDetailBody() {
-    return ColoredBox(
-      color: kGrey10,
-      child: Center(
-        child: ImageUploadArea(
-          onBytesSelected: (bytes) => _handleImageBytes(bytes),
-        ),
-      ),
+    // Build consumes project/image streams to provide initial bytes to viewer
+    return StreamBuilder<DbProject?>(
+      stream: (_currentProjectId != null)
+          ? ref.read(projectRepositoryProvider).watchById(_currentProjectId!)
+          : const Stream.empty(),
+      builder: (context, snap) {
+        final project = snap.data;
+        final imageId = project?.imageId;
+        final bytesAsync = (imageId != null)
+            ? ref.watch(imageBytesProvider(imageId))
+            : const AsyncValue<Uint8List?>.data(null);
+        final bytes = bytesAsync.asData?.value;
+        return ColoredBox(
+          color: kGrey10,
+          child: Center(
+            child: ImageUploadArea(
+              initialBytes: bytes,
+              onBytesSelected: (b) => _handleImageBytes(b),
+            ),
+          ),
+        );
+      },
     );
+  }
+}
+
+extension _ImageDimensions on _AppProjectDetailPageState {
+  Future<void> _loadImageDimensions(int imageId) async {
+    final db = ref.read(appDatabaseProvider);
+    try {
+      final row = await (db.select(db.images)
+            ..where((t) => t.id.equals(imageId)))
+          .getSingleOrNull();
+      final int? width = row?.origWidth;
+      final int? height = row?.origHeight;
+      if (width != null) _inputValueController.text = width.toString();
+      if (height != null) _inputValueController2.text = height.toString();
+    } catch (_) {
+      // ignore read errors
+    }
   }
 }

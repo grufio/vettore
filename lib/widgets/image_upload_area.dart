@@ -36,6 +36,18 @@ class _ImageUploadAreaState extends State<ImageUploadArea> {
     _scaleStateController = PhotoViewScaleStateController();
   }
 
+  @override
+  void didUpdateWidget(covariant ImageUploadArea oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialBytes != oldWidget.initialBytes &&
+        widget.initialBytes != null) {
+      setState(() {
+        _bytes = widget.initialBytes;
+        _scaleStateController.scaleState = PhotoViewScaleState.initial;
+      });
+    }
+  }
+
   Future<void> _selectBytes(Uint8List bytes) async {
     if (!mounted) return;
     setState(() => _bytes = bytes);

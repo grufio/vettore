@@ -106,3 +106,58 @@ class _DeleteProjectButtonState extends State<DeleteProjectButton> {
     );
   }
 }
+
+class OutlinedActionButton extends StatefulWidget {
+  final String label;
+  final VoidCallback onTap;
+  final double? minWidth;
+
+  const OutlinedActionButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.minWidth,
+  });
+
+  @override
+  State<OutlinedActionButton> createState() => _OutlinedActionButtonState();
+}
+
+class _OutlinedActionButtonState extends State<OutlinedActionButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color borderColor = _hovered ? kGrey100 : kGrey70;
+    final Color textColor = _hovered ? kGrey100 : kGrey70;
+    final TextStyle labelStyle = appTextStyles.bodyMMedium.copyWith(
+      color: textColor,
+      height: 1.0,
+    );
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          constraints: BoxConstraints(minWidth: widget.minWidth ?? 0),
+          height: 24.0,
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          decoration: BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.circular(6.0),
+            border: Border.all(color: borderColor, width: 1.0),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            widget.label,
+            style: labelStyle,
+            strutStyle: const StrutStyle(height: 1.0, leading: 0),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:io';
 import 'package:equatable/equatable.dart';
@@ -10,6 +11,33 @@ import 'package:path_provider/path_provider.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/services/settings_service.dart';
+
+// Image bytes provider (orig or conv)
+final imageBytesProvider =
+    FutureProvider.autoDispose.family<Uint8List?, int>((ref, imageId) async {
+  final db = ref.read(appDatabaseProvider);
+  final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
+      .getSingleOrNull();
+  return row?.convSrc ?? row?.origSrc;
+});
+
+// Image dimensions provider (origWidth/origHeight, fallback to conv if needed)
+final imageDimensionsProvider =
+    FutureProvider.autoDispose.family<(int?, int?), int>((ref, imageId) async {
+  final db = ref.read(appDatabaseProvider);
+  final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
+      .getSingleOrNull();
+  final w = row?.origWidth ?? row?.convWidth;
+  final h = row?.origHeight ?? row?.convHeight;
+  return (w, h);
+});
+
+// Projects list provider (stream)
+final projectsStreamProvider =
+    StreamProvider.autoDispose<List<DbProject>>((ref) {
+  final repo = ref.watch(projectRepositoryProvider);
+  return repo.watchAll();
+});
 
 // A simple data class for vector objects that can be sent to isolates.
 class IsolateVectorObject {
@@ -262,11 +290,12 @@ class ProjectLogic {
     }
 
     await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
-        .write(const ImagesCompanion(
+        .write(ImagesCompanion(
       convSrc: Value.absent(),
       convBytes: Value.absent(),
       convWidth: Value.absent(),
       convHeight: Value.absent(),
+      convUniqueColors: Value(uniqueColorCount),
     ));
     final now = DateTime.now().millisecondsSinceEpoch;
     await projectRepository
