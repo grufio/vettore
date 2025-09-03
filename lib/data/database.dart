@@ -202,18 +202,27 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 15) {
           // Introduce vendors table and link vendor_colors to vendors
-          await m.createTable(vendors);
-          await m.addColumn(vendorColors, vendorColors.vendorId);
+          // Create vendors table if missing (snake_case)
+          await m.database.customStatement(
+              "CREATE TABLE IF NOT EXISTS vendors (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, vendor_name TEXT NOT NULL, vendor_brand TEXT NOT NULL)");
+          // Add vendor_id to vendor_colors if it doesn't exist
+          final hasVendorId = await m.database
+              .customSelect(
+                  "SELECT 1 FROM pragma_table_info('vendor_colors') WHERE name = 'vendor_id' LIMIT 1")
+              .get();
+          if (hasVendorId.isEmpty) {
+            await m.addColumn(vendorColors, vendorColors.vendorId);
+          }
           // Seed a default vendor (Schmincke / Norma professional) and backfill existing rows
-          await customStatement(
-              "INSERT INTO vendors (vendorName, vendorBrand) VALUES ('Schmincke','Norma professional')");
-          await customStatement(
-              "UPDATE vendor_colors SET vendorId = (SELECT id FROM vendors WHERE vendorBrand='Norma professional' LIMIT 1) WHERE vendorId IS NULL");
-          // Helpful indexes
-          await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_vendor_colors_vendorId ON vendor_colors(vendorId)');
-          await customStatement(
-              'CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_colors_vendor_code ON vendor_colors(vendorId, code)');
+          await m.database.customStatement(
+              "INSERT INTO vendors (vendor_name, vendor_brand) SELECT 'Schmincke','Norma professional' WHERE NOT EXISTS (SELECT 1 FROM vendors WHERE vendor_brand='Norma professional')");
+          await m.database.customStatement(
+              "UPDATE vendor_colors SET vendor_id = (SELECT id FROM vendors WHERE vendor_brand='Norma professional' LIMIT 1) WHERE vendor_id IS NULL");
+          // Helpful indexes (snake_case)
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_vendor_colors_vendor_id ON vendor_colors(vendor_id)');
+          await m.database.customStatement(
+              'CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_colors_vendor_code ON vendor_colors(vendor_id, code)');
         }
       },
     );

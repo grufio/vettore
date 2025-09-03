@@ -342,34 +342,56 @@ class _HomeGalleryContainer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final projectsAsync = ref.watch(projectsStreamProvider);
     final projects = projectsAsync.asData?.value ?? const <DbProject>[];
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double width = constraints.maxWidth;
-        final int columns =
-            width.isFinite ? (width / 280.0).floor().clamp(1, 12) : 3;
-        return MasonryGridView.count(
-          crossAxisCount: columns,
-          mainAxisSpacing: 16.0,
-          crossAxisSpacing: 16.0,
-          padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
-          itemCount: projects.length,
-          itemBuilder: (context, index) {
-            final p = projects[index];
-            return Consumer(
-              builder: (context, ref, _) {
-                final bytesAsync = (p.imageId != null)
-                    ? ref.watch(imageBytesProvider(p.imageId!))
-                    : const AsyncValue<Uint8List?>.data(null);
-                final bytes = bytesAsync.asData?.value;
-                return GestureDetector(
-                  onDoubleTap: () => onOpenProject?.call(p.id),
-                  child: ThumbnailTile(
-                    imageBytes: bytes,
+    final db = ref.watch(appDatabaseProvider);
+    return StreamBuilder<List<Vendor>>(
+      stream: db.select(db.vendors).watch(),
+      builder: (context, vendorSnap) {
+        final vendors = vendorSnap.data ?? const <Vendor>[];
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final double width = constraints.maxWidth;
+            final int columns =
+                width.isFinite ? (width / 280.0).floor().clamp(1, 12) : 3;
+            return MasonryGridView.count(
+              crossAxisCount: columns,
+              mainAxisSpacing: 16.0,
+              crossAxisSpacing: 16.0,
+              padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
+              itemCount: vendors.length + projects.length,
+              itemBuilder: (context, index) {
+                // Render vendor tiles first
+                if (index < vendors.length) {
+                  final v = vendors[index];
+                  final now = DateTime.now();
+                  String two(int n) => n.toString().padLeft(2, '0');
+                  final formatted =
+                      '${two(now.day)}.${two(now.month)}.${now.year}, ${two(now.hour)}:${two(now.minute)}';
+                  return ThumbnailTile(
+                    imageBytes: null,
                     footerHeight: 72.0,
-                    lines: [p.title, '324x240px', '30.12.2005, 12:24'],
+                    lines: [v.vendorName, v.vendorBrand, formatted],
                     textPadding: 12.0,
                     lineSpacing: 12.0,
-                  ),
+                  );
+                }
+                final p = projects[index - vendors.length];
+                return Consumer(
+                  builder: (context, ref, _) {
+                    final bytesAsync = (p.imageId != null)
+                        ? ref.watch(imageBytesProvider(p.imageId!))
+                        : const AsyncValue<Uint8List?>.data(null);
+                    final bytes = bytesAsync.asData?.value;
+                    return GestureDetector(
+                      onDoubleTap: () => onOpenProject?.call(p.id),
+                      child: ThumbnailTile(
+                        imageBytes: bytes,
+                        footerHeight: 72.0,
+                        lines: [p.title, '324x240px', '30.12.2005, 12:24'],
+                        textPadding: 12.0,
+                        lineSpacing: 12.0,
+                      ),
+                    );
+                  },
                 );
               },
             );
