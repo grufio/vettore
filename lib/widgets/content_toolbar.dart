@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/theme/app_theme_typography.dart';
 
 class ContentToolbar extends StatelessWidget {
   final List<Widget> children;
@@ -44,5 +45,44 @@ class ContentToolbar extends StatelessWidget {
       }
     }
     return result;
+  }
+}
+
+class ContentToolbarTitle extends StatelessWidget {
+  final String title;
+  final double height;
+  final double horizontalPadding;
+
+  const ContentToolbarTitle({
+    super.key,
+    required this.title,
+    this.height = 48.0,
+    this.horizontalPadding = 24.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: const BoxDecoration(
+        color: kWhite,
+        border: Border(
+          bottom: BorderSide(color: kBordersColor, width: 1.0),
+        ),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: appTextStyles.bodyM.copyWith(
+          fontSize: 14.0,
+          fontWeight: FontWeight.w500,
+          color: kGrey100,
+          height: 1.0,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
   }
 }

@@ -61,11 +61,13 @@ class AppOverviewPage extends StatefulWidget {
   final bool showHeader;
   final ValueChanged<int>? onOpenProject;
   final VoidCallback? onAddProject;
+  final void Function(int vendorId, String vendorBrand)? onOpenVendor;
   const AppOverviewPage(
       {super.key,
       this.showHeader = true,
       this.onOpenProject,
-      this.onAddProject});
+      this.onAddProject,
+      this.onOpenVendor});
   @override
   State<AppOverviewPage> createState() => _AppOverviewPageState();
 }
@@ -208,7 +210,9 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                     ),
                     Expanded(
                         child: _HomeGalleryContainer(
-                            onOpenProject: widget.onOpenProject)),
+                      onOpenProject: widget.onOpenProject,
+                      onOpenVendor: widget.onOpenVendor,
+                    )),
                   ],
                 ),
               ),
@@ -285,7 +289,9 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                                 ? const AppProjectDetailPage()
                                 : (_activeIndex == 0
                                     ? _HomeGalleryContainer(
-                                        onOpenProject: widget.onOpenProject)
+                                        onOpenProject: widget.onOpenProject,
+                                        onOpenVendor: widget.onOpenVendor,
+                                      )
                                     : Center(
                                         child: Text(
                                             'Content for Tab ${_activeIndex + 1}'),
@@ -336,7 +342,8 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
 
 class _HomeGalleryContainer extends ConsumerWidget {
   final ValueChanged<int>? onOpenProject;
-  const _HomeGalleryContainer({this.onOpenProject});
+  final void Function(int vendorId, String vendorBrand)? onOpenVendor;
+  const _HomeGalleryContainer({this.onOpenProject, this.onOpenVendor});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -366,12 +373,17 @@ class _HomeGalleryContainer extends ConsumerWidget {
                   String two(int n) => n.toString().padLeft(2, '0');
                   final formatted =
                       '${two(now.day)}.${two(now.month)}.${now.year}, ${two(now.hour)}:${two(now.minute)}';
-                  return ThumbnailTile(
-                    imageBytes: null,
-                    footerHeight: 72.0,
-                    lines: [v.vendorName, v.vendorBrand, formatted],
-                    textPadding: 12.0,
-                    lineSpacing: 12.0,
+                  return GestureDetector(
+                    onTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
+                    onDoubleTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
+                    child: ThumbnailTile(
+                      assetPath: null,
+                      imageBytes: null,
+                      footerHeight: 72.0,
+                      lines: [v.vendorName, v.vendorBrand, formatted],
+                      textPadding: 12.0,
+                      lineSpacing: 12.0,
+                    ),
                   );
                 }
                 final p = projects[index - vendors.length];

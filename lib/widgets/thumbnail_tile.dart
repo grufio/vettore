@@ -7,6 +7,7 @@ import 'package:vettore/theme/app_theme_typography.dart';
 
 class ThumbnailTile extends StatelessWidget {
   final Uint8List? imageBytes;
+  final String? assetPath; // optional asset image path
   final double footerHeight;
   final List<String> lines; // expect up to 3 lines
   final double textPadding; // padding inside text area
@@ -17,6 +18,7 @@ class ThumbnailTile extends StatelessWidget {
   const ThumbnailTile({
     super.key,
     this.imageBytes,
+    this.assetPath,
     this.footerHeight = 72.0,
     this.lines = const ['', '', ''],
     this.textPadding = 12.0,
@@ -40,24 +42,30 @@ class ThumbnailTile extends StatelessWidget {
             // Image preview uses available space above; ratio for consistent height
             AspectRatio(
               aspectRatio: 4 / 3,
-              child: (imageBytes != null && imageBytes!.isNotEmpty)
-                  ? Image.memory(
-                      imageBytes!,
-                      fit: BoxFit.cover, // fill area (cover)
+              child: (assetPath != null)
+                  ? Image.asset(
+                      assetPath!,
+                      fit: BoxFit.cover,
                       filterQuality: FilterQuality.none,
                     )
-                  : Container(
-                      color: kGrey20,
-                      child: Center(
-                        child: SvgPicture.asset(
-                          'assets/icons/32/no-image.svg',
-                          width: 24,
-                          height: 24,
-                          colorFilter:
-                              const ColorFilter.mode(kGrey70, BlendMode.srcIn),
+                  : (imageBytes != null && imageBytes!.isNotEmpty)
+                      ? Image.memory(
+                          imageBytes!,
+                          fit: BoxFit.cover, // fill area (cover)
+                          filterQuality: FilterQuality.none,
+                        )
+                      : Container(
+                          color: kGrey20,
+                          child: Center(
+                            child: SvgPicture.asset(
+                              'assets/icons/32/no-image.svg',
+                              width: 24,
+                              height: 24,
+                              colorFilter: const ColorFilter.mode(
+                                  kGrey70, BlendMode.srcIn),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
             ),
             _Footer(
               height: footerHeight,

@@ -13,6 +13,7 @@ import 'theme/app_theme_colors.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/data/database.dart';
 import 'package:drift/drift.dart' show Value;
+import 'features/projects/widgets/vendor_colors_overview_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -153,44 +154,65 @@ class _AppShellState extends State<_AppShell> {
                         });
                       }
                     },
-                  )
-                : AppProjectDetailPage(
-                    initialActiveIndex: _activeIndex,
-                    onNavigateTab: (i) {
-                      if (i == 0) setState(() => _activeIndex = 0);
-                    },
-                    projectId: _currentProjectId,
-                    onProjectTitleSaved: (newTitle) {
-                      // Update the label of the active project tab
-                      if (_activeIndex > 0 && _activeIndex < _tabs.length) {
-                        final current = _tabs[_activeIndex];
-                        _tabs[_activeIndex] = GrufioTabData(
-                          iconPath: current.iconPath,
-                          label: newTitle.isEmpty ? 'Untitled' : newTitle,
-                          width: current.width,
-                          projectId: current.projectId,
-                        );
-                        setState(() {});
-                      }
-                    },
-                    onDeleteProject: (deletedId) {
-                      // Remove the tab associated with this project and go Home
-                      final idx = _tabs.indexWhere((t) =>
-                          t.projectId != null && t.projectId == deletedId);
-                      if (idx != -1) {
-                        setState(() {
-                          _tabs.removeAt(idx);
-                          _currentProjectId = null;
-                          _activeIndex = 0;
-                        });
+                    onOpenVendor: (vendorId, vendorBrand) {
+                      final existingIndex = _tabs.indexWhere(
+                          (t) => t.vendorId != null && t.vendorId == vendorId);
+                      if (existingIndex != -1) {
+                        setState(() => _activeIndex = existingIndex);
                       } else {
                         setState(() {
-                          _currentProjectId = null;
-                          _activeIndex = 0;
+                          _tabs.add(GrufioTabData(
+                            iconPath: 'assets/icons/32/color-palette.svg',
+                            label: vendorBrand,
+                            vendorId: vendorId,
+                          ));
+                          _activeIndex = _tabs.length - 1;
                         });
                       }
                     },
-                  ),
+                  )
+                : (_tabs[_activeIndex].vendorId != null)
+                    ? VendorColorsOverviewPage(
+                        vendorId: _tabs[_activeIndex].vendorId!,
+                        vendorBrand: _tabs[_activeIndex].label ?? 'Vendor',
+                      )
+                    : AppProjectDetailPage(
+                        initialActiveIndex: _activeIndex,
+                        onNavigateTab: (i) {
+                          if (i == 0) setState(() => _activeIndex = 0);
+                        },
+                        projectId: _currentProjectId,
+                        onProjectTitleSaved: (newTitle) {
+                          // Update the label of the active project tab
+                          if (_activeIndex > 0 && _activeIndex < _tabs.length) {
+                            final current = _tabs[_activeIndex];
+                            _tabs[_activeIndex] = GrufioTabData(
+                              iconPath: current.iconPath,
+                              label: newTitle.isEmpty ? 'Untitled' : newTitle,
+                              width: current.width,
+                              projectId: current.projectId,
+                            );
+                            setState(() {});
+                          }
+                        },
+                        onDeleteProject: (deletedId) {
+                          // Remove the tab associated with this project and go Home
+                          final idx = _tabs.indexWhere((t) =>
+                              t.projectId != null && t.projectId == deletedId);
+                          if (idx != -1) {
+                            setState(() {
+                              _tabs.removeAt(idx);
+                              _currentProjectId = null;
+                              _activeIndex = 0;
+                            });
+                          } else {
+                            setState(() {
+                              _currentProjectId = null;
+                              _activeIndex = 0;
+                            });
+                          }
+                        },
+                      ),
           ),
         ],
       ),
