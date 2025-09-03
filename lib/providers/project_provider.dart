@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,6 +38,73 @@ final projectsStreamProvider =
     StreamProvider.autoDispose<List<DbProject>>((ref) {
   final repo = ref.watch(projectRepositoryProvider);
   return repo.watchAll();
+});
+
+// Aggregated vendor colors with sizes as comma-separated list
+class VendorColorAggregated {
+  final VendorColor color;
+  final String sizes; // e.g., "35,120,250"
+  VendorColorAggregated({required this.color, required this.sizes});
+}
+
+final _vendorFilterProvider = StateProvider.autoDispose<String>((ref) => 'all');
+
+// Debounced filter stream
+final _debouncedFilterProvider =
+    StreamProvider.autoDispose<String>((ref) async* {
+  final controller = StreamController<String>();
+  Timer? timer;
+  void emit(String value) {
+    timer?.cancel();
+    timer = Timer(const Duration(milliseconds: 200), () {
+      controller.add(value);
+    });
+  }
+
+  final sub = ref.listen<String>(_vendorFilterProvider, (prev, next) {
+    emit(next);
+  });
+  ref.onDispose(() {
+    timer?.cancel();
+    controller.close();
+    sub.close();
+  });
+  emit(ref.read(_vendorFilterProvider));
+  yield* controller.stream;
+});
+
+final vendorColorsAggregatedProvider = StreamProvider.autoDispose
+    .family<List<VendorColorAggregated>, int>((ref, vendorId) async* {
+  final db = ref.watch(appDatabaseProvider);
+  await for (final _ in ref.watch(_debouncedFilterProvider.stream)) {
+    final rowsStream = db.customSelect(
+      'SELECT vc.id, vc.vendor_id, vc.name, vc.code, vc.image_url, vc.weight_in_grams, vc.color_density, '
+      'GROUP_CONCAT(vcv.size) AS sizes '
+      'FROM vendor_colors vc '
+      'LEFT JOIN vendor_color_variants vcv ON vcv.vendor_color_id = vc.id '
+      'WHERE vc.vendor_id = ? '
+      'GROUP BY vc.id '
+      'ORDER BY vc.name ASC',
+      variables: [Variable.withInt(vendorId)],
+      readsFrom: {db.vendorColors, db.vendorColorVariants},
+    ).watch();
+    await for (final result in rowsStream) {
+      final list = result.map((row) {
+        final color = VendorColor(
+          id: row.read<int>('id'),
+          vendorId: row.read<int?>('vendor_id'),
+          name: row.read<String>('name'),
+          code: row.read<String>('code'),
+          imageUrl: row.read<String>('image_url'),
+          weightInGrams: row.read<double?>('weight_in_grams'),
+          colorDensity: row.read<double?>('color_density'),
+        );
+        final sizes = row.read<String?>('sizes') ?? '';
+        return VendorColorAggregated(color: color, sizes: sizes);
+      }).toList();
+      yield list;
+    }
+  }
 });
 
 // A simple data class for vector objects that can be sent to isolates.
