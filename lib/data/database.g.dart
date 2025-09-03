@@ -954,9 +954,37 @@ class $VendorColorsTable extends VendorColors
   late final GeneratedColumn<double> colorDensity = GeneratedColumn<double>(
       'color_density', aliasedName, true,
       type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _pigmentCodeMeta =
+      const VerificationMeta('pigmentCode');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, vendorId, name, code, imageUrl, weightInGrams, colorDensity];
+  late final GeneratedColumn<String> pigmentCode = GeneratedColumn<String>(
+      'pigment_code', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _opacityMeta =
+      const VerificationMeta('opacity');
+  @override
+  late final GeneratedColumn<String> opacity = GeneratedColumn<String>(
+      'opacity', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _lightfastnessMeta =
+      const VerificationMeta('lightfastness');
+  @override
+  late final GeneratedColumn<int> lightfastness = GeneratedColumn<int>(
+      'lightfastness', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        vendorId,
+        name,
+        code,
+        imageUrl,
+        weightInGrams,
+        colorDensity,
+        pigmentCode,
+        opacity,
+        lightfastness
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1002,6 +1030,22 @@ class $VendorColorsTable extends VendorColors
           colorDensity.isAcceptableOrUnknown(
               data['color_density']!, _colorDensityMeta));
     }
+    if (data.containsKey('pigment_code')) {
+      context.handle(
+          _pigmentCodeMeta,
+          pigmentCode.isAcceptableOrUnknown(
+              data['pigment_code']!, _pigmentCodeMeta));
+    }
+    if (data.containsKey('opacity')) {
+      context.handle(_opacityMeta,
+          opacity.isAcceptableOrUnknown(data['opacity']!, _opacityMeta));
+    }
+    if (data.containsKey('lightfastness')) {
+      context.handle(
+          _lightfastnessMeta,
+          lightfastness.isAcceptableOrUnknown(
+              data['lightfastness']!, _lightfastnessMeta));
+    }
     return context;
   }
 
@@ -1025,6 +1069,12 @@ class $VendorColorsTable extends VendorColors
           .read(DriftSqlType.double, data['${effectivePrefix}weight_in_grams']),
       colorDensity: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}color_density']),
+      pigmentCode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}pigment_code']),
+      opacity: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}opacity']),
+      lightfastness: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}lightfastness']),
     );
   }
 
@@ -1042,6 +1092,9 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
   final String imageUrl;
   final double? weightInGrams;
   final double? colorDensity;
+  final String? pigmentCode;
+  final String? opacity;
+  final int? lightfastness;
   const VendorColor(
       {required this.id,
       this.vendorId,
@@ -1049,7 +1102,10 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
       required this.code,
       required this.imageUrl,
       this.weightInGrams,
-      this.colorDensity});
+      this.colorDensity,
+      this.pigmentCode,
+      this.opacity,
+      this.lightfastness});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1065,6 +1121,15 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
     }
     if (!nullToAbsent || colorDensity != null) {
       map['color_density'] = Variable<double>(colorDensity);
+    }
+    if (!nullToAbsent || pigmentCode != null) {
+      map['pigment_code'] = Variable<String>(pigmentCode);
+    }
+    if (!nullToAbsent || opacity != null) {
+      map['opacity'] = Variable<String>(opacity);
+    }
+    if (!nullToAbsent || lightfastness != null) {
+      map['lightfastness'] = Variable<int>(lightfastness);
     }
     return map;
   }
@@ -1084,6 +1149,15 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
       colorDensity: colorDensity == null && nullToAbsent
           ? const Value.absent()
           : Value(colorDensity),
+      pigmentCode: pigmentCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pigmentCode),
+      opacity: opacity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(opacity),
+      lightfastness: lightfastness == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lightfastness),
     );
   }
 
@@ -1098,6 +1172,9 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
       imageUrl: serializer.fromJson<String>(json['imageUrl']),
       weightInGrams: serializer.fromJson<double?>(json['weightInGrams']),
       colorDensity: serializer.fromJson<double?>(json['colorDensity']),
+      pigmentCode: serializer.fromJson<String?>(json['pigmentCode']),
+      opacity: serializer.fromJson<String?>(json['opacity']),
+      lightfastness: serializer.fromJson<int?>(json['lightfastness']),
     );
   }
   @override
@@ -1111,6 +1188,9 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
       'imageUrl': serializer.toJson<String>(imageUrl),
       'weightInGrams': serializer.toJson<double?>(weightInGrams),
       'colorDensity': serializer.toJson<double?>(colorDensity),
+      'pigmentCode': serializer.toJson<String?>(pigmentCode),
+      'opacity': serializer.toJson<String?>(opacity),
+      'lightfastness': serializer.toJson<int?>(lightfastness),
     };
   }
 
@@ -1121,7 +1201,10 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
           String? code,
           String? imageUrl,
           Value<double?> weightInGrams = const Value.absent(),
-          Value<double?> colorDensity = const Value.absent()}) =>
+          Value<double?> colorDensity = const Value.absent(),
+          Value<String?> pigmentCode = const Value.absent(),
+          Value<String?> opacity = const Value.absent(),
+          Value<int?> lightfastness = const Value.absent()}) =>
       VendorColor(
         id: id ?? this.id,
         vendorId: vendorId.present ? vendorId.value : this.vendorId,
@@ -1132,6 +1215,10 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
             weightInGrams.present ? weightInGrams.value : this.weightInGrams,
         colorDensity:
             colorDensity.present ? colorDensity.value : this.colorDensity,
+        pigmentCode: pigmentCode.present ? pigmentCode.value : this.pigmentCode,
+        opacity: opacity.present ? opacity.value : this.opacity,
+        lightfastness:
+            lightfastness.present ? lightfastness.value : this.lightfastness,
       );
   VendorColor copyWithCompanion(VendorColorsCompanion data) {
     return VendorColor(
@@ -1146,6 +1233,12 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
       colorDensity: data.colorDensity.present
           ? data.colorDensity.value
           : this.colorDensity,
+      pigmentCode:
+          data.pigmentCode.present ? data.pigmentCode.value : this.pigmentCode,
+      opacity: data.opacity.present ? data.opacity.value : this.opacity,
+      lightfastness: data.lightfastness.present
+          ? data.lightfastness.value
+          : this.lightfastness,
     );
   }
 
@@ -1158,14 +1251,17 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
           ..write('code: $code, ')
           ..write('imageUrl: $imageUrl, ')
           ..write('weightInGrams: $weightInGrams, ')
-          ..write('colorDensity: $colorDensity')
+          ..write('colorDensity: $colorDensity, ')
+          ..write('pigmentCode: $pigmentCode, ')
+          ..write('opacity: $opacity, ')
+          ..write('lightfastness: $lightfastness')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, vendorId, name, code, imageUrl, weightInGrams, colorDensity);
+  int get hashCode => Object.hash(id, vendorId, name, code, imageUrl,
+      weightInGrams, colorDensity, pigmentCode, opacity, lightfastness);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1176,7 +1272,10 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
           other.code == this.code &&
           other.imageUrl == this.imageUrl &&
           other.weightInGrams == this.weightInGrams &&
-          other.colorDensity == this.colorDensity);
+          other.colorDensity == this.colorDensity &&
+          other.pigmentCode == this.pigmentCode &&
+          other.opacity == this.opacity &&
+          other.lightfastness == this.lightfastness);
 }
 
 class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
@@ -1187,6 +1286,9 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
   final Value<String> imageUrl;
   final Value<double?> weightInGrams;
   final Value<double?> colorDensity;
+  final Value<String?> pigmentCode;
+  final Value<String?> opacity;
+  final Value<int?> lightfastness;
   const VendorColorsCompanion({
     this.id = const Value.absent(),
     this.vendorId = const Value.absent(),
@@ -1195,6 +1297,9 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
     this.imageUrl = const Value.absent(),
     this.weightInGrams = const Value.absent(),
     this.colorDensity = const Value.absent(),
+    this.pigmentCode = const Value.absent(),
+    this.opacity = const Value.absent(),
+    this.lightfastness = const Value.absent(),
   });
   VendorColorsCompanion.insert({
     this.id = const Value.absent(),
@@ -1204,6 +1309,9 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
     this.imageUrl = const Value.absent(),
     this.weightInGrams = const Value.absent(),
     this.colorDensity = const Value.absent(),
+    this.pigmentCode = const Value.absent(),
+    this.opacity = const Value.absent(),
+    this.lightfastness = const Value.absent(),
   })  : name = Value(name),
         code = Value(code);
   static Insertable<VendorColor> custom({
@@ -1214,6 +1322,9 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
     Expression<String>? imageUrl,
     Expression<double>? weightInGrams,
     Expression<double>? colorDensity,
+    Expression<String>? pigmentCode,
+    Expression<String>? opacity,
+    Expression<int>? lightfastness,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1223,6 +1334,9 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
       if (imageUrl != null) 'image_url': imageUrl,
       if (weightInGrams != null) 'weight_in_grams': weightInGrams,
       if (colorDensity != null) 'color_density': colorDensity,
+      if (pigmentCode != null) 'pigment_code': pigmentCode,
+      if (opacity != null) 'opacity': opacity,
+      if (lightfastness != null) 'lightfastness': lightfastness,
     });
   }
 
@@ -1233,7 +1347,10 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
       Value<String>? code,
       Value<String>? imageUrl,
       Value<double?>? weightInGrams,
-      Value<double?>? colorDensity}) {
+      Value<double?>? colorDensity,
+      Value<String?>? pigmentCode,
+      Value<String?>? opacity,
+      Value<int?>? lightfastness}) {
     return VendorColorsCompanion(
       id: id ?? this.id,
       vendorId: vendorId ?? this.vendorId,
@@ -1242,6 +1359,9 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
       imageUrl: imageUrl ?? this.imageUrl,
       weightInGrams: weightInGrams ?? this.weightInGrams,
       colorDensity: colorDensity ?? this.colorDensity,
+      pigmentCode: pigmentCode ?? this.pigmentCode,
+      opacity: opacity ?? this.opacity,
+      lightfastness: lightfastness ?? this.lightfastness,
     );
   }
 
@@ -1269,6 +1389,15 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
     if (colorDensity.present) {
       map['color_density'] = Variable<double>(colorDensity.value);
     }
+    if (pigmentCode.present) {
+      map['pigment_code'] = Variable<String>(pigmentCode.value);
+    }
+    if (opacity.present) {
+      map['opacity'] = Variable<String>(opacity.value);
+    }
+    if (lightfastness.present) {
+      map['lightfastness'] = Variable<int>(lightfastness.value);
+    }
     return map;
   }
 
@@ -1281,7 +1410,10 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
           ..write('code: $code, ')
           ..write('imageUrl: $imageUrl, ')
           ..write('weightInGrams: $weightInGrams, ')
-          ..write('colorDensity: $colorDensity')
+          ..write('colorDensity: $colorDensity, ')
+          ..write('pigmentCode: $pigmentCode, ')
+          ..write('opacity: $opacity, ')
+          ..write('lightfastness: $lightfastness')
           ..write(')'))
         .toString();
   }
@@ -3980,6 +4112,9 @@ typedef $$VendorColorsTableCreateCompanionBuilder = VendorColorsCompanion
   Value<String> imageUrl,
   Value<double?> weightInGrams,
   Value<double?> colorDensity,
+  Value<String?> pigmentCode,
+  Value<String?> opacity,
+  Value<int?> lightfastness,
 });
 typedef $$VendorColorsTableUpdateCompanionBuilder = VendorColorsCompanion
     Function({
@@ -3990,6 +4125,9 @@ typedef $$VendorColorsTableUpdateCompanionBuilder = VendorColorsCompanion
   Value<String> imageUrl,
   Value<double?> weightInGrams,
   Value<double?> colorDensity,
+  Value<String?> pigmentCode,
+  Value<String?> opacity,
+  Value<int?> lightfastness,
 });
 
 final class $$VendorColorsTableReferences
@@ -4073,6 +4211,15 @@ class $$VendorColorsTableFilterComposer
 
   ColumnFilters<double> get colorDensity => $composableBuilder(
       column: $table.colorDensity, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get pigmentCode => $composableBuilder(
+      column: $table.pigmentCode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get opacity => $composableBuilder(
+      column: $table.opacity, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get lightfastness => $composableBuilder(
+      column: $table.lightfastness, builder: (column) => ColumnFilters(column));
 
   $$VendorsTableFilterComposer get vendorId {
     final $$VendorsTableFilterComposer composer = $composerBuilder(
@@ -4166,6 +4313,16 @@ class $$VendorColorsTableOrderingComposer
       column: $table.colorDensity,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get pigmentCode => $composableBuilder(
+      column: $table.pigmentCode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get opacity => $composableBuilder(
+      column: $table.opacity, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get lightfastness => $composableBuilder(
+      column: $table.lightfastness,
+      builder: (column) => ColumnOrderings(column));
+
   $$VendorsTableOrderingComposer get vendorId {
     final $$VendorsTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -4213,6 +4370,15 @@ class $$VendorColorsTableAnnotationComposer
 
   GeneratedColumn<double> get colorDensity => $composableBuilder(
       column: $table.colorDensity, builder: (column) => column);
+
+  GeneratedColumn<String> get pigmentCode => $composableBuilder(
+      column: $table.pigmentCode, builder: (column) => column);
+
+  GeneratedColumn<String> get opacity =>
+      $composableBuilder(column: $table.opacity, builder: (column) => column);
+
+  GeneratedColumn<int> get lightfastness => $composableBuilder(
+      column: $table.lightfastness, builder: (column) => column);
 
   $$VendorsTableAnnotationComposer get vendorId {
     final $$VendorsTableAnnotationComposer composer = $composerBuilder(
@@ -4312,6 +4478,9 @@ class $$VendorColorsTableTableManager extends RootTableManager<
             Value<String> imageUrl = const Value.absent(),
             Value<double?> weightInGrams = const Value.absent(),
             Value<double?> colorDensity = const Value.absent(),
+            Value<String?> pigmentCode = const Value.absent(),
+            Value<String?> opacity = const Value.absent(),
+            Value<int?> lightfastness = const Value.absent(),
           }) =>
               VendorColorsCompanion(
             id: id,
@@ -4321,6 +4490,9 @@ class $$VendorColorsTableTableManager extends RootTableManager<
             imageUrl: imageUrl,
             weightInGrams: weightInGrams,
             colorDensity: colorDensity,
+            pigmentCode: pigmentCode,
+            opacity: opacity,
+            lightfastness: lightfastness,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -4330,6 +4502,9 @@ class $$VendorColorsTableTableManager extends RootTableManager<
             Value<String> imageUrl = const Value.absent(),
             Value<double?> weightInGrams = const Value.absent(),
             Value<double?> colorDensity = const Value.absent(),
+            Value<String?> pigmentCode = const Value.absent(),
+            Value<String?> opacity = const Value.absent(),
+            Value<int?> lightfastness = const Value.absent(),
           }) =>
               VendorColorsCompanion.insert(
             id: id,
@@ -4339,6 +4514,9 @@ class $$VendorColorsTableTableManager extends RootTableManager<
             imageUrl: imageUrl,
             weightInGrams: weightInGrams,
             colorDensity: colorDensity,
+            pigmentCode: pigmentCode,
+            opacity: opacity,
+            lightfastness: lightfastness,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (

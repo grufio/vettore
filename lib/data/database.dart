@@ -49,6 +49,9 @@ class VendorColors extends Table {
   TextColumn get imageUrl => text().withDefault(const Constant(''))();
   RealColumn get weightInGrams => real().nullable()();
   RealColumn get colorDensity => real().nullable()();
+  TextColumn get pigmentCode => text().nullable()();
+  TextColumn get opacity => text().nullable()();
+  IntColumn get lightfastness => integer().nullable()();
 }
 
 @DataClassName('VendorColorVariant')
@@ -138,7 +141,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration {
@@ -223,6 +226,30 @@ class AppDatabase extends _$AppDatabase {
               'CREATE INDEX IF NOT EXISTS idx_vendor_colors_vendor_id ON vendor_colors(vendor_id)');
           await m.database.customStatement(
               'CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_colors_vendor_code ON vendor_colors(vendor_id, code)');
+        }
+        if (from < 16) {
+          // Add pigment_code, opacity, lightfastness to vendor_colors (guarded)
+          final hasPigment = await m.database
+              .customSelect(
+                  "SELECT 1 FROM pragma_table_info('vendor_colors') WHERE name = 'pigment_code' LIMIT 1")
+              .get();
+          if (hasPigment.isEmpty) {
+            await m.addColumn(vendorColors, vendorColors.pigmentCode);
+          }
+          final hasOpacity = await m.database
+              .customSelect(
+                  "SELECT 1 FROM pragma_table_info('vendor_colors') WHERE name = 'opacity' LIMIT 1")
+              .get();
+          if (hasOpacity.isEmpty) {
+            await m.addColumn(vendorColors, vendorColors.opacity);
+          }
+          final hasLf = await m.database
+              .customSelect(
+                  "SELECT 1 FROM pragma_table_info('vendor_colors') WHERE name = 'lightfastness' LIMIT 1")
+              .get();
+          if (hasLf.isEmpty) {
+            await m.addColumn(vendorColors, vendorColors.lightfastness);
+          }
         }
       },
     );
