@@ -679,6 +679,227 @@ class PaletteColorsCompanion extends UpdateCompanion<PaletteColor> {
   }
 }
 
+class $VendorsTable extends Vendors with TableInfo<$VendorsTable, Vendor> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VendorsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _vendorNameMeta =
+      const VerificationMeta('vendorName');
+  @override
+  late final GeneratedColumn<String> vendorName = GeneratedColumn<String>(
+      'vendor_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _vendorBrandMeta =
+      const VerificationMeta('vendorBrand');
+  @override
+  late final GeneratedColumn<String> vendorBrand = GeneratedColumn<String>(
+      'vendor_brand', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [id, vendorName, vendorBrand];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'vendors';
+  @override
+  VerificationContext validateIntegrity(Insertable<Vendor> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('vendor_name')) {
+      context.handle(
+          _vendorNameMeta,
+          vendorName.isAcceptableOrUnknown(
+              data['vendor_name']!, _vendorNameMeta));
+    } else if (isInserting) {
+      context.missing(_vendorNameMeta);
+    }
+    if (data.containsKey('vendor_brand')) {
+      context.handle(
+          _vendorBrandMeta,
+          vendorBrand.isAcceptableOrUnknown(
+              data['vendor_brand']!, _vendorBrandMeta));
+    } else if (isInserting) {
+      context.missing(_vendorBrandMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Vendor map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Vendor(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      vendorName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}vendor_name'])!,
+      vendorBrand: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}vendor_brand'])!,
+    );
+  }
+
+  @override
+  $VendorsTable createAlias(String alias) {
+    return $VendorsTable(attachedDatabase, alias);
+  }
+}
+
+class Vendor extends DataClass implements Insertable<Vendor> {
+  final int id;
+  final String vendorName;
+  final String vendorBrand;
+  const Vendor(
+      {required this.id, required this.vendorName, required this.vendorBrand});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['vendor_name'] = Variable<String>(vendorName);
+    map['vendor_brand'] = Variable<String>(vendorBrand);
+    return map;
+  }
+
+  VendorsCompanion toCompanion(bool nullToAbsent) {
+    return VendorsCompanion(
+      id: Value(id),
+      vendorName: Value(vendorName),
+      vendorBrand: Value(vendorBrand),
+    );
+  }
+
+  factory Vendor.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Vendor(
+      id: serializer.fromJson<int>(json['id']),
+      vendorName: serializer.fromJson<String>(json['vendorName']),
+      vendorBrand: serializer.fromJson<String>(json['vendorBrand']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'vendorName': serializer.toJson<String>(vendorName),
+      'vendorBrand': serializer.toJson<String>(vendorBrand),
+    };
+  }
+
+  Vendor copyWith({int? id, String? vendorName, String? vendorBrand}) => Vendor(
+        id: id ?? this.id,
+        vendorName: vendorName ?? this.vendorName,
+        vendorBrand: vendorBrand ?? this.vendorBrand,
+      );
+  Vendor copyWithCompanion(VendorsCompanion data) {
+    return Vendor(
+      id: data.id.present ? data.id.value : this.id,
+      vendorName:
+          data.vendorName.present ? data.vendorName.value : this.vendorName,
+      vendorBrand:
+          data.vendorBrand.present ? data.vendorBrand.value : this.vendorBrand,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Vendor(')
+          ..write('id: $id, ')
+          ..write('vendorName: $vendorName, ')
+          ..write('vendorBrand: $vendorBrand')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, vendorName, vendorBrand);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Vendor &&
+          other.id == this.id &&
+          other.vendorName == this.vendorName &&
+          other.vendorBrand == this.vendorBrand);
+}
+
+class VendorsCompanion extends UpdateCompanion<Vendor> {
+  final Value<int> id;
+  final Value<String> vendorName;
+  final Value<String> vendorBrand;
+  const VendorsCompanion({
+    this.id = const Value.absent(),
+    this.vendorName = const Value.absent(),
+    this.vendorBrand = const Value.absent(),
+  });
+  VendorsCompanion.insert({
+    this.id = const Value.absent(),
+    required String vendorName,
+    required String vendorBrand,
+  })  : vendorName = Value(vendorName),
+        vendorBrand = Value(vendorBrand);
+  static Insertable<Vendor> custom({
+    Expression<int>? id,
+    Expression<String>? vendorName,
+    Expression<String>? vendorBrand,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (vendorName != null) 'vendor_name': vendorName,
+      if (vendorBrand != null) 'vendor_brand': vendorBrand,
+    });
+  }
+
+  VendorsCompanion copyWith(
+      {Value<int>? id, Value<String>? vendorName, Value<String>? vendorBrand}) {
+    return VendorsCompanion(
+      id: id ?? this.id,
+      vendorName: vendorName ?? this.vendorName,
+      vendorBrand: vendorBrand ?? this.vendorBrand,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (vendorName.present) {
+      map['vendor_name'] = Variable<String>(vendorName.value);
+    }
+    if (vendorBrand.present) {
+      map['vendor_brand'] = Variable<String>(vendorBrand.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VendorsCompanion(')
+          ..write('id: $id, ')
+          ..write('vendorName: $vendorName, ')
+          ..write('vendorBrand: $vendorBrand')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $VendorColorsTable extends VendorColors
     with TableInfo<$VendorColorsTable, VendorColor> {
   @override
@@ -694,6 +915,15 @@ class $VendorColorsTable extends VendorColors
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _vendorIdMeta =
+      const VerificationMeta('vendorId');
+  @override
+  late final GeneratedColumn<int> vendorId = GeneratedColumn<int>(
+      'vendor_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES vendors (id)'));
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -726,7 +956,7 @@ class $VendorColorsTable extends VendorColors
       type: DriftSqlType.double, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns =>
-      [id, name, code, imageUrl, weightInGrams, colorDensity];
+      [id, vendorId, name, code, imageUrl, weightInGrams, colorDensity];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -739,6 +969,10 @@ class $VendorColorsTable extends VendorColors
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('vendor_id')) {
+      context.handle(_vendorIdMeta,
+          vendorId.isAcceptableOrUnknown(data['vendor_id']!, _vendorIdMeta));
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -779,6 +1013,8 @@ class $VendorColorsTable extends VendorColors
     return VendorColor(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      vendorId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}vendor_id']),
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       code: attachedDatabase.typeMapping
@@ -800,6 +1036,7 @@ class $VendorColorsTable extends VendorColors
 
 class VendorColor extends DataClass implements Insertable<VendorColor> {
   final int id;
+  final int? vendorId;
   final String name;
   final String code;
   final String imageUrl;
@@ -807,6 +1044,7 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
   final double? colorDensity;
   const VendorColor(
       {required this.id,
+      this.vendorId,
       required this.name,
       required this.code,
       required this.imageUrl,
@@ -816,6 +1054,9 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || vendorId != null) {
+      map['vendor_id'] = Variable<int>(vendorId);
+    }
     map['name'] = Variable<String>(name);
     map['code'] = Variable<String>(code);
     map['image_url'] = Variable<String>(imageUrl);
@@ -831,6 +1072,9 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
   VendorColorsCompanion toCompanion(bool nullToAbsent) {
     return VendorColorsCompanion(
       id: Value(id),
+      vendorId: vendorId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(vendorId),
       name: Value(name),
       code: Value(code),
       imageUrl: Value(imageUrl),
@@ -848,6 +1092,7 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return VendorColor(
       id: serializer.fromJson<int>(json['id']),
+      vendorId: serializer.fromJson<int?>(json['vendorId']),
       name: serializer.fromJson<String>(json['name']),
       code: serializer.fromJson<String>(json['code']),
       imageUrl: serializer.fromJson<String>(json['imageUrl']),
@@ -860,6 +1105,7 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'vendorId': serializer.toJson<int?>(vendorId),
       'name': serializer.toJson<String>(name),
       'code': serializer.toJson<String>(code),
       'imageUrl': serializer.toJson<String>(imageUrl),
@@ -870,6 +1116,7 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
 
   VendorColor copyWith(
           {int? id,
+          Value<int?> vendorId = const Value.absent(),
           String? name,
           String? code,
           String? imageUrl,
@@ -877,6 +1124,7 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
           Value<double?> colorDensity = const Value.absent()}) =>
       VendorColor(
         id: id ?? this.id,
+        vendorId: vendorId.present ? vendorId.value : this.vendorId,
         name: name ?? this.name,
         code: code ?? this.code,
         imageUrl: imageUrl ?? this.imageUrl,
@@ -888,6 +1136,7 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
   VendorColor copyWithCompanion(VendorColorsCompanion data) {
     return VendorColor(
       id: data.id.present ? data.id.value : this.id,
+      vendorId: data.vendorId.present ? data.vendorId.value : this.vendorId,
       name: data.name.present ? data.name.value : this.name,
       code: data.code.present ? data.code.value : this.code,
       imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
@@ -904,6 +1153,7 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
   String toString() {
     return (StringBuffer('VendorColor(')
           ..write('id: $id, ')
+          ..write('vendorId: $vendorId, ')
           ..write('name: $name, ')
           ..write('code: $code, ')
           ..write('imageUrl: $imageUrl, ')
@@ -914,13 +1164,14 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, code, imageUrl, weightInGrams, colorDensity);
+  int get hashCode => Object.hash(
+      id, vendorId, name, code, imageUrl, weightInGrams, colorDensity);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is VendorColor &&
           other.id == this.id &&
+          other.vendorId == this.vendorId &&
           other.name == this.name &&
           other.code == this.code &&
           other.imageUrl == this.imageUrl &&
@@ -930,6 +1181,7 @@ class VendorColor extends DataClass implements Insertable<VendorColor> {
 
 class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
   final Value<int> id;
+  final Value<int?> vendorId;
   final Value<String> name;
   final Value<String> code;
   final Value<String> imageUrl;
@@ -937,6 +1189,7 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
   final Value<double?> colorDensity;
   const VendorColorsCompanion({
     this.id = const Value.absent(),
+    this.vendorId = const Value.absent(),
     this.name = const Value.absent(),
     this.code = const Value.absent(),
     this.imageUrl = const Value.absent(),
@@ -945,6 +1198,7 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
   });
   VendorColorsCompanion.insert({
     this.id = const Value.absent(),
+    this.vendorId = const Value.absent(),
     required String name,
     required String code,
     this.imageUrl = const Value.absent(),
@@ -954,6 +1208,7 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
         code = Value(code);
   static Insertable<VendorColor> custom({
     Expression<int>? id,
+    Expression<int>? vendorId,
     Expression<String>? name,
     Expression<String>? code,
     Expression<String>? imageUrl,
@@ -962,6 +1217,7 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (vendorId != null) 'vendor_id': vendorId,
       if (name != null) 'name': name,
       if (code != null) 'code': code,
       if (imageUrl != null) 'image_url': imageUrl,
@@ -972,6 +1228,7 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
 
   VendorColorsCompanion copyWith(
       {Value<int>? id,
+      Value<int?>? vendorId,
       Value<String>? name,
       Value<String>? code,
       Value<String>? imageUrl,
@@ -979,6 +1236,7 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
       Value<double?>? colorDensity}) {
     return VendorColorsCompanion(
       id: id ?? this.id,
+      vendorId: vendorId ?? this.vendorId,
       name: name ?? this.name,
       code: code ?? this.code,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -992,6 +1250,9 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (vendorId.present) {
+      map['vendor_id'] = Variable<int>(vendorId.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -1015,6 +1276,7 @@ class VendorColorsCompanion extends UpdateCompanion<VendorColor> {
   String toString() {
     return (StringBuffer('VendorColorsCompanion(')
           ..write('id: $id, ')
+          ..write('vendorId: $vendorId, ')
           ..write('name: $name, ')
           ..write('code: $code, ')
           ..write('imageUrl: $imageUrl, ')
@@ -2833,6 +3095,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $PalettesTable palettes = $PalettesTable(this);
   late final $PaletteColorsTable paletteColors = $PaletteColorsTable(this);
+  late final $VendorsTable vendors = $VendorsTable(this);
   late final $VendorColorsTable vendorColors = $VendorColorsTable(this);
   late final $VendorColorVariantsTable vendorColorVariants =
       $VendorColorVariantsTable(this);
@@ -2848,6 +3111,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
         palettes,
         paletteColors,
+        vendors,
         vendorColors,
         vendorColorVariants,
         colorComponents,
@@ -3492,9 +3756,225 @@ typedef $$PaletteColorsTableProcessedTableManager = ProcessedTableManager<
     (PaletteColor, $$PaletteColorsTableReferences),
     PaletteColor,
     PrefetchHooks Function({bool paletteId, bool colorComponentsRefs})>;
+typedef $$VendorsTableCreateCompanionBuilder = VendorsCompanion Function({
+  Value<int> id,
+  required String vendorName,
+  required String vendorBrand,
+});
+typedef $$VendorsTableUpdateCompanionBuilder = VendorsCompanion Function({
+  Value<int> id,
+  Value<String> vendorName,
+  Value<String> vendorBrand,
+});
+
+final class $$VendorsTableReferences
+    extends BaseReferences<_$AppDatabase, $VendorsTable, Vendor> {
+  $$VendorsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$VendorColorsTable, List<VendorColor>>
+      _vendorColorsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+          db.vendorColors,
+          aliasName:
+              $_aliasNameGenerator(db.vendors.id, db.vendorColors.vendorId));
+
+  $$VendorColorsTableProcessedTableManager get vendorColorsRefs {
+    final manager = $$VendorColorsTableTableManager($_db, $_db.vendorColors)
+        .filter((f) => f.vendorId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_vendorColorsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$VendorsTableFilterComposer
+    extends Composer<_$AppDatabase, $VendorsTable> {
+  $$VendorsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get vendorName => $composableBuilder(
+      column: $table.vendorName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get vendorBrand => $composableBuilder(
+      column: $table.vendorBrand, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> vendorColorsRefs(
+      Expression<bool> Function($$VendorColorsTableFilterComposer f) f) {
+    final $$VendorColorsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vendorColors,
+        getReferencedColumn: (t) => t.vendorId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VendorColorsTableFilterComposer(
+              $db: $db,
+              $table: $db.vendorColors,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$VendorsTableOrderingComposer
+    extends Composer<_$AppDatabase, $VendorsTable> {
+  $$VendorsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get vendorName => $composableBuilder(
+      column: $table.vendorName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get vendorBrand => $composableBuilder(
+      column: $table.vendorBrand, builder: (column) => ColumnOrderings(column));
+}
+
+class $$VendorsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VendorsTable> {
+  $$VendorsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get vendorName => $composableBuilder(
+      column: $table.vendorName, builder: (column) => column);
+
+  GeneratedColumn<String> get vendorBrand => $composableBuilder(
+      column: $table.vendorBrand, builder: (column) => column);
+
+  Expression<T> vendorColorsRefs<T extends Object>(
+      Expression<T> Function($$VendorColorsTableAnnotationComposer a) f) {
+    final $$VendorColorsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vendorColors,
+        getReferencedColumn: (t) => t.vendorId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VendorColorsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.vendorColors,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$VendorsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $VendorsTable,
+    Vendor,
+    $$VendorsTableFilterComposer,
+    $$VendorsTableOrderingComposer,
+    $$VendorsTableAnnotationComposer,
+    $$VendorsTableCreateCompanionBuilder,
+    $$VendorsTableUpdateCompanionBuilder,
+    (Vendor, $$VendorsTableReferences),
+    Vendor,
+    PrefetchHooks Function({bool vendorColorsRefs})> {
+  $$VendorsTableTableManager(_$AppDatabase db, $VendorsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VendorsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VendorsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VendorsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> vendorName = const Value.absent(),
+            Value<String> vendorBrand = const Value.absent(),
+          }) =>
+              VendorsCompanion(
+            id: id,
+            vendorName: vendorName,
+            vendorBrand: vendorBrand,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String vendorName,
+            required String vendorBrand,
+          }) =>
+              VendorsCompanion.insert(
+            id: id,
+            vendorName: vendorName,
+            vendorBrand: vendorBrand,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) =>
+                  (e.readTable(table), $$VendorsTableReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: ({vendorColorsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (vendorColorsRefs) db.vendorColors],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (vendorColorsRefs)
+                    await $_getPrefetchedData<Vendor, $VendorsTable,
+                            VendorColor>(
+                        currentTable: table,
+                        referencedTable:
+                            $$VendorsTableReferences._vendorColorsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$VendorsTableReferences(db, table, p0)
+                                .vendorColorsRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.vendorId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$VendorsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $VendorsTable,
+    Vendor,
+    $$VendorsTableFilterComposer,
+    $$VendorsTableOrderingComposer,
+    $$VendorsTableAnnotationComposer,
+    $$VendorsTableCreateCompanionBuilder,
+    $$VendorsTableUpdateCompanionBuilder,
+    (Vendor, $$VendorsTableReferences),
+    Vendor,
+    PrefetchHooks Function({bool vendorColorsRefs})>;
 typedef $$VendorColorsTableCreateCompanionBuilder = VendorColorsCompanion
     Function({
   Value<int> id,
+  Value<int?> vendorId,
   required String name,
   required String code,
   Value<String> imageUrl,
@@ -3504,6 +3984,7 @@ typedef $$VendorColorsTableCreateCompanionBuilder = VendorColorsCompanion
 typedef $$VendorColorsTableUpdateCompanionBuilder = VendorColorsCompanion
     Function({
   Value<int> id,
+  Value<int?> vendorId,
   Value<String> name,
   Value<String> code,
   Value<String> imageUrl,
@@ -3514,6 +3995,21 @@ typedef $$VendorColorsTableUpdateCompanionBuilder = VendorColorsCompanion
 final class $$VendorColorsTableReferences
     extends BaseReferences<_$AppDatabase, $VendorColorsTable, VendorColor> {
   $$VendorColorsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $VendorsTable _vendorIdTable(_$AppDatabase db) =>
+      db.vendors.createAlias(
+          $_aliasNameGenerator(db.vendorColors.vendorId, db.vendors.id));
+
+  $$VendorsTableProcessedTableManager? get vendorId {
+    final $_column = $_itemColumn<int>('vendor_id');
+    if ($_column == null) return null;
+    final manager = $$VendorsTableTableManager($_db, $_db.vendors)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_vendorIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
 
   static MultiTypedResultKey<$VendorColorVariantsTable,
       List<VendorColorVariant>> _vendorColorVariantsRefsTable(
@@ -3577,6 +4073,26 @@ class $$VendorColorsTableFilterComposer
 
   ColumnFilters<double> get colorDensity => $composableBuilder(
       column: $table.colorDensity, builder: (column) => ColumnFilters(column));
+
+  $$VendorsTableFilterComposer get vendorId {
+    final $$VendorsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.vendorId,
+        referencedTable: $db.vendors,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VendorsTableFilterComposer(
+              $db: $db,
+              $table: $db.vendors,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 
   Expression<bool> vendorColorVariantsRefs(
       Expression<bool> Function($$VendorColorVariantsTableFilterComposer f) f) {
@@ -3649,6 +4165,26 @@ class $$VendorColorsTableOrderingComposer
   ColumnOrderings<double> get colorDensity => $composableBuilder(
       column: $table.colorDensity,
       builder: (column) => ColumnOrderings(column));
+
+  $$VendorsTableOrderingComposer get vendorId {
+    final $$VendorsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.vendorId,
+        referencedTable: $db.vendors,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VendorsTableOrderingComposer(
+              $db: $db,
+              $table: $db.vendors,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 }
 
 class $$VendorColorsTableAnnotationComposer
@@ -3677,6 +4213,26 @@ class $$VendorColorsTableAnnotationComposer
 
   GeneratedColumn<double> get colorDensity => $composableBuilder(
       column: $table.colorDensity, builder: (column) => column);
+
+  $$VendorsTableAnnotationComposer get vendorId {
+    final $$VendorsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.vendorId,
+        referencedTable: $db.vendors,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VendorsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.vendors,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 
   Expression<T> vendorColorVariantsRefs<T extends Object>(
       Expression<T> Function($$VendorColorVariantsTableAnnotationComposer a)
@@ -3735,7 +4291,9 @@ class $$VendorColorsTableTableManager extends RootTableManager<
     (VendorColor, $$VendorColorsTableReferences),
     VendorColor,
     PrefetchHooks Function(
-        {bool vendorColorVariantsRefs, bool colorComponentsRefs})> {
+        {bool vendorId,
+        bool vendorColorVariantsRefs,
+        bool colorComponentsRefs})> {
   $$VendorColorsTableTableManager(_$AppDatabase db, $VendorColorsTable table)
       : super(TableManagerState(
           db: db,
@@ -3748,6 +4306,7 @@ class $$VendorColorsTableTableManager extends RootTableManager<
               $$VendorColorsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<int?> vendorId = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String> code = const Value.absent(),
             Value<String> imageUrl = const Value.absent(),
@@ -3756,6 +4315,7 @@ class $$VendorColorsTableTableManager extends RootTableManager<
           }) =>
               VendorColorsCompanion(
             id: id,
+            vendorId: vendorId,
             name: name,
             code: code,
             imageUrl: imageUrl,
@@ -3764,6 +4324,7 @@ class $$VendorColorsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<int?> vendorId = const Value.absent(),
             required String name,
             required String code,
             Value<String> imageUrl = const Value.absent(),
@@ -3772,6 +4333,7 @@ class $$VendorColorsTableTableManager extends RootTableManager<
           }) =>
               VendorColorsCompanion.insert(
             id: id,
+            vendorId: vendorId,
             name: name,
             code: code,
             imageUrl: imageUrl,
@@ -3785,14 +4347,41 @@ class $$VendorColorsTableTableManager extends RootTableManager<
                   ))
               .toList(),
           prefetchHooksCallback: (
-              {vendorColorVariantsRefs = false, colorComponentsRefs = false}) {
+              {vendorId = false,
+              vendorColorVariantsRefs = false,
+              colorComponentsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (vendorColorVariantsRefs) db.vendorColorVariants,
                 if (colorComponentsRefs) db.colorComponents
               ],
-              addJoins: null,
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (vendorId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.vendorId,
+                    referencedTable:
+                        $$VendorColorsTableReferences._vendorIdTable(db),
+                    referencedColumn:
+                        $$VendorColorsTableReferences._vendorIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (vendorColorVariantsRefs)
@@ -3840,7 +4429,9 @@ typedef $$VendorColorsTableProcessedTableManager = ProcessedTableManager<
     (VendorColor, $$VendorColorsTableReferences),
     VendorColor,
     PrefetchHooks Function(
-        {bool vendorColorVariantsRefs, bool colorComponentsRefs})>;
+        {bool vendorId,
+        bool vendorColorVariantsRefs,
+        bool colorComponentsRefs})>;
 typedef $$VendorColorVariantsTableCreateCompanionBuilder
     = VendorColorVariantsCompanion Function({
   Value<int> id,
@@ -5239,6 +5830,8 @@ class $AppDatabaseManager {
       $$PalettesTableTableManager(_db, _db.palettes);
   $$PaletteColorsTableTableManager get paletteColors =>
       $$PaletteColorsTableTableManager(_db, _db.paletteColors);
+  $$VendorsTableTableManager get vendors =>
+      $$VendorsTableTableManager(_db, _db.vendors);
   $$VendorColorsTableTableManager get vendorColors =>
       $$VendorColorsTableTableManager(_db, _db.vendorColors);
   $$VendorColorVariantsTableTableManager get vendorColorVariants =>

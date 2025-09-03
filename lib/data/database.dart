@@ -35,8 +35,15 @@ class PaletteColors extends Table {
 }
 
 // Vendor Color Table
+class Vendors extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get vendorName => text()();
+  TextColumn get vendorBrand => text()();
+}
+
 class VendorColors extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get vendorId => integer().nullable().references(Vendors, #id)();
   TextColumn get name => text()();
   TextColumn get code => text()();
   TextColumn get imageUrl => text().withDefault(const Constant(''))();
@@ -119,6 +126,7 @@ class Projects extends Table {
 @DriftDatabase(tables: [
   Palettes,
   PaletteColors,
+  Vendors,
   VendorColors,
   VendorColorVariants,
   ColorComponents,
@@ -130,7 +138,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration {
@@ -191,6 +199,21 @@ class AppDatabase extends _$AppDatabase {
               'CREATE INDEX IF NOT EXISTS idx_projects_title ON projects(title)');
           await customStatement(
               'CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)');
+        }
+        if (from < 15) {
+          // Introduce vendors table and link vendor_colors to vendors
+          await m.createTable(vendors);
+          await m.addColumn(vendorColors, vendorColors.vendorId);
+          // Seed a default vendor (Schmincke / Norma professional) and backfill existing rows
+          await customStatement(
+              "INSERT INTO vendors (vendorName, vendorBrand) VALUES ('Schmincke','Norma professional')");
+          await customStatement(
+              "UPDATE vendor_colors SET vendorId = (SELECT id FROM vendors WHERE vendorBrand='Norma professional' LIMIT 1) WHERE vendorId IS NULL");
+          // Helpful indexes
+          await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_vendor_colors_vendorId ON vendor_colors(vendorId)');
+          await customStatement(
+              'CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_colors_vendor_code ON vendor_colors(vendorId, code)');
         }
       },
     );
