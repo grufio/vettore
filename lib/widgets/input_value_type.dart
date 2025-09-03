@@ -22,6 +22,10 @@ class InputValueType extends StatefulWidget {
   final String? suffixText;
   final String prefixIconAsset;
   final bool readOnly;
+  // Dropdown support (optional). If provided, tapping the field opens a dropdown.
+  final List<String>? dropdownItems;
+  final String? selectedItem;
+  final ValueChanged<String>? onItemSelected;
 
   const InputValueType({
     super.key,
@@ -35,6 +39,9 @@ class InputValueType extends StatefulWidget {
     this.suffixText,
     this.prefixIconAsset = 'assets/icons/32/color-palette.svg',
     this.readOnly = false,
+    this.dropdownItems,
+    this.selectedItem,
+    this.onItemSelected,
   });
 
   factory InputValueType.text({
@@ -73,6 +80,10 @@ class _InputValueTypeState extends State<InputValueType> {
   late final FocusNode _focusNode;
   late final VoidCallback _controllerListener;
   late final VoidCallback _focusListener;
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _dropdownEntry;
+  bool get _hasDropdown =>
+      (widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty);
 
   @override
   void initState() {
@@ -112,7 +123,6 @@ class _InputValueTypeState extends State<InputValueType> {
       }
       // Clear any selection when switching to read-only to avoid blue highlight
       if (widget.readOnly) {
-        final int end = _controller.text.length;
         _controller.selection = const TextSelection.collapsed(offset: 0);
       }
     }
@@ -122,6 +132,7 @@ class _InputValueTypeState extends State<InputValueType> {
   void dispose() {
     _controller.removeListener(_controllerListener);
     _focusNode.removeListener(_focusListener);
+    _removeDropdown();
     if (widget.controller == null) {
       _controller.dispose();
     }
@@ -155,87 +166,91 @@ class _InputValueTypeState extends State<InputValueType> {
       }
     }
 
-    return Container(
-      height: 24.0,
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      decoration: BoxDecoration(
-        color: isReadOnly ? kWhite : kGrey10,
-        borderRadius: BorderRadius.circular(4.0),
-        border: Border.all(
-          color: isReadOnly
-              ? kBordersColor
-              : (_focusNode.hasFocus ? kInputFocus : kTransparent),
-          width: 1.0,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            widget.prefixIconAsset,
-            width: 16.0,
-            height: 16.0,
-            colorFilter: ColorFilter.mode(
-                isReadOnly ? kGrey70 : kGrey70, BlendMode.srcIn),
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Container(
+        height: 24.0,
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        decoration: BoxDecoration(
+          color: isReadOnly ? kWhite : kGrey10,
+          borderRadius: BorderRadius.circular(4.0),
+          border: Border.all(
+            color: isReadOnly
+                ? kBordersColor
+                : (_focusNode.hasFocus ? kInputFocus : kTransparent),
+            width: 1.0,
           ),
-          const SizedBox(width: 8.0),
-          Expanded(
-            child: MouseRegion(
-              cursor: isReadOnly
-                  ? SystemMouseCursors.basic
-                  : SystemMouseCursors.text,
-              child: Stack(
-                alignment: Alignment.centerLeft,
-                children: [
-                  if (_controller.text.isEmpty && widget.placeholder != null)
-                    IgnorePointer(
-                      child: Text(
-                        widget.placeholder!,
-                        style: placeholderStyle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  IgnorePointer(
-                    ignoring: isReadOnly,
-                    child: Material(
-                      type: MaterialType.transparency,
-                      child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        style: textStyle,
-                        cursorColor: isReadOnly ? kTransparent : kGrey100,
-                        decoration: const InputDecoration(
-                          isCollapsed: true,
-                          isDense: true,
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              widget.prefixIconAsset,
+              width: 16.0,
+              height: 16.0,
+              colorFilter: const ColorFilter.mode(kGrey70, BlendMode.srcIn),
+            ),
+            const SizedBox(width: 8.0),
+            Expanded(
+              child: MouseRegion(
+                cursor: isReadOnly
+                    ? SystemMouseCursors.basic
+                    : SystemMouseCursors.text,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () {
+                    if (_hasDropdown && !isReadOnly) {
+                      _toggleDropdown();
+                    }
+                  },
+                  child: Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      if (_controller.text.isEmpty &&
+                          widget.placeholder != null)
+                        IgnorePointer(
+                          child: Text(
+                            widget.placeholder!,
+                            style: placeholderStyle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        textAlign: widget.textAlign,
-                        autofocus: isReadOnly ? false : widget.autofocus,
-                        onChanged: isReadOnly ? null : widget.onChanged,
-                        onSubmitted: isReadOnly ? null : widget.onSubmitted,
-                        readOnly: isReadOnly,
-                        enableInteractiveSelection: !isReadOnly,
-                        showCursor: !isReadOnly,
-                        selectionControls: materialTextSelectionControls,
-                        enabled: !isReadOnly,
+                      IgnorePointer(
+                        ignoring: isReadOnly,
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: TextField(
+                            controller: _controller,
+                            focusNode: _focusNode,
+                            style: textStyle,
+                            cursorColor: isReadOnly ? kTransparent : kGrey100,
+                            decoration: const InputDecoration(
+                              isCollapsed: true,
+                              isDense: true,
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            textAlign: widget.textAlign,
+                            autofocus: isReadOnly ? false : widget.autofocus,
+                            onChanged: isReadOnly ? null : widget.onChanged,
+                            onSubmitted: isReadOnly ? null : widget.onSubmitted,
+                            readOnly: isReadOnly,
+                            enableInteractiveSelection: !isReadOnly,
+                            showCursor: !isReadOnly,
+                            selectionControls: materialTextSelectionControls,
+                            enabled: !isReadOnly,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-          if (widget.suffixText != null) ...[
-            const SizedBox(width: 8.0),
-            Text(
-              widget.suffixText!,
-              style: appTextStyles.bodyM
-                  .copyWith(color: isReadOnly ? kGrey70 : kGrey70, height: 1.0),
-            ),
+            _buildSuffix(isReadOnly),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -250,5 +265,171 @@ class _InputValueTypeState extends State<InputValueType> {
     final text = _controller.text;
     _controller.selection =
         TextSelection(baseOffset: 0, extentOffset: text.length);
+  }
+
+  Widget _buildSuffix(bool isReadOnly) {
+    if (widget.suffixText == null) return const SizedBox.shrink();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(width: 8.0),
+        Text(
+          widget.suffixText!,
+          style: appTextStyles.bodyM
+              .copyWith(color: isReadOnly ? kGrey70 : kGrey70, height: 1.0),
+        ),
+      ],
+    );
+  }
+
+  void _toggleDropdown() {
+    if (_dropdownEntry == null) {
+      _dropdownEntry = _createDropdown();
+      Overlay.of(context).insert(_dropdownEntry!);
+    } else {
+      _removeDropdown();
+    }
+  }
+
+  void _removeDropdown() {
+    _dropdownEntry?.remove();
+    _dropdownEntry = null;
+  }
+
+  OverlayEntry _createDropdown() {
+    final items = widget.dropdownItems!;
+    return OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Stack(
+            children: [
+              // Dismiss area
+              GestureDetector(
+                  onTap: _removeDropdown, behavior: HitTestBehavior.opaque),
+              CompositedTransformFollower(
+                link: _layerLink,
+                showWhenUnlinked: false,
+                offset: const Offset(0, 28),
+                child: _DropdownPanel(
+                  items: items,
+                  selected: widget.selectedItem,
+                  onSelect: (value) {
+                    widget.onItemSelected?.call(value);
+                    _controller.text = value;
+                    _removeDropdown();
+                    setState(() {});
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DropdownPanel extends StatelessWidget {
+  final List<String> items;
+  final String? selected;
+  final ValueChanged<String> onSelect;
+
+  const _DropdownPanel({
+    required this.items,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: kTransparent,
+      child: Container(
+        constraints: const BoxConstraints(maxHeight: 280, minWidth: 160),
+        padding: const EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          color: kGrey100, // black background
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final value = items[index];
+            final bool isSelected = selected == value;
+            return _DropdownItem(
+              label: value,
+              isSelected: isSelected,
+              onTap: () => onSelect(value),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _DropdownItem extends StatefulWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  const _DropdownItem(
+      {required this.label, required this.isSelected, required this.onTap});
+
+  @override
+  State<_DropdownItem> createState() => _DropdownItemState();
+}
+
+class _DropdownItemState extends State<_DropdownItem> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 2.0),
+          padding: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            color: _hover ? kInputBackground : kTransparent,
+            borderRadius: BorderRadius.circular(4.0),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 16.0,
+                height: 16.0,
+                child: widget.isSelected
+                    ? SvgPicture.asset(
+                        'assets/icons/32/checkmark.svg',
+                        width: 16.0,
+                        height: 16.0,
+                        colorFilter:
+                            const ColorFilter.mode(kWhite, BlendMode.srcIn),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              const SizedBox(width: 8.0),
+              Expanded(
+                child: Text(
+                  widget.label,
+                  style: const TextStyle(
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w400,
+                    color: kWhite,
+                    height: 1.0,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
