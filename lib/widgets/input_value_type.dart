@@ -17,6 +17,7 @@ enum InputVariant {
   regular,
   selector,
   dropdown,
+  valueDropdown,
 }
 
 // (Removed old Shortcuts/Actions intents; RawAutocomplete now manages keys)
@@ -138,7 +139,12 @@ class _InputValueTypeState extends State<InputValueType> {
   // Dropdown is driven by RawAutocomplete; no direct guard needed.
   // Deprecated overlay/highlight state removed with RawAutocomplete
   bool _forceOpen = false;
-  bool _selectionToggle = false;
+  // Legacy selection toggle no longer needed
+  String? _currentSuffix;
+  TextEditingValue? _beforeOpenValue;
+  // selection flip no longer used with overlay dropdown
+  bool _usingOverlay = false;
+  OverlayEntry? _dropdownEntry;
 
   @override
   void initState() {
@@ -180,6 +186,12 @@ class _InputValueTypeState extends State<InputValueType> {
       () {},
       () {},
     );
+    // Initialize current suffix for valueDropdown/selector so something is visible when not hovering
+    _currentSuffix = widget.selectedItem ??
+        widget.suffixText ??
+        ((widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty)
+            ? widget.dropdownItems!.first
+            : null);
   }
 
   @override
@@ -195,13 +207,24 @@ class _InputValueTypeState extends State<InputValueType> {
         _controller.selection = const TextSelection.collapsed(offset: 0);
       }
     }
+    // Keep _currentSuffix in sync if parent changes
+    if (oldWidget.selectedItem != widget.selectedItem &&
+        widget.selectedItem != null) {
+      _currentSuffix = widget.selectedItem;
+    } else if (oldWidget.suffixText != widget.suffixText &&
+        _currentSuffix == null) {
+      _currentSuffix = widget.suffixText ??
+          ((widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty)
+              ? widget.dropdownItems!.first
+              : null);
+    }
   }
 
   @override
   void dispose() {
     _controller.removeListener(_controllerListener);
     _focusNode.removeListener(_focusListener);
-    // Overlay and keyboard nodes removed in RawAutocomplete version
+    _removeDropdown();
     if (widget.controller == null) {
       _controller.dispose();
     }
@@ -235,172 +258,93 @@ class _InputValueTypeState extends State<InputValueType> {
       }
     }
 
-    return RawAutocomplete<String>(
-      textEditingController: _controller,
-      focusNode: _focusNode,
-      optionsBuilder: (TextEditingValue value) {
-        if (isReadOnly) return const Iterable<String>.empty();
-        final items = widget.dropdownItems ?? const <String>[];
-        if (items.isEmpty) return const Iterable<String>.empty();
-        final q = value.text.trim().toLowerCase();
-        if (_forceOpen || q.isEmpty) return items;
-        return items.where((s) => s.toLowerCase().startsWith(q));
-      },
-      displayStringForOption: (s) => s,
-      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-        return CompositedTransformTarget(
-          link: _layerLink,
-          child: Container(
-            key: _targetKey,
-            height: 24.0,
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            decoration: BoxDecoration(
-              color: isReadOnly ? kWhite : kGrey10,
-              borderRadius: BorderRadius.circular(4.0),
-              border: Border.all(
-                color: isReadOnly
-                    ? kBordersColor
-                    : (focusNode.hasFocus ? kInputFocus : kTransparent),
-                width: 1.0,
-              ),
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Container(
+        key: _targetKey,
+        height: 24.0,
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        decoration: BoxDecoration(
+          color: isReadOnly ? kWhite : kGrey10,
+          borderRadius: BorderRadius.circular(4.0),
+          border: Border.all(
+            color: isReadOnly
+                ? kBordersColor
+                : (_focusNode.hasFocus ? kInputFocus : kTransparent),
+            width: 1.0,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              widget.prefixIconAsset,
+              width: 16.0,
+              height: 16.0,
+              colorFilter: const ColorFilter.mode(kGrey70, BlendMode.srcIn),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SvgPicture.asset(
-                  widget.prefixIconAsset,
-                  width: 16.0,
-                  height: 16.0,
-                  colorFilter: const ColorFilter.mode(kGrey70, BlendMode.srcIn),
-                ),
-                const SizedBox(width: 8.0),
-                Expanded(
-                  child: MouseRegion(
-                    cursor: isReadOnly
-                        ? SystemMouseCursors.basic
-                        : SystemMouseCursors.text,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onTap: () {
-                        if (!isReadOnly) {
-                          focusNode.requestFocus();
-                        }
-                      },
-                      child: Stack(
-                        alignment: Alignment.centerLeft,
-                        children: [
-                          if (controller.text.isEmpty &&
-                              widget.placeholder != null)
-                            IgnorePointer(
-                              child: Text(
-                                widget.placeholder!,
-                                style: placeholderStyle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          IgnorePointer(
-                            ignoring: isReadOnly,
-                            child: Material(
-                              type: MaterialType.transparency,
-                              child: TextField(
-                                controller: controller,
-                                focusNode: focusNode,
-                                style: textStyle,
-                                cursorColor:
-                                    isReadOnly ? kTransparent : kGrey100,
-                                decoration: const InputDecoration(
-                                  isCollapsed: true,
-                                  isDense: true,
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                textAlign: widget.textAlign,
-                                autofocus:
-                                    isReadOnly ? false : widget.autofocus,
-                                onChanged: isReadOnly ? null : widget.onChanged,
-                                onSubmitted:
-                                    isReadOnly ? null : widget.onSubmitted,
-                                readOnly: isReadOnly,
-                                enableInteractiveSelection: !isReadOnly,
-                                showCursor: !isReadOnly,
-                                selectionControls:
-                                    materialTextSelectionControls,
-                                enabled: !isReadOnly,
-                              ),
-                            ),
+            const SizedBox(width: 8.0),
+            Expanded(
+              child: MouseRegion(
+                cursor: isReadOnly
+                    ? SystemMouseCursors.basic
+                    : SystemMouseCursors.text,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () {
+                    if (!isReadOnly) {
+                      _focusNode.requestFocus();
+                    }
+                  },
+                  child: Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      if (_controller.text.isEmpty &&
+                          widget.placeholder != null)
+                        IgnorePointer(
+                          child: Text(
+                            widget.placeholder!,
+                            style: placeholderStyle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
+                        ),
+                      IgnorePointer(
+                        ignoring: isReadOnly,
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: TextField(
+                            controller: _controller,
+                            focusNode: _focusNode,
+                            style: textStyle,
+                            cursorColor: isReadOnly ? kTransparent : kGrey100,
+                            decoration: const InputDecoration(
+                              isCollapsed: true,
+                              isDense: true,
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            textAlign: widget.textAlign,
+                            autofocus: isReadOnly ? false : widget.autofocus,
+                            onChanged: isReadOnly ? null : widget.onChanged,
+                            onSubmitted: isReadOnly ? null : widget.onSubmitted,
+                            readOnly: isReadOnly,
+                            enableInteractiveSelection: !isReadOnly,
+                            showCursor: !isReadOnly,
+                            selectionControls: materialTextSelectionControls,
+                            enabled: !isReadOnly,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                _buildSuffix(isReadOnly),
-              ],
-            ),
-          ),
-        );
-      },
-      optionsViewBuilder: (context, onSelected, options) {
-        final List<String> items = options.toList();
-        final Size screenSize = MediaQuery.of(context).size;
-        const double itemHeight = 28.0;
-        const int maxVisible = 8;
-        final int visibleCount =
-            items.length < maxVisible ? items.length : maxVisible;
-        final double estimatedPanelHeight = 8 + (visibleCount * itemHeight) + 8;
-        double offsetY = 28;
-        final RenderBox? targetBox =
-            _targetKey.currentContext?.findRenderObject() as RenderBox?;
-        if (targetBox != null) {
-          final Offset topLeft = targetBox.localToGlobal(Offset.zero);
-          final double targetBottom = topLeft.dy + targetBox.size.height;
-          final double spaceBelow = screenSize.height - targetBottom;
-          if (spaceBelow < estimatedPanelHeight + 8) {
-            offsetY = -(estimatedPanelHeight + 4);
-          }
-        }
-        return CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0, offsetY),
-          child: Material(
-            color: kTransparent,
-            child: Semantics(
-              container: true,
-              label: 'Options',
-              child: Container(
-                constraints:
-                    const BoxConstraints(maxHeight: 280, minWidth: 160),
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: kGrey100,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final value = items[index];
-                    final bool isSelected = (value == widget.selectedItem);
-                    return _DropdownItem(
-                      label: value,
-                      isSelected: isSelected,
-                      highlighted: false,
-                      onHover: () {},
-                      onTap: () => onSelected(value),
-                    );
-                  },
-                ),
               ),
             ),
-          ),
-        );
-      },
-      onSelected: (value) {
-        widget.onItemSelected?.call(value);
-        if (_forceOpen) setState(() => _forceOpen = false);
-      },
+            _buildSuffix(isReadOnly),
+          ],
+        ),
+      ),
     );
   }
 
@@ -457,6 +401,7 @@ class _InputValueTypeState extends State<InputValueType> {
           suffixText: widget.suffixText,
           iconAsset: iconAsset,
           onTap: _openOptions,
+          showAsIcon: _usingOverlay || _forceOpen || _focusNode.hasFocus,
         );
       case InputVariant.dropdown:
         if (!hasDropdown) return const SizedBox.shrink();
@@ -464,20 +409,136 @@ class _InputValueTypeState extends State<InputValueType> {
           iconAsset: iconAsset,
           onTap: _openOptions,
         );
+      case InputVariant.valueDropdown:
+        if (!hasDropdown) {
+          if (_currentSuffix == null) return const SizedBox.shrink();
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(width: 8.0),
+              Text(
+                _currentSuffix!,
+                style: appTextStyles.bodyM.copyWith(
+                    color: isReadOnly ? kGrey70 : kGrey70, height: 1.0),
+              ),
+            ],
+          );
+        }
+        return _HoverSelectorSuffix(
+          suffixText: _currentSuffix,
+          iconAsset: iconAsset,
+          onTap: _openOptions,
+          showAsIcon: _usingOverlay || _forceOpen || _focusNode.hasFocus,
+        );
     }
   }
 
   void _openOptions() {
     if (widget.readOnly) return;
     if ((widget.dropdownItems ?? const <String>[]).isEmpty) return;
-    setState(() => _forceOpen = true);
     _focusNode.requestFocus();
-    // Force RawAutocomplete to recompute options by changing text value to same
-    _controller.value = _controller.value.copyWith(
-      text: _controller.text,
-      selection: TextSelection.collapsed(offset: _controller.text.length),
-      composing: TextRange.empty,
+    _beforeOpenValue = _controller.value;
+    setState(() {
+      _usingOverlay = true;
+    });
+    _showOverlayDropdown();
+  }
+
+  void _showOverlayDropdown() {
+    _removeDropdown();
+    final items = widget.dropdownItems ?? const <String>[];
+    final Size screenSize = MediaQuery.of(context).size;
+    double offsetY = 28;
+    const double itemHeight = 28.0;
+    const int maxVisible = 8;
+    final int visibleCount =
+        items.length < maxVisible ? items.length : maxVisible;
+    final double estimatedPanelHeight = 8 + (visibleCount * itemHeight) + 8;
+    final RenderBox? targetBox =
+        _targetKey.currentContext?.findRenderObject() as RenderBox?;
+    if (targetBox != null) {
+      final Offset topLeft = targetBox.localToGlobal(Offset.zero);
+      final double targetBottom = topLeft.dy + targetBox.size.height;
+      final double spaceBelow = screenSize.height - targetBottom;
+      if (spaceBelow < estimatedPanelHeight + 8) {
+        offsetY = -(estimatedPanelHeight + 4);
+      }
+    }
+    _dropdownEntry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Stack(
+            children: [
+              GestureDetector(
+                  onTap: _removeDropdown, behavior: HitTestBehavior.opaque),
+              CompositedTransformFollower(
+                link: _layerLink,
+                showWhenUnlinked: false,
+                offset: Offset(0, offsetY),
+                child: Material(
+                  color: kTransparent,
+                  child: Semantics(
+                    container: true,
+                    label: 'Options',
+                    child: SizedBox(
+                      width: 100.0,
+                      child: Container(
+                        constraints: const BoxConstraints(maxHeight: 280),
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: kGrey100,
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: items.length,
+                          itemBuilder: (context, index) {
+                            final value = items[index];
+                            final bool isSelected = (value ==
+                                (widget.selectedItem ?? _currentSuffix));
+                            return _DropdownItem(
+                              label: value,
+                              isSelected: isSelected,
+                              highlighted: false,
+                              onHover: () {},
+                              onTap: () {
+                                widget.onItemSelected?.call(value);
+                                if (widget.variant ==
+                                    InputVariant.valueDropdown) {
+                                  setState(() => _currentSuffix = value);
+                                }
+                                _removeDropdown();
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
+    Overlay.of(context).insert(_dropdownEntry!);
+  }
+
+  void _removeDropdown() {
+    _dropdownEntry?.remove();
+    _dropdownEntry = null;
+    if (_usingOverlay) {
+      setState(() => _usingOverlay = false);
+    }
+    if (_beforeOpenValue != null) {
+      final restore = _beforeOpenValue!;
+      _beforeOpenValue = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _controller.value = restore;
+      });
+    }
   }
 
   // Removed legacy overlay and keyboard navigation helpers
@@ -611,8 +672,13 @@ class _HoverSelectorSuffix extends StatefulWidget {
   final String? suffixText;
   final String iconAsset;
   final VoidCallback onTap;
-  const _HoverSelectorSuffix(
-      {required this.suffixText, required this.iconAsset, required this.onTap});
+  final bool showAsIcon;
+  const _HoverSelectorSuffix({
+    required this.suffixText,
+    required this.iconAsset,
+    required this.onTap,
+    this.showAsIcon = false,
+  });
 
   @override
   State<_HoverSelectorSuffix> createState() => _HoverSelectorSuffixState();
@@ -622,47 +688,48 @@ class _HoverSelectorSuffixState extends State<_HoverSelectorSuffix> {
   bool _hover = false;
   @override
   Widget build(BuildContext context) {
+    final bool showIcon = _hover || widget.showAsIcon;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 120),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          child: _hover
-              ? Container(
-                  key: const ValueKey('icon'),
-                  margin: const EdgeInsets.only(left: 8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(width: 8.0),
+            if (showIcon)
+              SizedBox(
+                width: 12.0,
+                height: 12.0,
+                child: SvgPicture.asset(
+                  widget.iconAsset,
                   width: 12.0,
                   height: 12.0,
-                  decoration: BoxDecoration(
-                    color: kGrey10,
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  alignment: Alignment.center,
-                  child: SvgPicture.asset(
-                    widget.iconAsset,
-                    width: 12.0,
-                    height: 12.0,
-                    colorFilter:
-                        const ColorFilter.mode(kGrey100, BlendMode.srcIn),
-                  ),
-                )
-              : Row(
-                  key: const ValueKey('text'),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(width: 8.0),
-                    if (widget.suffixText != null)
-                      Text(
-                        widget.suffixText!,
-                        style: appTextStyles.bodyM
-                            .copyWith(color: kGrey70, height: 1.0),
-                      ),
-                  ],
+                  colorFilter:
+                      const ColorFilter.mode(kGrey100, BlendMode.srcIn),
                 ),
+              )
+            else
+              ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 12.0),
+                child: SizedBox(
+                  height: 12.0,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: widget.suffixText != null
+                        ? Text(
+                            widget.suffixText!,
+                            style: appTextStyles.bodyM
+                                .copyWith(color: kGrey70, height: 1.0),
+                            maxLines: 1,
+                            overflow: TextOverflow.visible,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

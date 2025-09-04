@@ -228,7 +228,6 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                   left: InputValueType(
                                     controller: _singleInputController,
                                     placeholder: null,
-                                    suffixText: 'px',
                                     dropdownItems: const [
                                       'px',
                                       'mm',
@@ -236,9 +235,9 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                       'in'
                                     ],
                                     selectedItem: 'px',
-                                    variant: InputVariant.selector,
+                                    variant: InputVariant.valueDropdown,
                                     onItemSelected: (v) {
-                                      // keep text; only unit changes implied
+                                      // unit immediately reflected in suffix
                                     },
                                   ),
                                   right: null,
