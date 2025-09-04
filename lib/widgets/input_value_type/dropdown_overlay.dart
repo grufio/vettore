@@ -26,6 +26,7 @@ OverlayEntry createDropdownOverlay({
   VoidCallback? onConfirm,
   VoidCallback? onEscape,
   Offset? centerGlobal,
+  FocusNode? focusNode,
 }) {
   final Size screenSize = MediaQuery.of(context).size;
   double offsetY = 24;
@@ -72,6 +73,7 @@ OverlayEntry createDropdownOverlay({
                 container: true,
                 label: 'Options',
                 child: Focus(
+                  focusNode: focusNode,
                   autofocus: true,
                   onKey: (node, event) {
                     if (event is! KeyDownEvent) return KeyEventResult.ignored;

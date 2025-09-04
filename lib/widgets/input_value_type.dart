@@ -123,8 +123,9 @@ class _InputValueTypeState extends State<InputValueType> {
   OverlayEntry? _dropdownEntry;
   // Keyboard navigation
   final ValueNotifier<int?> _highlightedIndex = ValueNotifier<int?>(null);
-  final ScrollController _listScrollController = ScrollController();
+  ScrollController? _listScrollController;
   Offset? _lastTapGlobal;
+  FocusNode? _overlayFocusNode;
 
   @override
   void initState() {
@@ -236,7 +237,8 @@ class _InputValueTypeState extends State<InputValueType> {
       _focusNode.dispose();
     }
     _highlightedIndex.dispose();
-    _listScrollController.dispose();
+    _listScrollController?.dispose();
+    _overlayFocusNode?.dispose();
     super.dispose();
   }
 
@@ -444,7 +446,6 @@ class _InputValueTypeState extends State<InputValueType> {
   void _openOptions() {
     if (widget.readOnly) return;
     if ((widget.dropdownItems ?? const <String>[]).isEmpty) return;
-    _focusNode.requestFocus();
     _beforeOpenValue = _controller.value;
     setState(() {
       _usingOverlay = true;
@@ -459,6 +460,18 @@ class _InputValueTypeState extends State<InputValueType> {
     final String? selectionBasis = widget.variant == InputVariant.valueDropdown
         ? (_currentSuffix ?? widget.selectedItem ?? _selectedItem)
         : (widget.selectedItem ?? _selectedItem);
+    // Determine initial highlighted index
+    final int initialIndex =
+        selectionBasis != null ? items.indexOf(selectionBasis) : -1;
+    _highlightedIndex.value = initialIndex >= 0 ? initialIndex : 0;
+    // Recreate list scroll controller with initial offset to avoid jump animation
+    _listScrollController?.dispose();
+    final double initialOffset =
+        (_highlightedIndex.value ?? 0) * ivt_ovl.kDropdownItemHeight;
+    _listScrollController =
+        ScrollController(initialScrollOffset: initialOffset);
+    _overlayFocusNode?.dispose();
+    _overlayFocusNode = FocusNode();
     _dropdownEntry = ivt_ovl.createDropdownOverlay(
       context: context,
       layerLink: _layerLink,
@@ -502,22 +515,13 @@ class _InputValueTypeState extends State<InputValueType> {
       onConfirm: _confirmHighlighted,
       onEscape: _removeDropdown,
       centerGlobal: _lastTapGlobal,
+      focusNode: _overlayFocusNode,
     );
     Overlay.of(context).insert(_dropdownEntry!);
-
-    // Initialize highlight to current selection
-    final int initialIndex =
-        selectionBasis != null ? items.indexOf(selectionBasis) : -1;
-    _highlightedIndex.value = initialIndex >= 0 ? initialIndex : 0;
-    _markOverlayNeedsBuild();
-    // Scroll into view
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_listScrollController.hasClients) return;
-      final int idx = _highlightedIndex.value ?? 0;
-      const double itemHeight = 28.0;
-      final double offset = (idx * itemHeight).toDouble();
-      _listScrollController.jumpTo(offset);
+      _overlayFocusNode?.requestFocus();
     });
+    _markOverlayNeedsBuild();
   }
 
   void _removeDropdown() {
