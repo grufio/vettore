@@ -229,6 +229,17 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                     controller: _singleInputController,
                                     placeholder: null,
                                     suffixText: 'px',
+                                    dropdownItems: const [
+                                      'px',
+                                      'mm',
+                                      'cm',
+                                      'in'
+                                    ],
+                                    selectedItem: 'px',
+                                    variant: InputVariant.selector,
+                                    onItemSelected: (v) {
+                                      // keep text; only unit changes implied
+                                    },
                                   ),
                                   right: null,
                                   actionIconAsset: null,
