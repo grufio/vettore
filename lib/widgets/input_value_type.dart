@@ -12,6 +12,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 // Removed: async utilities
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
+import 'package:vettore/widgets/input_value_type/suffix.dart' as ivt_sfx;
+import 'package:vettore/widgets/input_value_type/dropdown_item.dart' as ivt_di;
 
 enum InputVariant {
   regular,
@@ -397,7 +399,7 @@ class _InputValueTypeState extends State<InputValueType> {
             ],
           );
         }
-        return _HoverSelectorSuffix(
+        return ivt_sfx.HoverSelectorSuffix(
           suffixText: widget.suffixText,
           iconAsset: iconAsset,
           onTap: _openOptions,
@@ -424,7 +426,7 @@ class _InputValueTypeState extends State<InputValueType> {
             ],
           );
         }
-        return _HoverSelectorSuffix(
+        return ivt_sfx.HoverSelectorSuffix(
           suffixText: _currentSuffix,
           iconAsset: iconAsset,
           onTap: _openOptions,
@@ -496,7 +498,7 @@ class _InputValueTypeState extends State<InputValueType> {
                             final value = items[index];
                             final bool isSelected = (value ==
                                 (widget.selectedItem ?? _currentSuffix));
-                            return _DropdownItem(
+                            return ivt_di.DropdownItem(
                               label: value,
                               isSelected: isSelected,
                               highlighted: false,
@@ -546,88 +548,7 @@ class _InputValueTypeState extends State<InputValueType> {
 
 // Removed legacy _DropdownPanel; RawAutocomplete's optionsViewBuilder is used
 
-class _DropdownItem extends StatefulWidget {
-  final String label;
-  final bool isSelected;
-  final bool highlighted;
-  final VoidCallback onTap;
-  final VoidCallback onHover;
-  const _DropdownItem(
-      {required this.label,
-      required this.isSelected,
-      required this.highlighted,
-      required this.onTap,
-      required this.onHover});
-
-  @override
-  State<_DropdownItem> createState() => _DropdownItemState();
-}
-
-class _DropdownItemState extends State<_DropdownItem> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) {
-        widget.onHover();
-        setState(() => _hover = true);
-      },
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Semantics(
-          button: true,
-          selected: widget.isSelected,
-          label: widget.label,
-          onTap: widget.onTap,
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 2.0),
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              color: (widget.highlighted || _hover)
-                  ? kInputBackground
-                  : kTransparent,
-              borderRadius: BorderRadius.circular(4.0),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 16.0,
-                  height: 16.0,
-                  child: widget.isSelected
-                      ? SvgPicture.asset(
-                          'assets/icons/32/checkmark.svg',
-                          width: 16.0,
-                          height: 16.0,
-                          colorFilter:
-                              const ColorFilter.mode(kWhite, BlendMode.srcIn),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-                const SizedBox(width: 8.0),
-                Expanded(
-                  child: Text(
-                    widget.label,
-                    style: const TextStyle(
-                      fontSize: 12.0,
-                      fontWeight: FontWeight.w400,
-                      color: kWhite,
-                      height: 1.0,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
+// Legacy, kept for compatibility; replaced by DropdownItem in separate file
 class _IconSuffixButton extends StatefulWidget {
   final String iconAsset;
   final VoidCallback onTap;
@@ -668,70 +589,4 @@ class _IconSuffixButtonState extends State<_IconSuffixButton> {
   }
 }
 
-class _HoverSelectorSuffix extends StatefulWidget {
-  final String? suffixText;
-  final String iconAsset;
-  final VoidCallback onTap;
-  final bool showAsIcon;
-  const _HoverSelectorSuffix({
-    required this.suffixText,
-    required this.iconAsset,
-    required this.onTap,
-    this.showAsIcon = false,
-  });
-
-  @override
-  State<_HoverSelectorSuffix> createState() => _HoverSelectorSuffixState();
-}
-
-class _HoverSelectorSuffixState extends State<_HoverSelectorSuffix> {
-  bool _hover = false;
-  @override
-  Widget build(BuildContext context) {
-    final bool showIcon = _hover || widget.showAsIcon;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(width: 8.0),
-            if (showIcon)
-              SizedBox(
-                width: 12.0,
-                height: 12.0,
-                child: SvgPicture.asset(
-                  widget.iconAsset,
-                  width: 12.0,
-                  height: 12.0,
-                  colorFilter:
-                      const ColorFilter.mode(kGrey100, BlendMode.srcIn),
-                ),
-              )
-            else
-              ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 12.0),
-                child: SizedBox(
-                  height: 12.0,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: widget.suffixText != null
-                        ? Text(
-                            widget.suffixText!,
-                            style: appTextStyles.bodyM
-                                .copyWith(color: kGrey70, height: 1.0),
-                            maxLines: 1,
-                            overflow: TextOverflow.visible,
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// HoverSelectorSuffix and DropdownItem moved to input_value_type/ subfolder
