@@ -13,7 +13,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 import 'package:vettore/widgets/input_value_type/suffix.dart' as ivt_sfx;
-import 'package:vettore/widgets/input_value_type/dropdown_item.dart' as ivt_di;
+import 'package:vettore/widgets/input_value_type/controller.dart';
+import 'package:vettore/widgets/input_value_type/dropdown_overlay.dart'
+    as ivt_ovl;
 
 enum InputVariant {
   regular,
@@ -99,37 +101,7 @@ class InputValueType extends StatefulWidget {
   State<InputValueType> createState() => _InputValueTypeState();
 }
 
-class InputDropdownController {
-  late VoidCallback _open;
-  late VoidCallback _close;
-  late VoidCallback _toggle;
-  late VoidCallback _next;
-  late VoidCallback _prev;
-  late VoidCallback _confirm;
-
-  void _attach(
-    VoidCallback open,
-    VoidCallback close,
-    VoidCallback toggle,
-    VoidCallback next,
-    VoidCallback prev,
-    VoidCallback confirm,
-  ) {
-    _open = open;
-    _close = close;
-    _toggle = toggle;
-    _next = next;
-    _prev = prev;
-    _confirm = confirm;
-  }
-
-  void open() => _open();
-  void close() => _close();
-  void toggle() => _toggle();
-  void highlightNext() => _next();
-  void highlightPrev() => _prev();
-  void confirm() => _confirm();
-}
+// Controller moved to input_value_type/controller.dart
 
 class _InputValueTypeState extends State<InputValueType> {
   late final TextEditingController _controller;
@@ -149,6 +121,9 @@ class _InputValueTypeState extends State<InputValueType> {
   // selection flip no longer used with overlay dropdown
   bool _usingOverlay = false;
   OverlayEntry? _dropdownEntry;
+  // Keyboard navigation
+  final ValueNotifier<int?> _highlightedIndex = ValueNotifier<int?>(null);
+  final ScrollController _listScrollController = ScrollController();
 
   @override
   void initState() {
@@ -180,15 +155,15 @@ class _InputValueTypeState extends State<InputValueType> {
     _controller.addListener(_controllerListener);
     _focusNode.addListener(_focusListener);
     // Attach controller if present
-    widget.dropdownController?._attach(
+    widget.dropdownController?.attach(
       () => _focusNode.requestFocus(),
       () => _focusNode.unfocus(),
       () => _focusNode.hasFocus
           ? _focusNode.unfocus()
           : _focusNode.requestFocus(),
-      () {},
-      () {},
-      () {},
+      _highlightNext,
+      _highlightPrev,
+      _confirmHighlighted,
     );
     // Initialize current suffix for valueDropdown/selector so something is visible when not hovering
     _currentSuffix = widget.selectedItem ??
@@ -226,6 +201,26 @@ class _InputValueTypeState extends State<InputValueType> {
               ? widget.dropdownItems!.first
               : null);
     }
+
+    // If dropdownItems changed, ensure selection still valid. In controlled mode,
+    // rely on widget.selectedItem. In uncontrolled, clamp to first available.
+    final List<String> oldItems = oldWidget.dropdownItems ?? const <String>[];
+    final List<String> newItems = widget.dropdownItems ?? const <String>[];
+    if (!_listEquals(oldItems, newItems)) {
+      if (widget.selectedItem != null) {
+        // Controlled: if selectedItem not in new list, do nothing here (parent should update)
+      } else {
+        // Uncontrolled: ensure internal selection and suffix are valid
+        if (_selectedItem != null && !newItems.contains(_selectedItem)) {
+          _selectedItem = newItems.isNotEmpty ? newItems.first : null;
+        }
+        if (widget.variant == InputVariant.valueDropdown) {
+          if (_currentSuffix != null && !newItems.contains(_currentSuffix)) {
+            _currentSuffix = newItems.isNotEmpty ? newItems.first : null;
+          }
+        }
+      }
+    }
   }
 
   @override
@@ -239,6 +234,8 @@ class _InputValueTypeState extends State<InputValueType> {
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
+    _highlightedIndex.dispose();
+    _listScrollController.dispose();
     super.dispose();
   }
 
@@ -455,93 +452,69 @@ class _InputValueTypeState extends State<InputValueType> {
   void _showOverlayDropdown() {
     _removeDropdown();
     final items = widget.dropdownItems ?? const <String>[];
-    final Size screenSize = MediaQuery.of(context).size;
-    double offsetY = 28;
-    const double itemHeight = 28.0;
-    const int maxVisible = 8;
-    final int visibleCount =
-        items.length < maxVisible ? items.length : maxVisible;
-    final double estimatedPanelHeight = 8 + (visibleCount * itemHeight) + 8;
-    final RenderBox? targetBox =
-        _targetKey.currentContext?.findRenderObject() as RenderBox?;
-    if (targetBox != null) {
-      final Offset topLeft = targetBox.localToGlobal(Offset.zero);
-      final double targetBottom = topLeft.dy + targetBox.size.height;
-      final double spaceBelow = screenSize.height - targetBottom;
-      if (spaceBelow < estimatedPanelHeight + 8) {
-        offsetY = -(estimatedPanelHeight + 4);
-      }
-    }
-    _dropdownEntry = OverlayEntry(
-      builder: (context) {
-        return Positioned.fill(
-          child: Stack(
-            children: [
-              GestureDetector(
-                  onTap: _removeDropdown, behavior: HitTestBehavior.opaque),
-              CompositedTransformFollower(
-                link: _layerLink,
-                showWhenUnlinked: false,
-                offset: Offset(0, offsetY),
-                child: Material(
-                  color: kTransparent,
-                  child: Semantics(
-                    container: true,
-                    label: 'Options',
-                    child: SizedBox(
-                      width: 100.0,
-                      child: Container(
-                        constraints: const BoxConstraints(maxHeight: 280),
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          color: kGrey100,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: items.length,
-                          itemBuilder: (context, index) {
-                            final value = items[index];
-                            final bool isSelected = value ==
-                                (_selectedItem ??
-                                    (widget.variant ==
-                                            InputVariant.valueDropdown
-                                        ? _currentSuffix
-                                        : widget.selectedItem));
-                            return ivt_di.DropdownItem(
-                              label: value,
-                              isSelected: isSelected,
-                              highlighted: false,
-                              onHover: () {},
-                              onTap: () {
-                                widget.onItemSelected?.call(value);
-                                setState(() {
-                                  _selectedItem = value;
-                                  if (widget.variant ==
-                                      InputVariant.valueDropdown) {
-                                    _currentSuffix = value;
-                                  }
-                                });
-                                _removeDropdown();
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
+    // External prop wins; fallback to internal state only when uncontrolled
+    final String? selectionBasis = widget.selectedItem ??
+        (_selectedItem ??
+            (widget.variant == InputVariant.valueDropdown
+                ? _currentSuffix
+                : null));
+    _dropdownEntry = ivt_ovl.createDropdownOverlay(
+      context: context,
+      layerLink: _layerLink,
+      targetKey: _targetKey,
+      items: items,
+      selectedValue: selectionBasis,
+      isValueDropdownVariant: widget.variant == InputVariant.valueDropdown,
+      onItemSelected: (value) {
+        widget.onItemSelected?.call(value);
+        setState(() {
+          // Only update internal selection when uncontrolled
+          if (widget.selectedItem == null) {
+            _selectedItem = value;
+          }
+          if (widget.variant == InputVariant.valueDropdown) {
+            _currentSuffix = value;
+          }
+        });
       },
+      onDismiss: _removeDropdown,
+      panelWidth: 100.0,
+      highlightedIndexListenable: _highlightedIndex,
+      listScrollController: _listScrollController,
+      onHighlightNext: _highlightNext,
+      onHighlightPrev: _highlightPrev,
+      onHighlightHome: () {
+        _highlightedIndex.value = 0;
+        _markOverlayNeedsBuild();
+      },
+      onHighlightEnd: () {
+        final items = widget.dropdownItems ?? const <String>[];
+        if (items.isEmpty) return;
+        _highlightedIndex.value = items.length - 1;
+        _markOverlayNeedsBuild();
+      },
+      onConfirm: _confirmHighlighted,
+      onEscape: _removeDropdown,
     );
     Overlay.of(context).insert(_dropdownEntry!);
+
+    // Initialize highlight to current selection
+    final int initialIndex =
+        selectionBasis != null ? items.indexOf(selectionBasis) : -1;
+    _highlightedIndex.value = initialIndex >= 0 ? initialIndex : 0;
+    _markOverlayNeedsBuild();
+    // Scroll into view
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_listScrollController.hasClients) return;
+      final int idx = _highlightedIndex.value ?? 0;
+      const double itemHeight = 28.0;
+      final double offset = (idx * itemHeight).toDouble();
+      _listScrollController.jumpTo(offset);
+    });
   }
 
   void _removeDropdown() {
-    _dropdownEntry?.remove();
+    ivt_ovl.removeDropdownOverlay(_dropdownEntry);
     _dropdownEntry = null;
     if (_usingOverlay) {
       setState(() => _usingOverlay = false);
@@ -556,7 +529,56 @@ class _InputValueTypeState extends State<InputValueType> {
     }
   }
 
+  // Keyboard helpers
+  void _highlightNext() {
+    final items = widget.dropdownItems ?? const <String>[];
+    if (items.isEmpty) return;
+    final int current = _highlightedIndex.value ?? -1;
+    final int next = (current + 1).clamp(0, items.length - 1);
+    _highlightedIndex.value = next;
+    _markOverlayNeedsBuild();
+  }
+
+  void _highlightPrev() {
+    final items = widget.dropdownItems ?? const <String>[];
+    if (items.isEmpty) return;
+    final int current = _highlightedIndex.value ?? 0;
+    final int prev = (current - 1).clamp(0, items.length - 1);
+    _highlightedIndex.value = prev;
+    _markOverlayNeedsBuild();
+  }
+
+  void _confirmHighlighted() {
+    final items = widget.dropdownItems ?? const <String>[];
+    final int idx = _highlightedIndex.value ?? -1;
+    if (idx < 0 || idx >= items.length) return;
+    final String value = items[idx];
+    widget.onItemSelected?.call(value);
+    setState(() {
+      if (widget.selectedItem == null) {
+        _selectedItem = value;
+      }
+      if (widget.variant == InputVariant.valueDropdown) {
+        _currentSuffix = value;
+      }
+    });
+    _removeDropdown();
+  }
+
+  void _markOverlayNeedsBuild() {
+    _dropdownEntry?.markNeedsBuild();
+  }
+
   // Removed legacy overlay and keyboard navigation helpers
+}
+
+bool _listEquals<T>(List<T> a, List<T> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (int i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
 
 // Removed legacy _DropdownPanel; RawAutocomplete's optionsViewBuilder is used
