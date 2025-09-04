@@ -143,6 +143,8 @@ class _InputValueTypeState extends State<InputValueType> {
   bool _forceOpen = false;
   // Legacy selection toggle no longer needed
   String? _currentSuffix;
+  // Persist selected item (for checkmark) across openings, even if parent doesn't manage it
+  String? _selectedItem;
   TextEditingValue? _beforeOpenValue;
   // selection flip no longer used with overlay dropdown
   bool _usingOverlay = false;
@@ -194,6 +196,9 @@ class _InputValueTypeState extends State<InputValueType> {
         ((widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty)
             ? widget.dropdownItems!.first
             : null);
+    // Initialize persisted selection
+    _selectedItem = widget.selectedItem ??
+        (widget.variant == InputVariant.valueDropdown ? _currentSuffix : null);
   }
 
   @override
@@ -213,6 +218,7 @@ class _InputValueTypeState extends State<InputValueType> {
     if (oldWidget.selectedItem != widget.selectedItem &&
         widget.selectedItem != null) {
       _currentSuffix = widget.selectedItem;
+      _selectedItem = widget.selectedItem;
     } else if (oldWidget.suffixText != widget.suffixText &&
         _currentSuffix == null) {
       _currentSuffix = widget.suffixText ??
@@ -496,8 +502,12 @@ class _InputValueTypeState extends State<InputValueType> {
                           itemCount: items.length,
                           itemBuilder: (context, index) {
                             final value = items[index];
-                            final bool isSelected = (value ==
-                                (widget.selectedItem ?? _currentSuffix));
+                            final bool isSelected = value ==
+                                (_selectedItem ??
+                                    (widget.variant ==
+                                            InputVariant.valueDropdown
+                                        ? _currentSuffix
+                                        : widget.selectedItem));
                             return ivt_di.DropdownItem(
                               label: value,
                               isSelected: isSelected,
@@ -505,10 +515,13 @@ class _InputValueTypeState extends State<InputValueType> {
                               onHover: () {},
                               onTap: () {
                                 widget.onItemSelected?.call(value);
-                                if (widget.variant ==
-                                    InputVariant.valueDropdown) {
-                                  setState(() => _currentSuffix = value);
-                                }
+                                setState(() {
+                                  _selectedItem = value;
+                                  if (widget.variant ==
+                                      InputVariant.valueDropdown) {
+                                    _currentSuffix = value;
+                                  }
+                                });
                                 _removeDropdown();
                               },
                             );
