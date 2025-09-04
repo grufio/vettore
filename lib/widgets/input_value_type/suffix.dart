@@ -8,12 +8,14 @@ class HoverSelectorSuffix extends StatefulWidget {
   final String iconAsset;
   final VoidCallback onTap;
   final bool showAsIcon;
+  final ValueChanged<Offset>? onTapDownGlobal;
   const HoverSelectorSuffix({
     super.key,
     required this.suffixText,
     required this.iconAsset,
     required this.onTap,
     this.showAsIcon = false,
+    this.onTapDownGlobal,
   });
 
   @override
@@ -31,6 +33,8 @@ class _HoverSelectorSuffixState extends State<HoverSelectorSuffix> {
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
         onTap: widget.onTap,
+        onTapDown: (details) =>
+            widget.onTapDownGlobal?.call(details.globalPosition),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

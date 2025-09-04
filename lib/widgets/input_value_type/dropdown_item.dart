@@ -35,12 +35,10 @@ class _DropdownItemState extends State<DropdownItem> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 2.0),
-          padding: const EdgeInsets.all(8.0),
+          height: 24.0,
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
           decoration: BoxDecoration(
-            color: (widget.highlighted || _hover)
-                ? kInputBackground
-                : kTransparent,
+            color: _hover ? kInputBackground : kTransparent,
             borderRadius: BorderRadius.circular(4.0),
           ),
           child: Row(

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/input_value_type/dropdown_item.dart';
 
-const double kDropdownItemHeight = 28.0;
+const double kDropdownItemHeight = 24.0;
 const double kDropdownPanelWidth = 100.0;
 
 OverlayEntry createDropdownOverlay({
@@ -25,9 +25,11 @@ OverlayEntry createDropdownOverlay({
   VoidCallback? onHighlightEnd,
   VoidCallback? onConfirm,
   VoidCallback? onEscape,
+  Offset? centerGlobal,
 }) {
   final Size screenSize = MediaQuery.of(context).size;
-  double offsetY = 28;
+  double offsetY = 24;
+  double offsetX = 0;
   const double itemHeight = kDropdownItemHeight;
   const int maxVisible = 8;
   final int visibleCount =
@@ -36,11 +38,23 @@ OverlayEntry createDropdownOverlay({
   final RenderBox? targetBox =
       targetKey.currentContext?.findRenderObject() as RenderBox?;
   if (targetBox != null) {
-    final Offset topLeft = targetBox.localToGlobal(Offset.zero);
-    final double targetBottom = topLeft.dy + targetBox.size.height;
-    final double spaceBelow = screenSize.height - targetBottom;
-    if (spaceBelow < estimatedPanelHeight + 8) {
-      offsetY = -(estimatedPanelHeight + 4);
+    final Offset targetTopLeft = targetBox.localToGlobal(Offset.zero);
+    if (centerGlobal != null) {
+      // Center the dropdown around the click, clamped to screen
+      double desiredLeft = centerGlobal.dx - (panelWidth / 2);
+      double desiredTop = centerGlobal.dy - (estimatedPanelHeight / 2);
+      desiredLeft = desiredLeft.clamp(0.0, screenSize.width - panelWidth);
+      desiredTop =
+          desiredTop.clamp(0.0, screenSize.height - estimatedPanelHeight);
+      offsetX = desiredLeft - targetTopLeft.dx;
+      offsetY = desiredTop - targetTopLeft.dy;
+    } else {
+      final double targetBottom = targetTopLeft.dy + targetBox.size.height;
+      final double spaceBelow = screenSize.height - targetBottom;
+      if (spaceBelow < estimatedPanelHeight + 8) {
+        offsetY = -(estimatedPanelHeight + 4);
+      }
+      offsetX = 0;
     }
   }
 
@@ -53,7 +67,7 @@ OverlayEntry createDropdownOverlay({
             CompositedTransformFollower(
               link: layerLink,
               showWhenUnlinked: false,
-              offset: Offset(0, offsetY),
+              offset: Offset(offsetX, offsetY),
               child: Semantics(
                 container: true,
                 label: 'Options',

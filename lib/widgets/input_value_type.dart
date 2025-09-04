@@ -124,6 +124,7 @@ class _InputValueTypeState extends State<InputValueType> {
   // Keyboard navigation
   final ValueNotifier<int?> _highlightedIndex = ValueNotifier<int?>(null);
   final ScrollController _listScrollController = ScrollController();
+  Offset? _lastTapGlobal;
 
   @override
   void initState() {
@@ -406,7 +407,8 @@ class _InputValueTypeState extends State<InputValueType> {
           suffixText: widget.suffixText,
           iconAsset: iconAsset,
           onTap: _openOptions,
-          showAsIcon: _usingOverlay || _forceOpen || _focusNode.hasFocus,
+          showAsIcon: (_dropdownEntry != null) || _usingOverlay || _forceOpen,
+          onTapDownGlobal: (pos) => _lastTapGlobal = pos,
         );
       case InputVariant.dropdown:
         if (!hasDropdown) return const SizedBox.shrink();
@@ -433,7 +435,8 @@ class _InputValueTypeState extends State<InputValueType> {
           suffixText: _currentSuffix,
           iconAsset: iconAsset,
           onTap: _openOptions,
-          showAsIcon: _usingOverlay || _forceOpen || _focusNode.hasFocus,
+          showAsIcon: (_dropdownEntry != null) || _usingOverlay || _forceOpen,
+          onTapDownGlobal: (pos) => _lastTapGlobal = pos,
         );
     }
   }
@@ -452,12 +455,10 @@ class _InputValueTypeState extends State<InputValueType> {
   void _showOverlayDropdown() {
     _removeDropdown();
     final items = widget.dropdownItems ?? const <String>[];
-    // External prop wins; fallback to internal state only when uncontrolled
-    final String? selectionBasis = widget.selectedItem ??
-        (_selectedItem ??
-            (widget.variant == InputVariant.valueDropdown
-                ? _currentSuffix
-                : null));
+    // For valueDropdown, prefer the currently displayed suffix; otherwise external wins
+    final String? selectionBasis = widget.variant == InputVariant.valueDropdown
+        ? (_currentSuffix ?? widget.selectedItem ?? _selectedItem)
+        : (widget.selectedItem ?? _selectedItem);
     _dropdownEntry = ivt_ovl.createDropdownOverlay(
       context: context,
       layerLink: _layerLink,
@@ -475,6 +476,11 @@ class _InputValueTypeState extends State<InputValueType> {
           if (widget.variant == InputVariant.valueDropdown) {
             _currentSuffix = value;
           }
+        });
+        // Return focus to the input field after a selection
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _focusNode.requestFocus();
         });
       },
       onDismiss: _removeDropdown,
@@ -495,6 +501,7 @@ class _InputValueTypeState extends State<InputValueType> {
       },
       onConfirm: _confirmHighlighted,
       onEscape: _removeDropdown,
+      centerGlobal: _lastTapGlobal,
     );
     Overlay.of(context).insert(_dropdownEntry!);
 
@@ -563,6 +570,11 @@ class _InputValueTypeState extends State<InputValueType> {
       }
     });
     _removeDropdown();
+    // Return focus to the input field after confirm
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _focusNode.requestFocus();
+    });
   }
 
   void _markOverlayNeedsBuild() {
