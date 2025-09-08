@@ -75,8 +75,11 @@ OverlayEntry createDropdownOverlay({
                 child: Focus(
                   focusNode: focusNode,
                   autofocus: true,
-                  onKey: (node, event) {
-                    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+                  onKeyEvent: (node, event) {
+                    // Handle both initial down and repeats
+                    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+                      return KeyEventResult.ignored;
+                    }
                     final key = event.logicalKey;
                     if (key == LogicalKeyboardKey.arrowDown) {
                       onHighlightNext?.call();
