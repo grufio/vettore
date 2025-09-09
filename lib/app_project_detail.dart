@@ -7,10 +7,8 @@ import 'dart:typed_data';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
-import 'package:vettore/widgets/input_value_type.dart';
 import 'package:vettore/widgets/section_sidebar.dart';
 import 'package:vettore/widgets/section_input.dart';
-import 'package:vettore/widgets/button_toggle.dart';
 import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/widgets/image_upload_area.dart';
@@ -20,6 +18,9 @@ import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/data/database.dart';
 import 'package:image/image.dart' as img;
 import 'dart:async';
+import 'package:vettore/widgets/input_value_type/dimensions_row.dart';
+import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
+import 'package:vettore/services/dimensions_guard.dart';
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -57,10 +58,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   StreamSubscription<DbProject?>? _projectSub;
   // Link/unlink width/height
   bool _linkWH = false;
-  bool _syncingWH = false;
-  double? _aspectWH; // height / width
-  int? _origW;
-  int? _origH;
+  // Original dimensions no longer tracked here; DimensionsRow manages aspect
   // Guard to avoid re-initializing dimensions on stream rebuilds
   int? _lastDimsImageId;
   bool _dimsInitialized = false;
@@ -70,32 +68,25 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     setState(() => _hasImage = value);
   }
 
-  void _onWidthChanged() {
-    if (!_linkWH || _syncingWH) return;
-    final int? w = int.tryParse(_inputValueController.text);
-    if (w == null || w <= 0) return;
-    final double aspect = _aspectWH ??
-        ((_origW != null && _origW! > 0 && _origH != null)
-            ? _origH! / _origW!
-            : 1.0);
-    _syncingWH = true;
-    final int h = (w * aspect).round();
-    _inputValueController2.text = h.toString();
-    _syncingWH = false;
-  }
-
-  void _onHeightChanged() {
-    if (!_linkWH || _syncingWH) return;
-    final int? h = int.tryParse(_inputValueController2.text);
-    if (h == null || h <= 0) return;
-    final double aspect = _aspectWH ??
-        ((_origW != null && _origW! > 0 && _origH != null)
-            ? _origH! / _origW!
-            : 1.0);
-    _syncingWH = true;
-    final int w = (h / aspect).round();
-    _inputValueController.text = w.toString();
-    _syncingWH = false;
+  // Linking logic is handled inside DimensionsRow
+  void _applyImageDims({int? width, int? height}) {
+    final int? curW = int.tryParse(_inputValueController.text);
+    final int? curH = int.tryParse(_inputValueController2.text);
+    final bool should = DimensionsGuard.shouldApply(
+      currentWidth: curW,
+      currentHeight: curH,
+      newWidth: width,
+      newHeight: height,
+      initialized: _dimsInitialized,
+    );
+    if (!should) return;
+    DimensionsGuard.writeControllers(
+      widthController: _inputValueController,
+      heightController: _inputValueController2,
+      width: width,
+      height: height,
+    );
+    _dimsInitialized = true;
   }
 
   @override
@@ -113,9 +104,6 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
         _saveProjectTitle();
       }
     });
-    // Sync listeners for linked width/height
-    _inputValueController.addListener(_onWidthChanged);
-    _inputValueController2.addListener(_onHeightChanged);
     _initProject();
   }
 
@@ -127,8 +115,6 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     _projectController.dispose();
     _projectTitleFocusNode.dispose();
     _projectSub?.cancel();
-    _inputValueController.removeListener(_onWidthChanged);
-    _inputValueController2.removeListener(_onHeightChanged);
     super.dispose();
   }
 
@@ -239,30 +225,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                               if (dims != null) {
                                 final int? w = dims.$1;
                                 final int? h = dims.$2;
-                                final int? curW =
-                                    int.tryParse(_inputValueController.text);
-                                final int? curH =
-                                    int.tryParse(_inputValueController2.text);
-                                final bool changed = (w != null && w != curW) ||
-                                    (h != null && h != curH) ||
-                                    !_dimsInitialized;
-                                if (changed) {
-                                  if (w != null) {
-                                    _inputValueController.text = w.toString();
-                                    _origW = w;
-                                  }
-                                  if (h != null) {
-                                    _inputValueController2.text = h.toString();
-                                    _origH = h;
-                                  }
-                                  if (w != null &&
-                                      w > 0 &&
-                                      h != null &&
-                                      h > 0) {
-                                    _aspectWH = h / w;
-                                  }
-                                  _dimsInitialized = true;
-                                }
+                                _applyImageDims(width: w, height: h);
                               }
                             } else {
                               if (_inputValueController.text.isNotEmpty) {
@@ -271,140 +234,26 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                               if (_inputValueController2.text.isNotEmpty) {
                                 _inputValueController2.text = '';
                               }
-                              _origW = null;
-                              _origH = null;
-                              _aspectWH = null;
                               _dimsInitialized = false;
                             }
                             return SectionSidebar(
                               title: 'Title',
                               children: [
-                                SectionInput(
-                                  left: InputValueType(
-                                    key: const ValueKey('width'),
-                                    controller: _inputValueController,
-                                    placeholder: hasImage ? null : 'Width',
-                                    dropdownItems: const [
-                                      'px',
-                                      'mm',
-                                      'cm',
-                                      'in'
-                                    ],
-                                    selectedItem: 'px',
-                                    variant: InputVariant.valueDropdown,
-                                    readOnly: !hasImage,
-                                  ),
-                                  right: InputValueType(
-                                    key: const ValueKey('height'),
-                                    controller: _inputValueController2,
-                                    placeholder: hasImage ? null : 'Height',
-                                    dropdownItems: const [
-                                      'px',
-                                      'mm',
-                                      'cm',
-                                      'in'
-                                    ],
-                                    selectedItem: 'px',
-                                    variant: InputVariant.valueDropdown,
-                                    readOnly: !hasImage,
-                                  ),
-                                  action: ButtonToggle(
-                                    value: _linkWH,
-                                    onChanged: (v) {
-                                      setState(() {
-                                        _linkWH = v;
-                                        if (_linkWH) {
-                                          // Compute aspect from current values or original dims
-                                          final int? w = int.tryParse(
-                                              _inputValueController.text);
-                                          final int? h = int.tryParse(
-                                              _inputValueController2.text);
-                                          if (w != null &&
-                                              w > 0 &&
-                                              h != null &&
-                                              h > 0) {
-                                            _aspectWH = h / w;
-                                          } else if (_origW != null &&
-                                              _origW! > 0 &&
-                                              _origH != null) {
-                                            _aspectWH = _origH! / _origW!;
-                                          }
-                                          // Immediately sync counterpart so link effect is visible
-                                          final double aspect = _aspectWH ??
-                                              ((_origW != null &&
-                                                      _origW! > 0 &&
-                                                      _origH != null)
-                                                  ? _origH! / _origW!
-                                                  : 1.0);
-                                          _syncingWH = true;
-                                          if (w != null && w > 0) {
-                                            final int newH =
-                                                (w * aspect).round();
-                                            _inputValueController2.text =
-                                                newH.toString();
-                                          } else if (h != null && h > 0) {
-                                            final int newW =
-                                                (h / aspect).round();
-                                            _inputValueController.text =
-                                                newW.toString();
-                                          }
-                                          _syncingWH = false;
-                                        }
-                                      });
-                                    },
-                                  ),
+                                DimensionsRow(
+                                  widthController: _inputValueController,
+                                  heightController: _inputValueController2,
+                                  enabled: hasImage,
+                                  initialLinked: _linkWH,
+                                  onLinkChanged: (v) => setState(() {
+                                    _linkWH = v;
+                                  }),
                                 ),
-                                SectionInput(
-                                  left: InputValueType(
-                                    controller: _singleInputController,
-                                    placeholder: null,
-                                    enableSelection: false,
-                                    dropdownItems: const [
-                                      'nearest',
-                                      'linear',
-                                      'cubic',
-                                      'area',
-                                      'lanczos'
-                                    ],
-                                    selectedItem: null,
-                                    variant: InputVariant.dropdown,
-                                    readOnly: false,
-                                    onChanged: (t) {
-                                      if (t != _interp) {
-                                        // Prevent manual edits; restore last selected value
-                                        _singleInputController.text = _interp;
-                                      }
-                                    },
-                                    onItemSelected: (v) {
-                                      setState(() {
-                                        _interp = v;
-                                        _singleInputController.text = v;
-                                      });
-                                    },
-                                  ),
-                                  right: null,
-                                  actionIconAsset: null,
-                                ),
-                                SectionInput(
-                                  full: OutlinedActionButton(
-                                    label: 'Resize',
-                                    onTap: () async {
-                                      if (_currentProjectId == null) return;
-                                      final int? w = int.tryParse(
-                                          _inputValueController.text);
-                                      final int? h = int.tryParse(
-                                          _inputValueController2.text);
-                                      if (w == null || h == null) return;
-                                      final interp = _interp;
-                                      try {
-                                        final logic = ref.read(
-                                            projectLogicProvider(
-                                                _currentProjectId!));
-                                        await logic.resizeToCv(w, h, interp);
-                                      } catch (_) {}
-                                    },
-                                  ),
-                                  actionIconAsset: null,
+                                InterpolationSelector(
+                                  value: _interp,
+                                  onChanged: (v) => setState(() {
+                                    _interp = v;
+                                    _singleInputController.text = v;
+                                  }),
                                 ),
                               ],
                             );
@@ -477,14 +326,7 @@ extension on _AppProjectDetailPageState {
       ),
     );
     // Update local UI controllers with dimensions
-    if (width != null) {
-      _inputValueController.text = width.toString();
-      _origW = width;
-    }
-    if (height != null) {
-      _inputValueController2.text = height.toString();
-      _origH = height;
-    }
+    _applyImageDims(width: width, height: height);
     _setHasImage(true);
   }
 
@@ -599,14 +441,7 @@ extension _ImageDimensions on _AppProjectDetailPageState {
           .getSingleOrNull();
       final int? width = row?.origWidth;
       final int? height = row?.origHeight;
-      if (width != null) {
-        _inputValueController.text = width.toString();
-        _origW = width;
-      }
-      if (height != null) {
-        _inputValueController2.text = height.toString();
-        _origH = height;
-      }
+      _applyImageDims(width: width, height: height);
     } catch (_) {
       // ignore read errors
     }

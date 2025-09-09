@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:vettore/widgets/section_sidebar.dart';
-import 'package:vettore/widgets/input_value_type.dart';
+import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 
 class InputRowFull extends StatelessWidget {
   final TextEditingController controller;

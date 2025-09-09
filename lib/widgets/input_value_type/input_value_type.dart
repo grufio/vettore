@@ -17,6 +17,12 @@ import 'package:vettore/widgets/input_value_type/controller.dart';
 import 'package:vettore/widgets/input_value_type/dropdown_overlay.dart'
     as ivt_ovl;
 
+/// Visual/behavior variants for the right-side affordance.
+/// - regular: fixed suffix text (if provided), no dropdown.
+/// - selector: suffix text that turns into a chevron on hover; opens dropdown.
+/// - dropdown: chevron-only suffix; opens dropdown.
+/// - valueDropdown: numeric/text field with a suffix that is the selected
+///   dropdown value; clicking the suffix opens a dropdown centered on click.
 enum InputVariant {
   regular,
   selector,
@@ -26,11 +32,14 @@ enum InputVariant {
 
 // (Removed old Shortcuts/Actions intents; RawAutocomplete now manages keys)
 
+/// Input field with optional dropdown behaviors and custom suffix.
+///
+/// When [dropdownItems] is provided, the suffix acts based on [variant]:
+/// - [InputVariant.selector] shows suffix text that flips to a chevron on hover.
+/// - [InputVariant.dropdown] shows only a chevron.
+/// - [InputVariant.valueDropdown] shows the currently selected item as suffix.
+/// For read-only mode, selection/cursor are disabled and the caret is hidden.
 class InputValueType extends StatefulWidget {
-  // Visual/behavior variants for the right-side affordance
-  // regular: just suffix text (if provided)
-  // selector: suffix text by default; on hover shows dropdown icon; click opens dropdown
-  // dropdownIconOnly: only shows dropdown icon; click opens dropdown
   static const InputVariant defaultVariant = InputVariant.regular;
   final TextEditingController? controller;
   final FocusNode? focusNode;
