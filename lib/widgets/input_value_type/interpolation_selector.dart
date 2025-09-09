@@ -50,6 +50,11 @@ class _InterpolationSelectorState extends State<InterpolationSelector> {
       left: InputValueType(
         controller: _controller,
         placeholder: null,
+        prefixIconAsset: 'assets/icons/16/help.svg',
+        prefixIconFit: BoxFit.none,
+        prefixIconAlignment: Alignment.centerLeft,
+        prefixIconWidth: 16.0,
+        prefixIconHeight: 16.0,
         enableSelection: false,
         dropdownItems: _items,
         selectedItem: null,

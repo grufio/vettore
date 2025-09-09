@@ -50,6 +50,10 @@ class InputValueType extends StatefulWidget {
   final String? placeholder;
   final String? suffixText;
   final String prefixIconAsset;
+  final BoxFit? prefixIconFit;
+  final AlignmentGeometry? prefixIconAlignment;
+  final double? prefixIconWidth;
+  final double? prefixIconHeight;
   final bool readOnly;
   // When false, user cannot select/mark the text (cursor hidden, no selection handles)
   final bool enableSelection;
@@ -71,7 +75,11 @@ class InputValueType extends StatefulWidget {
     this.autofocus = false,
     this.placeholder,
     this.suffixText,
-    this.prefixIconAsset = 'assets/icons/32/color-palette.svg',
+    this.prefixIconAsset = 'assets/icons/16/help.svg',
+    this.prefixIconFit,
+    this.prefixIconAlignment,
+    this.prefixIconWidth,
+    this.prefixIconHeight,
     this.readOnly = false,
     this.enableSelection = true,
     this.dropdownItems,
@@ -300,8 +308,10 @@ class _InputValueTypeState extends State<InputValueType> {
           children: [
             SvgPicture.asset(
               widget.prefixIconAsset,
-              width: 16.0,
-              height: 16.0,
+              width: widget.prefixIconWidth ?? 16.0,
+              height: widget.prefixIconHeight ?? 16.0,
+              fit: widget.prefixIconFit ?? BoxFit.none,
+              alignment: widget.prefixIconAlignment ?? Alignment.centerLeft,
               colorFilter: const ColorFilter.mode(kGrey70, BlendMode.srcIn),
             ),
             const SizedBox(width: 8.0),

@@ -12,7 +12,7 @@ import 'package:vettore/widgets/section_input.dart';
 import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/widgets/image_upload_area.dart';
-import 'package:vettore/widgets/input_row_full.dart';
+import 'package:vettore/widgets/input_value_type/text_default.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/data/database.dart';
@@ -225,7 +225,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                         SectionSidebar(
                           title: 'Projekt',
                           children: [
-                            InputRowFull(
+                            TextDefaultInput(
                               controller: _projectController,
                               focusNode: _projectTitleFocusNode,
                               placeholder: null,
