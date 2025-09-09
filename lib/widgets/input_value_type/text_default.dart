@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart' show TextCapitalization;
 import 'package:vettore/widgets/section_sidebar.dart';
 import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 
@@ -15,6 +16,9 @@ class TextDefaultInput extends StatelessWidget {
   final String? actionIconAsset;
   final VoidCallback? onActionTap;
   final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged;
+  final int? maxLength;
+  final TextCapitalization textCapitalization;
 
   const TextDefaultInput({
     super.key,
@@ -26,6 +30,9 @@ class TextDefaultInput extends StatelessWidget {
     this.actionIconAsset,
     this.onActionTap,
     this.onSubmitted,
+    this.onChanged,
+    this.maxLength,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -41,6 +48,9 @@ class TextDefaultInput extends StatelessWidget {
         prefixIconHeight: 16.0,
         prefixIconFit: BoxFit.contain,
         prefixIconAlignment: Alignment.centerLeft,
+        onChanged: onChanged,
+        maxLength: maxLength,
+        textCapitalization: textCapitalization,
         readOnly: false,
         enableSelection: true,
         onSubmitted: onSubmitted,

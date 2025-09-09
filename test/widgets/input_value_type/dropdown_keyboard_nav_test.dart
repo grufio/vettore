@@ -21,15 +21,15 @@ void main() {
       selectedItem: 'linear',
       variant: InputVariant.dropdown,
       readOnly: false,
+      suffixKey: const ValueKey('ivt-suffix'),
     )));
 
     // Focus the field
     await tester.tap(find.byType(TextField));
     await tester.pump();
 
-    // Open dropdown via suffix icon tap (chevron)
-    // The icon is rendered as _IconSuffixButton inside InputValueType
-    await tester.tap(find.byType(IconButton).first, warnIfMissed: false);
+    // Open dropdown via exposed suffix key
+    await tester.tap(find.byKey(const ValueKey('ivt-suffix')));
     await tester.pump();
 
     // Send arrow down then enter to select next item

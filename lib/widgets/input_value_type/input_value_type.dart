@@ -6,7 +6,8 @@ import 'package:flutter/material.dart'
         TextField,
         InputDecoration,
         InputBorder,
-        materialTextSelectionControls;
+        materialTextSelectionControls,
+        TextCapitalization;
 import 'package:flutter_svg/flutter_svg.dart';
 // Removed: keyboard services, handled by RawAutocomplete and TextField
 // Removed: async utilities
@@ -16,6 +17,7 @@ import 'package:vettore/widgets/input_value_type/suffix.dart' as ivt_sfx;
 import 'package:vettore/widgets/input_value_type/controller.dart';
 import 'package:vettore/widgets/input_value_type/dropdown_overlay.dart'
     as ivt_ovl;
+import 'package:vettore/widgets/input_value_type/prefix_icon.dart';
 
 /// Visual/behavior variants for the right-side affordance.
 /// - regular: fixed suffix text (if provided), no dropdown.
@@ -49,11 +51,13 @@ class InputValueType extends StatefulWidget {
   final bool autofocus;
   final String? placeholder;
   final String? suffixText;
-  final String prefixIconAsset;
+  final String? prefixIconAsset;
   final BoxFit? prefixIconFit;
   final AlignmentGeometry? prefixIconAlignment;
   final double? prefixIconWidth;
   final double? prefixIconHeight;
+  final int? maxLength;
+  final TextCapitalization? textCapitalization;
   final bool readOnly;
   // When false, user cannot select/mark the text (cursor hidden, no selection handles)
   final bool enableSelection;
@@ -64,6 +68,8 @@ class InputValueType extends StatefulWidget {
   final InputDropdownController? dropdownController;
   final InputVariant variant;
   final String? dropdownIconAsset;
+  // Testing/targeting aid: stable key for the tappable suffix widget
+  final Key? suffixKey;
 
   const InputValueType({
     super.key,
@@ -75,11 +81,13 @@ class InputValueType extends StatefulWidget {
     this.autofocus = false,
     this.placeholder,
     this.suffixText,
-    this.prefixIconAsset = 'assets/icons/16/help.svg',
+    this.prefixIconAsset,
     this.prefixIconFit,
     this.prefixIconAlignment,
     this.prefixIconWidth,
     this.prefixIconHeight,
+    this.maxLength,
+    this.textCapitalization,
     this.readOnly = false,
     this.enableSelection = true,
     this.dropdownItems,
@@ -88,6 +96,7 @@ class InputValueType extends StatefulWidget {
     this.dropdownController,
     this.variant = InputValueType.defaultVariant,
     this.dropdownIconAsset,
+    this.suffixKey,
   });
 
   factory InputValueType.text({
@@ -306,15 +315,16 @@ class _InputValueTypeState extends State<InputValueType> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SvgPicture.asset(
-              widget.prefixIconAsset,
-              width: widget.prefixIconWidth ?? 16.0,
-              height: widget.prefixIconHeight ?? 16.0,
-              fit: widget.prefixIconFit ?? BoxFit.none,
-              alignment: widget.prefixIconAlignment ?? Alignment.centerLeft,
-              colorFilter: const ColorFilter.mode(kGrey70, BlendMode.srcIn),
-            ),
-            const SizedBox(width: 8.0),
+            if (widget.prefixIconAsset != null) ...[
+              PrefixIcon(
+                asset: widget.prefixIconAsset!,
+                size: widget.prefixIconWidth ?? 16.0,
+                fit: widget.prefixIconFit ?? BoxFit.none,
+                alignment: widget.prefixIconAlignment ?? Alignment.centerLeft,
+                color: kGrey70,
+              ),
+              const SizedBox(width: 8.0),
+            ],
             Expanded(
               child: MouseRegion(
                 cursor: isReadOnly
@@ -359,6 +369,9 @@ class _InputValueTypeState extends State<InputValueType> {
                             autofocus: isReadOnly ? false : widget.autofocus,
                             onChanged: isReadOnly ? null : widget.onChanged,
                             onSubmitted: isReadOnly ? null : widget.onSubmitted,
+                            maxLength: widget.maxLength,
+                            textCapitalization: widget.textCapitalization ??
+                                TextCapitalization.none,
                             readOnly: isReadOnly,
                             enableInteractiveSelection:
                                 !isReadOnly && widget.enableSelection,
@@ -430,6 +443,7 @@ class _InputValueTypeState extends State<InputValueType> {
           );
         }
         return ivt_sfx.HoverSelectorSuffix(
+          key: widget.suffixKey,
           suffixText: widget.suffixText,
           iconAsset: iconAsset,
           onTap: _openOptions,
@@ -439,6 +453,7 @@ class _InputValueTypeState extends State<InputValueType> {
       case InputVariant.dropdown:
         if (!hasDropdown) return const SizedBox.shrink();
         return _IconSuffixButton(
+          key: widget.suffixKey,
           iconAsset: iconAsset,
           onTap: _openOptions,
           onTapDown: (details) => _lastTapGlobal = details.globalPosition,
@@ -459,6 +474,7 @@ class _InputValueTypeState extends State<InputValueType> {
           );
         }
         return ivt_sfx.HoverSelectorSuffix(
+          key: widget.suffixKey,
           suffixText: _currentSuffix,
           iconAsset: iconAsset,
           onTap: _openOptions,
@@ -633,8 +649,12 @@ class _IconSuffixButton extends StatefulWidget {
   final String iconAsset;
   final VoidCallback onTap;
   final void Function(TapDownDetails)? onTapDown;
-  const _IconSuffixButton(
-      {required this.iconAsset, required this.onTap, this.onTapDown});
+  const _IconSuffixButton({
+    super.key,
+    required this.iconAsset,
+    required this.onTap,
+    this.onTapDown,
+  });
 
   @override
   State<_IconSuffixButton> createState() => _IconSuffixButtonState();
