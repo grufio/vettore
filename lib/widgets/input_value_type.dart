@@ -42,6 +42,8 @@ class InputValueType extends StatefulWidget {
   final String? suffixText;
   final String prefixIconAsset;
   final bool readOnly;
+  // When false, user cannot select/mark the text (cursor hidden, no selection handles)
+  final bool enableSelection;
   // Dropdown support (optional). If provided, tapping the field opens a dropdown.
   final List<String>? dropdownItems;
   final String? selectedItem;
@@ -62,6 +64,7 @@ class InputValueType extends StatefulWidget {
     this.suffixText,
     this.prefixIconAsset = 'assets/icons/32/color-palette.svg',
     this.readOnly = false,
+    this.enableSelection = true,
     this.dropdownItems,
     this.selectedItem,
     this.onItemSelected,
@@ -94,6 +97,7 @@ class InputValueType extends StatefulWidget {
       suffixText: suffixText,
       prefixIconAsset: prefixIconAsset,
       readOnly: false,
+      enableSelection: true,
     );
   }
 
@@ -337,8 +341,9 @@ class _InputValueTypeState extends State<InputValueType> {
                             onChanged: isReadOnly ? null : widget.onChanged,
                             onSubmitted: isReadOnly ? null : widget.onSubmitted,
                             readOnly: isReadOnly,
-                            enableInteractiveSelection: !isReadOnly,
-                            showCursor: !isReadOnly,
+                            enableInteractiveSelection:
+                                !isReadOnly && widget.enableSelection,
+                            showCursor: !isReadOnly && widget.enableSelection,
                             selectionControls: materialTextSelectionControls,
                             enabled: !isReadOnly,
                           ),
@@ -417,6 +422,7 @@ class _InputValueTypeState extends State<InputValueType> {
         return _IconSuffixButton(
           iconAsset: iconAsset,
           onTap: _openOptions,
+          onTapDown: (details) => _lastTapGlobal = details.globalPosition,
         );
       case InputVariant.valueDropdown:
         if (!hasDropdown) {
@@ -456,10 +462,14 @@ class _InputValueTypeState extends State<InputValueType> {
   void _showOverlayDropdown() {
     _removeDropdown();
     final items = widget.dropdownItems ?? const <String>[];
-    // For valueDropdown, prefer the currently displayed suffix; otherwise external wins
+    // For valueDropdown, prefer the currently displayed suffix; otherwise use
+    // explicit selectedItem, internal selection, or fall back to field text.
     final String? selectionBasis = widget.variant == InputVariant.valueDropdown
-        ? (_currentSuffix ?? widget.selectedItem ?? _selectedItem)
-        : (widget.selectedItem ?? _selectedItem);
+        ? (_currentSuffix ??
+            widget.selectedItem ??
+            _selectedItem ??
+            _controller.text)
+        : (widget.selectedItem ?? _selectedItem ?? _controller.text);
     // Determine initial highlighted index
     final int initialIndex =
         selectionBasis != null ? items.indexOf(selectionBasis) : -1;
@@ -603,7 +613,9 @@ bool _listEquals<T>(List<T> a, List<T> b) {
 class _IconSuffixButton extends StatefulWidget {
   final String iconAsset;
   final VoidCallback onTap;
-  const _IconSuffixButton({required this.iconAsset, required this.onTap});
+  final void Function(TapDownDetails)? onTapDown;
+  const _IconSuffixButton(
+      {required this.iconAsset, required this.onTap, this.onTapDown});
 
   @override
   State<_IconSuffixButton> createState() => _IconSuffixButtonState();
@@ -618,6 +630,7 @@ class _IconSuffixButtonState extends State<_IconSuffixButton> {
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
         onTap: widget.onTap,
+        onTapDown: widget.onTapDown,
         child: Container(
           margin: const EdgeInsets.only(left: 8.0),
           width: 12.0,

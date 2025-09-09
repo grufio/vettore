@@ -100,6 +100,7 @@ flutter:
     - lib/input/norma_pro_color_codes.csv
     - scripts/quantize.py
     - scripts/resize.py
+    - scripts/resize_cv.py
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

@@ -133,7 +133,7 @@ class _AppShellState extends State<_AppShell> {
                 ? AppOverviewPage(
                     showHeader: false,
                     onAddProject: _handleAddTab,
-                    onOpenProject: (projectId) {
+                    onOpenProject: (projectId) async {
                       // If already open, select its tab; else create a new tab
                       final existingIndex = _tabs.indexWhere((t) =>
                           t.projectId != null && t.projectId == projectId);
@@ -143,11 +143,19 @@ class _AppShellState extends State<_AppShell> {
                           _currentProjectId = projectId;
                         });
                       } else {
+                        // Fetch actual project title for the new tab label
+                        final container = ProviderScope.containerOf(context);
+                        final repo = container.read(projectRepositoryProvider);
+                        final DbProject? p = await repo.getById(projectId);
+                        final String tabLabel =
+                            (p != null && p.title.isNotEmpty)
+                                ? p.title
+                                : 'Untitled';
                         setState(() {
                           _currentProjectId = projectId;
                           _tabs.add(GrufioTabData(
                             iconPath: 'assets/icons/32/color-palette.svg',
-                            label: 'Untitled',
+                            label: tabLabel,
                             projectId: projectId,
                           ));
                           _activeIndex = _tabs.length - 1;

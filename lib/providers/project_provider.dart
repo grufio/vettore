@@ -28,8 +28,10 @@ final imageDimensionsProvider =
   final db = ref.read(appDatabaseProvider);
   final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
       .getSingleOrNull();
-  final w = row?.origWidth ?? row?.convWidth;
-  final h = row?.origHeight ?? row?.convHeight;
+  // Prefer converted dimensions if available (reflect latest resize),
+  // fallback to original when no converted dims exist.
+  final w = row?.convWidth ?? row?.origWidth;
+  final h = row?.convHeight ?? row?.origHeight;
   return (w, h);
 });
 
@@ -328,9 +330,170 @@ class ProjectLogic {
       final now = DateTime.now().millisecondsSinceEpoch;
       await projectRepository.update(
           ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)));
+
+      // Invalidate dependent providers so UI picks up updated image and dims
+      if (project.imageId != null) {
+        ref.invalidate(imageBytesProvider(project.imageId!));
+        ref.invalidate(imageDimensionsProvider(project.imageId!));
+      }
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// Resize to exact target dimensions using OpenCV script (only).
+  Future<void> resizeTo(
+      int targetWidth, int targetHeight, FilterQuality filterQuality) async {
+    final projectRepository = ref.read(projectRepositoryProvider);
+    final db = ref.read(appDatabaseProvider);
+    final project = await projectRepository.getById(projectId);
+
+    if (project.imageId == null) return;
+
+    final tempDir = await getTemporaryDirectory();
+    final scriptPath = '${tempDir.path}/resize_cv.py';
+    final inputPath = '${tempDir.path}/cv_in.png';
+    final outputPath = '${tempDir.path}/cv_out.png';
+
+    final scriptContent = await rootBundle.loadString('scripts/resize_cv.py');
+    await File(scriptPath).writeAsString(scriptContent);
+
+    final imageRow = await (db.select(db.images)
+          ..where((t) => t.id.equals(project.imageId!)))
+        .getSingle();
+    final orig = imageRow.origSrc;
+    if (orig == null || orig.isEmpty) return;
+    await File(inputPath).writeAsBytes(orig);
+
+    final interp = filterQuality == FilterQuality.high ? 'lanczos' : 'nearest';
+    final result = await Process.run('python3', [
+      scriptPath,
+      inputPath,
+      outputPath,
+      targetWidth.toString(),
+      targetHeight.toString(),
+      interp,
+    ]);
+    if (result.exitCode != 0) {
+      throw Exception('OpenCV resize failed: ${result.stderr}');
+    }
+
+    final newImageData = await File(outputPath).readAsBytes();
+    final dims = jsonDecode(result.stdout as String) as Map<String, dynamic>;
+    final newW = dims['width'] as int;
+    final newH = dims['height'] as int;
+
+    int uniqueColorCount = 0;
+    final decoded = img.decodeImage(newImageData);
+    if (decoded != null) {
+      final colors = <int>{};
+      for (final p in decoded) {
+        colors.add(img.rgbaToUint32(
+            p.r.toInt(), p.g.toInt(), p.b.toInt(), p.a.toInt()));
+      }
+      uniqueColorCount = colors.length;
+    }
+
+    await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
+        .write(ImagesCompanion(
+      convSrc: Value(newImageData),
+      convBytes: Value(newImageData.length),
+      convWidth: Value(newW),
+      convHeight: Value(newH),
+      convUniqueColors: Value(uniqueColorCount),
+    ));
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await projectRepository
+        .update(ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)));
+
+    if (project.imageId != null) {
+      ref.invalidate(imageBytesProvider(project.imageId!));
+      ref.invalidate(imageDimensionsProvider(project.imageId!));
+    }
+
+    try {
+      await File(scriptPath).delete();
+      await File(inputPath).delete();
+      await File(outputPath).delete();
+    } catch (_) {}
+  }
+
+  /// Resize using OpenCV with an explicit interpolation name
+  Future<void> resizeToCv(
+      int targetWidth, int targetHeight, String interpolationName) async {
+    final projectRepository = ref.read(projectRepositoryProvider);
+    final db = ref.read(appDatabaseProvider);
+    final project = await projectRepository.getById(projectId);
+
+    if (project.imageId == null) return;
+
+    final tempDir = await getTemporaryDirectory();
+    final scriptPath = '${tempDir.path}/resize_cv.py';
+    final inputPath = '${tempDir.path}/cv_in.png';
+    final outputPath = '${tempDir.path}/cv_out.png';
+
+    final scriptContent = await rootBundle.loadString('scripts/resize_cv.py');
+    await File(scriptPath).writeAsString(scriptContent);
+
+    final imageRow = await (db.select(db.images)
+          ..where((t) => t.id.equals(project.imageId!)))
+        .getSingle();
+    final orig = imageRow.origSrc;
+    if (orig == null || orig.isEmpty) return;
+    await File(inputPath).writeAsBytes(orig);
+
+    final result = await Process.run('python3', [
+      scriptPath,
+      inputPath,
+      outputPath,
+      targetWidth.toString(),
+      targetHeight.toString(),
+      interpolationName,
+    ]);
+    if (result.exitCode != 0) {
+      throw Exception('OpenCV resize failed: ${result.stderr}');
+    }
+
+    final newImageData = await File(outputPath).readAsBytes();
+    final dims = jsonDecode(result.stdout as String) as Map<String, dynamic>;
+    final newW = dims['width'] as int;
+    final newH = dims['height'] as int;
+
+    int uniqueColorCount = 0;
+    final decoded = img.decodeImage(newImageData);
+    if (decoded != null) {
+      final colors = <int>{};
+      for (final p in decoded) {
+        colors.add(img.rgbaToUint32(
+            p.r.toInt(), p.g.toInt(), p.b.toInt(), p.a.toInt()));
+      }
+      uniqueColorCount = colors.length;
+    }
+
+    await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
+        .write(ImagesCompanion(
+      convSrc: Value(newImageData),
+      convBytes: Value(newImageData.length),
+      convWidth: Value(newW),
+      convHeight: Value(newH),
+      convUniqueColors: Value(uniqueColorCount),
+    ));
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await projectRepository
+        .update(ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)));
+
+    if (project.imageId != null) {
+      ref.invalidate(imageBytesProvider(project.imageId!));
+      ref.invalidate(imageDimensionsProvider(project.imageId!));
+    }
+
+    try {
+      await File(scriptPath).delete();
+      await File(inputPath).delete();
+      await File(outputPath).delete();
+    } catch (_) {}
   }
 
   Future<void> resetImage() async {

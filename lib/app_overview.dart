@@ -162,6 +162,18 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
             }
           },
           projectId: _newProjectIdForDetail,
+          onProjectTitleSaved: (newTitle) {
+            // Update label of current tab in this headered view
+            if (_activeIndex >= 0 && _activeIndex < _tabs.length) {
+              final t = _tabs[_activeIndex];
+              _tabs[_activeIndex] = GrufioTabData(
+                iconPath: t.iconPath,
+                label: newTitle.isEmpty ? 'Untitled' : newTitle,
+                width: t.width,
+              );
+              setState(() {});
+            }
+          },
         );
       }
       if (!widget.showHeader) {

@@ -41,7 +41,7 @@ OverlayEntry createDropdownOverlay({
   if (targetBox != null) {
     final Offset targetTopLeft = targetBox.localToGlobal(Offset.zero);
     if (centerGlobal != null) {
-      // Center the dropdown around the click, clamped to screen
+      // Center around click position, clamped to screen bounds
       double desiredLeft = centerGlobal.dx - (panelWidth / 2);
       double desiredTop = centerGlobal.dy - (estimatedPanelHeight / 2);
       desiredLeft = desiredLeft.clamp(0.0, screenSize.width - panelWidth);

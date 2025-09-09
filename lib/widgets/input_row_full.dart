@@ -10,6 +10,7 @@ class InputRowFull extends StatelessWidget {
   final String prefixIconAsset;
   final String? actionIconAsset;
   final VoidCallback? onActionTap;
+  final ValueChanged<String>? onSubmitted;
 
   const InputRowFull({
     super.key,
@@ -18,8 +19,9 @@ class InputRowFull extends StatelessWidget {
     this.placeholder,
     this.suffixText,
     this.prefixIconAsset = 'assets/icons/32/document--blank.svg',
-    this.actionIconAsset = 'assets/icons/32/checkmark.svg',
+    this.actionIconAsset = null,
     this.onActionTap,
+    this.onSubmitted,
   });
 
   @override
@@ -31,6 +33,7 @@ class InputRowFull extends StatelessWidget {
         placeholder: placeholder,
         suffixText: suffixText,
         prefixIconAsset: prefixIconAsset,
+        onSubmitted: onSubmitted,
       ),
       actionIconAsset: actionIconAsset,
       onActionTap: onActionTap,

@@ -49,6 +49,7 @@ class SectionInput extends StatelessWidget {
   final Widget? left;
   final Widget? right;
   final Widget? full; // optional element spanning both input areas
+  final Widget? action; // optional custom trailing action
   final String? actionIconAsset;
   final VoidCallback? onActionTap; // Reserved for later use
 
@@ -57,6 +58,7 @@ class SectionInput extends StatelessWidget {
     this.left,
     this.right,
     this.full,
+    this.action,
     this.actionIconAsset,
     this.onActionTap,
   });
@@ -83,10 +85,11 @@ class SectionInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget action = _ReservedActionIcon(
-      asset: actionIconAsset,
-      onTap: onActionTap,
-    );
+    final Widget trailing = action ??
+        _ReservedActionIcon(
+          asset: actionIconAsset,
+          onTap: onActionTap,
+        );
 
     final List<Widget> children = [];
 
@@ -100,7 +103,7 @@ class SectionInput extends StatelessWidget {
       ]);
     }
 
-    children.addAll([const SizedBox(width: 8.0), action]);
+    children.addAll([const SizedBox(width: 8.0), trailing]);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
