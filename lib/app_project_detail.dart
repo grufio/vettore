@@ -16,11 +16,12 @@ import 'package:vettore/widgets/input_row_full.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/data/database.dart';
-import 'package:image/image.dart' as img;
 import 'dart:async';
 import 'package:vettore/widgets/input_value_type/dimensions_row.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/services/dimensions_guard.dart';
+import 'package:flutter/foundation.dart' show compute;
+import 'package:vettore/services/image_compute.dart' as ic;
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -130,6 +131,36 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     }
 
     // Image presence is determined via DB stream in the body below
+    // Set up provider listeners at the start of build (required by Riverpod)
+    final int? _imageIdForListen = (_currentProjectId != null)
+        ? ref.watch(projectByIdProvider(_currentProjectId!)
+            .select((p) => p.asData?.value?.imageId))
+        : null;
+    if (_currentProjectId != null) {
+      ref.listen(projectByIdProvider(_currentProjectId!), (prev, next) {
+        final int? nextImageId = next.asData?.value?.imageId;
+        if (_lastDimsImageId != nextImageId) {
+          _lastDimsImageId = nextImageId;
+          _dimsInitialized = false;
+        }
+        if (nextImageId == null) {
+          if (_inputValueController.text.isNotEmpty) {
+            _inputValueController.text = '';
+          }
+          if (_inputValueController2.text.isNotEmpty) {
+            _inputValueController2.text = '';
+          }
+        }
+      });
+    }
+    if (_imageIdForListen != null) {
+      ref.listen(imageDimensionsProvider(_imageIdForListen), (prev, next) {
+        final dims = next.asData?.value;
+        if (dims != null) {
+          _applyImageDims(width: dims.$1, height: dims.$2);
+        }
+      });
+    }
 
     return ColoredBox(
       color: kWhite,
@@ -204,61 +235,35 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                             ),
                           ],
                         ),
-                        StreamBuilder<DbProject?>(
-                          stream: (_currentProjectId != null)
-                              ? ref
-                                  .watch(projectRepositoryProvider)
-                                  .watchById(_currentProjectId!)
-                              : const Stream.empty(),
-                          builder: (context, snapshot) {
-                            final int? imageId = snapshot.data?.imageId;
-                            final bool hasImage = imageId != null;
-                            // Reset init guard when image changes
-                            if (_lastDimsImageId != imageId) {
-                              _lastDimsImageId = imageId;
-                              _dimsInitialized = false;
-                            }
-                            if (hasImage) {
-                              final dimsAsync =
-                                  ref.watch(imageDimensionsProvider(imageId));
-                              final dims = dimsAsync.asData?.value;
-                              if (dims != null) {
-                                final int? w = dims.$1;
-                                final int? h = dims.$2;
-                                _applyImageDims(width: w, height: h);
-                              }
-                            } else {
-                              if (_inputValueController.text.isNotEmpty) {
-                                _inputValueController.text = '';
-                              }
-                              if (_inputValueController2.text.isNotEmpty) {
-                                _inputValueController2.text = '';
-                              }
-                              _dimsInitialized = false;
-                            }
-                            return SectionSidebar(
-                              title: 'Title',
-                              children: [
-                                DimensionsRow(
-                                  widthController: _inputValueController,
-                                  heightController: _inputValueController2,
-                                  enabled: hasImage,
-                                  initialLinked: _linkWH,
-                                  onLinkChanged: (v) => setState(() {
-                                    _linkWH = v;
-                                  }),
-                                ),
-                                InterpolationSelector(
-                                  value: _interp,
-                                  onChanged: (v) => setState(() {
-                                    _interp = v;
-                                    _singleInputController.text = v;
-                                  }),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
+                        Builder(builder: (context) {
+                          final int? imageId = (_currentProjectId != null)
+                              ? ref.watch(
+                                  projectByIdProvider(_currentProjectId!)
+                                      .select((p) => p.asData?.value?.imageId))
+                              : null;
+                          final bool hasImage = imageId != null;
+                          return SectionSidebar(
+                            title: 'Title',
+                            children: [
+                              DimensionsRow(
+                                widthController: _inputValueController,
+                                heightController: _inputValueController2,
+                                enabled: hasImage,
+                                initialLinked: _linkWH,
+                                onLinkChanged: (v) => setState(() {
+                                  _linkWH = v;
+                                }),
+                              ),
+                              InterpolationSelector(
+                                value: _interp,
+                                onChanged: (v) => setState(() {
+                                  _interp = v;
+                                  _singleInputController.text = v;
+                                }),
+                              ),
+                            ],
+                          );
+                        }),
                         const Expanded(child: SizedBox.shrink()),
                         // Move Delete Project button to the very bottom
                         SectionInput(
@@ -292,10 +297,10 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
 extension on _AppProjectDetailPageState {
   Future<void> _handleImageBytes(Uint8List bytes) async {
     if (_currentProjectId == null) return;
-    // Decode to get dimensions
-    final decoded = img.decodeImage(bytes);
-    final int? width = decoded?.width;
-    final int? height = decoded?.height;
+    // Decode to get dimensions in isolate
+    final dims = await compute(ic.decodeDimensions, bytes);
+    final int? width = dims.width;
+    final int? height = dims.height;
     final imagesDao = ref.read(appDatabaseProvider);
     // Insert image row
     final imageId = await imagesDao.into(imagesDao.images).insert(

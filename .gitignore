@@ -95,3 +95,5 @@ melos_local.yaml
 *.sqlite-shm
 *.db-wal
 *.db-shm
+
+**/.DS_Store

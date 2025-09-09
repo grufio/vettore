@@ -7,6 +7,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/grufio_tabs_app.dart';
+import 'package:vettore/services/logger.dart';
 
 class AppHeaderBar extends StatefulWidget {
   const AppHeaderBar({
@@ -78,7 +79,9 @@ class _AppHeaderBarState extends State<AppHeaderBar>
       final isFs = await windowManager.isFullScreen();
       if (!mounted) return;
       setState(() => _isFullscreen = isFs);
-    } catch (_) {}
+    } catch (e, st) {
+      logWarn('Failed to refresh window fullscreen state', e, st);
+    }
   }
 
   @override

@@ -8,10 +8,13 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:image/image.dart' as img;
+import 'package:flutter/foundation.dart' show compute;
+import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:path_provider/path_provider.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/services/settings_service.dart';
+import 'package:vettore/services/logger.dart';
 
 // Image bytes provider (orig or conv)
 final imageBytesProvider =
@@ -153,10 +156,19 @@ final projectStreamProvider =
           final frame = await codec.getNextFrame();
           decodedImage = frame.image;
         }
-      } catch (_) {}
+      } catch (e, st) {
+        logWarn('Failed to decode image for project ${project.id}', e, st);
+      }
     }
     return ProjectState(project: project, decodedImage: decodedImage);
   });
+});
+
+/// Stream provider for a single project row (DbProject?) by id.
+final projectByIdProvider =
+    StreamProvider.autoDispose.family<DbProject?, int>((ref, projectId) {
+  final repo = ref.watch(projectRepositoryProvider);
+  return repo.watchById(projectId);
 });
 
 // A provider for the business logic of the project editor.
@@ -218,8 +230,9 @@ class ProjectLogic {
           (jsonDecode(paletteJson) as List).map((c) => c as List).toList();
 
       // Decode the new image to get its dimensions
-      final img.Image? decodedQuantizedImage = img.decodeImage(newImageData);
-      if (decodedQuantizedImage == null) {
+      final ic.DecodedDimensions decodedDims =
+          await compute(ic.decodeDimensions, newImageData);
+      if (decodedDims.width == null || decodedDims.height == null) {
         throw Exception('Could not decode the quantized image output.');
       }
 
@@ -227,14 +240,15 @@ class ProjectLogic {
           .write(ImagesCompanion(
         convSrc: Value(newImageData),
         convBytes: Value(newImageData.length),
-        convWidth: Value(decodedQuantizedImage.width),
-        convHeight: Value(decodedQuantizedImage.height),
+        convWidth: Value(decodedDims.width!),
+        convHeight: Value(decodedDims.height!),
         convUniqueColors: Value(paletteList.length),
       ));
       final now = DateTime.now().millisecondsSinceEpoch;
       await projectRepository.update(
           ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)));
-    } catch (e) {
+    } catch (e, st) {
+      logWarn('quantizeImage failed for project $projectId', e, st);
       // Re-throw the exception to be caught by the UI layer if needed.
       rethrow;
     }
@@ -308,16 +322,9 @@ class ProjectLogic {
       await File(outputPath).delete();
 
       // Calculate unique colors for info
-      int uniqueColorCount = 0;
-      final image = img.decodeImage(newImageData);
-      if (image != null) {
-        final colors = <int>{};
-        for (final p in image) {
-          colors.add(img.rgbaToUint32(
-              p.r.toInt(), p.g.toInt(), p.b.toInt(), p.a.toInt()));
-        }
-        uniqueColorCount = colors.length;
-      }
+      final ic.UniqueColorsResult uc =
+          await compute(ic.decodeUniqueColors, newImageData);
+      final int uniqueColorCount = uc.count;
 
       await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
           .write(ImagesCompanion(
@@ -336,7 +343,8 @@ class ProjectLogic {
         ref.invalidate(imageBytesProvider(project.imageId!));
         ref.invalidate(imageDimensionsProvider(project.imageId!));
       }
-    } catch (e) {
+    } catch (e, st) {
+      logWarn('updateImage failed for project $projectId', e, st);
       rethrow;
     }
   }
@@ -383,16 +391,9 @@ class ProjectLogic {
     final newW = dims['width'] as int;
     final newH = dims['height'] as int;
 
-    int uniqueColorCount = 0;
-    final decoded = img.decodeImage(newImageData);
-    if (decoded != null) {
-      final colors = <int>{};
-      for (final p in decoded) {
-        colors.add(img.rgbaToUint32(
-            p.r.toInt(), p.g.toInt(), p.b.toInt(), p.a.toInt()));
-      }
-      uniqueColorCount = colors.length;
-    }
+    final ic.UniqueColorsResult uc2 =
+        await compute(ic.decodeUniqueColors, newImageData);
+    final int uniqueColorCount = uc2.count;
 
     await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
         .write(ImagesCompanion(
@@ -416,7 +417,9 @@ class ProjectLogic {
       await File(scriptPath).delete();
       await File(inputPath).delete();
       await File(outputPath).delete();
-    } catch (_) {}
+    } catch (e, st) {
+      logWarn('cleanup temp files failed in resizeTo for $projectId', e, st);
+    }
   }
 
   /// Resize using OpenCV with an explicit interpolation name
@@ -493,7 +496,9 @@ class ProjectLogic {
       await File(scriptPath).delete();
       await File(inputPath).delete();
       await File(outputPath).delete();
-    } catch (_) {}
+    } catch (e, st) {
+      logWarn('cleanup temp files failed in resizeToCv for $projectId', e, st);
+    }
   }
 
   Future<void> resetImage() async {
@@ -509,15 +514,9 @@ class ProjectLogic {
         .getSingleOrNull();
     final orig = imageRow?.origSrc;
     if (orig != null) {
-      final image = img.decodeImage(orig);
-      if (image != null) {
-        final colors = <int>{};
-        for (final p in image) {
-          colors.add(img.rgbaToUint32(
-              p.r.toInt(), p.g.toInt(), p.b.toInt(), p.a.toInt()));
-        }
-        uniqueColorCount = colors.length;
-      }
+      final ic.UniqueColorsResult uc3 =
+          await compute(ic.decodeUniqueColors, orig);
+      uniqueColorCount = uc3.count;
     }
 
     await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))

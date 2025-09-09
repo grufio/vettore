@@ -55,15 +55,8 @@ class _InterpolationSelectorState extends State<InterpolationSelector> {
         selectedItem: null,
         variant: InputVariant.dropdown,
         readOnly: false,
-        onChanged: (t) {
-          if (t != widget.value) {
-            _controller.text = widget.value;
-          }
-        },
-        onItemSelected: (v) {
-          _controller.text = v;
-          widget.onChanged(v);
-        },
+        onChanged: null,
+        onItemSelected: (v) => widget.onChanged(v),
       ),
       right: null,
       actionIconAsset: null,
