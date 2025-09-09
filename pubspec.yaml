@@ -93,6 +93,7 @@ flutter:
     - assets/images/libraries/schmincke/norma/
     - assets/images/layout/
     - assets/images/test/
+    - assets/icons/16/
     - assets/icons/32/
     - path: assets/icons/
       transformers:
