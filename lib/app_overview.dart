@@ -17,6 +17,8 @@ import 'package:vettore/app_project_detail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
+import 'package:vettore/providers/navigation_providers.dart';
+import 'package:vettore/app_image_detail.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:vettore/data/database.dart';
 // import 'package:vettore/widgets/preview_gallery.dart';
@@ -142,6 +144,9 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
           _showDetail = true;
           _newProjectIdForDetail = id;
         });
+        // Set providers for new project and default page
+        container.read(currentProjectIdProvider.notifier).state = id;
+        container.read(currentPageProvider.notifier).state = PageId.project;
       }
     });
   }
@@ -298,10 +303,38 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                             ),
                           Expanded(
                             child: _showDetail
-                                ? const AppProjectDetailPage()
+                                ? Consumer(builder: (context, ref, _) {
+                                    final page = ref.watch(currentPageProvider);
+                                    switch (page) {
+                                      case PageId.project:
+                                        return const AppProjectDetailPage();
+                                      case PageId.image:
+                                        return const AppImageDetailPage();
+                                      case PageId.conversion:
+                                      case PageId.grid:
+                                      case PageId.output:
+                                        return const AppProjectDetailPage();
+                                    }
+                                  })
                                 : (_activeIndex == 0
                                     ? _HomeGalleryContainer(
-                                        onOpenProject: widget.onOpenProject,
+                                        onOpenProject: widget.onOpenProject ??
+                                            (projId) {
+                                              final container =
+                                                  ProviderScope.containerOf(
+                                                      context);
+                                              container
+                                                  .read(currentProjectIdProvider
+                                                      .notifier)
+                                                  .state = projId;
+                                              container
+                                                  .read(currentPageProvider
+                                                      .notifier)
+                                                  .state = PageId.project;
+                                              setState(() {
+                                                _showDetail = true;
+                                              });
+                                            },
                                         onOpenVendor: widget.onOpenVendor,
                                       )
                                     : Center(

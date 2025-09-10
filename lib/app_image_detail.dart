@@ -27,13 +27,13 @@ import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/providers/navigation_providers.dart';
 
-class AppProjectDetailPage extends ConsumerStatefulWidget {
+class AppImageDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
   final ValueChanged<int>? onNavigateTab;
   final int? projectId; // optional for now; when null we load/create first
   final ValueChanged<String>? onProjectTitleSaved;
   final ValueChanged<int>? onDeleteProject;
-  const AppProjectDetailPage({
+  const AppImageDetailPage({
     super.key,
     this.initialActiveIndex = 1,
     this.onNavigateTab,
@@ -43,11 +43,10 @@ class AppProjectDetailPage extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AppProjectDetailPage> createState() =>
-      _AppProjectDetailPageState();
+  ConsumerState<AppImageDetailPage> createState() => _AppImageDetailPageState();
 }
 
-class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
+class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
   // Header handled by shell; these are no longer needed
   String _detailFilterId = 'project';
   // Photo viewer removed for empty state; controllers retained for later usage
@@ -200,10 +199,10 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
               activeId: _detailFilterId,
               onChanged: (id) {
                 setState(() => _detailFilterId = id);
-                if (id == 'image') {
-                  ref.read(currentPageProvider.notifier).state = PageId.image;
-                } else if (id == 'project') {
+                if (id == 'project') {
                   ref.read(currentPageProvider.notifier).state = PageId.project;
+                } else if (id == 'image') {
+                  ref.read(currentPageProvider.notifier).state = PageId.image;
                 }
               },
               height: 40.0,
@@ -323,7 +322,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   }
 }
 
-extension on _AppProjectDetailPageState {
+extension on _AppImageDetailPageState {
   void _onResizeTap() async {
     if (_currentProjectId == null) return;
     final int? wVal = int.tryParse(_inputValueController.text.trim());
@@ -500,7 +499,7 @@ extension on _AppProjectDetailPageState {
   }
 }
 
-extension _ImageDimensions on _AppProjectDetailPageState {
+extension _ImageDimensions on _AppImageDetailPageState {
   Future<void> _loadImageDimensions(int imageId) async {
     final db = ref.read(appDatabaseProvider);
     try {
