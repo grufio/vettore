@@ -296,6 +296,9 @@ class _InputValueTypeState extends State<InputValueType> {
       }
     }
 
+    // Determine if field has dropdown (unused since borders and bg are unified)
+    // Borders removed globally; keep variable removed
+
     return CompositedTransformTarget(
       link: _layerLink,
       child: Container(
@@ -303,12 +306,12 @@ class _InputValueTypeState extends State<InputValueType> {
         height: 24.0,
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         decoration: BoxDecoration(
-          color: isReadOnly ? kWhite : kGrey10,
+          // All inputs should have no borders per latest instruction
+          color: kGrey10,
           borderRadius: BorderRadius.circular(4.0),
+          // Keep a constant 1px border to prevent layout shift; make it transparent when not focused
           border: Border.all(
-            color: isReadOnly
-                ? kBordersColor
-                : (_focusNode.hasFocus ? kInputFocus : kTransparent),
+            color: _focusNode.hasFocus ? kInputFocus : kTransparent,
             width: 1.0,
           ),
         ),
@@ -407,8 +410,7 @@ class _InputValueTypeState extends State<InputValueType> {
 
   Widget _buildSuffix(bool isReadOnly) {
     final bool hasDropdown =
-        (widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty) &&
-            !isReadOnly;
+        (widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty);
     final String iconAsset =
         widget.dropdownIconAsset ?? 'assets/icons/32/chevron--down.svg';
 
@@ -485,7 +487,6 @@ class _InputValueTypeState extends State<InputValueType> {
   }
 
   void _openOptions() {
-    if (widget.readOnly) return;
     if ((widget.dropdownItems ?? const <String>[]).isEmpty) return;
     _beforeOpenValue = _controller.value;
     setState(() {

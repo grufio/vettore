@@ -47,7 +47,7 @@ class _InterpolationSelectorState extends State<InterpolationSelector> {
   @override
   Widget build(BuildContext context) {
     return SectionInput(
-      left: InputValueType(
+      full: InputValueType(
         controller: _controller,
         placeholder: null,
         prefixIconAsset: 'assets/icons/16/help.svg',
@@ -59,12 +59,10 @@ class _InterpolationSelectorState extends State<InterpolationSelector> {
         dropdownItems: _items,
         selectedItem: null,
         variant: InputVariant.dropdown,
-        readOnly: false,
+        readOnly: true,
         onChanged: null,
         onItemSelected: (v) => widget.onChanged(v),
       ),
-      right: null,
-      actionIconAsset: null,
     );
   }
 }

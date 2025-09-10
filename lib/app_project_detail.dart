@@ -18,8 +18,9 @@ import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/data/database.dart';
 import 'dart:async';
 import 'package:vettore/widgets/input_value_type/dimensions_row.dart';
-import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/services/dimensions_guard.dart';
+import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
+import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 import 'package:flutter/foundation.dart' show compute;
 import 'package:vettore/services/image_compute.dart' as ic;
 
@@ -260,6 +261,20 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                   _interp = v;
                                   _singleInputController.text = v;
                                 }),
+                                enabled: hasImage,
+                              ),
+                              ResolutionSelector(
+                                value: 96,
+                                onChanged: (dpi) {
+                                  // TODO: hook into unit conversion when implemented
+                                },
+                                enabled: hasImage,
+                              ),
+                              SectionInput(
+                                full: OutlinedActionButton(
+                                  label: 'Resize',
+                                  onTap: () {},
+                                ),
                               ),
                             ],
                           );

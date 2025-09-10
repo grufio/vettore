@@ -85,12 +85,6 @@ class SectionInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget trailing = action ??
-        _ReservedActionIcon(
-          asset: actionIconAsset,
-          onTap: onActionTap,
-        );
-
     final List<Widget> children = [];
 
     if (full != null) {
@@ -103,6 +97,12 @@ class SectionInput extends StatelessWidget {
       ]);
     }
 
+    // Always reserve trailing action slot to match Title row
+    final Widget trailing = action ??
+        _ReservedActionIcon(
+          asset: actionIconAsset,
+          onTap: onActionTap,
+        );
     children.addAll([const SizedBox(width: 8.0), trailing]);
 
     return Row(
