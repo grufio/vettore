@@ -17,7 +17,8 @@ import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/data/database.dart';
 import 'dart:async';
-import 'package:vettore/widgets/input_value_type/dimensions_row.dart';
+import 'package:vettore/widgets/input_value_type/width_row.dart';
+import 'package:vettore/widgets/input_value_type/height_row.dart';
 import 'package:vettore/services/dimensions_guard.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
@@ -246,7 +247,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                           return SectionSidebar(
                             title: 'Title',
                             children: [
-                              DimensionsRow(
+                              WidthRow(
                                 widthController: _inputValueController,
                                 heightController: _inputValueController2,
                                 enabled: hasImage,
@@ -254,6 +255,10 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                 onLinkChanged: (v) => setState(() {
                                   _linkWH = v;
                                 }),
+                              ),
+                              HeightRow(
+                                heightController: _inputValueController2,
+                                enabled: hasImage,
                               ),
                               InterpolationSelector(
                                 value: _interp,
