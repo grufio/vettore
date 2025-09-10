@@ -61,6 +61,10 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   StreamSubscription<DbProject?>? _projectSub;
   // Link/unlink width/height
   bool _linkWH = false;
+  // Units and DPI state for resize wiring
+  String _widthUnit = 'px';
+  String _heightUnit = 'px';
+  int _dpi = 96;
   // Original dimensions no longer tracked here; DimensionsRow manages aspect
   // Guard to avoid re-initializing dimensions on stream rebuilds
   int? _lastDimsImageId;
@@ -255,10 +259,14 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                 onLinkChanged: (v) => setState(() {
                                   _linkWH = v;
                                 }),
+                                dpi: _dpi,
+                                onUnitChanged: (u) => _widthUnit = u,
                               ),
                               HeightRow(
                                 heightController: _inputValueController2,
                                 enabled: hasImage,
+                                dpi: _dpi,
+                                onUnitChanged: (u) => _heightUnit = u,
                               ),
                               InterpolationSelector(
                                 value: _interp,
@@ -271,36 +279,22 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                               ResolutionSelector(
                                 value: 96,
                                 onChanged: (dpi) {
-                                  // TODO: hook into unit conversion when implemented
+                                  setState(() {
+                                    _dpi = dpi;
+                                  });
                                 },
                                 enabled: hasImage,
                               ),
                               SectionInput(
                                 full: OutlinedActionButton(
                                   label: 'Resize',
-                                  onTap: () {},
+                                  onTap: _onResizeTap,
                                 ),
                               ),
                             ],
                           );
                         }),
                         const Expanded(child: SizedBox.shrink()),
-                        // Move Delete Project button to the very bottom
-                        SectionInput(
-                          full: OutlinedActionButton(
-                            label: 'Delete Project',
-                            onTap: () async {
-                              if (_currentProjectId == null) return;
-                              final id = _currentProjectId!;
-                              await ref
-                                  .read(projectRepositoryProvider)
-                                  .delete(id);
-                              if (!mounted) return;
-                              widget.onDeleteProject?.call(id);
-                            },
-                          ),
-                          actionIconAsset: null,
-                        ),
                       ],
                     ),
                   ),
@@ -315,10 +309,42 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
 }
 
 extension on _AppProjectDetailPageState {
+  void _onResizeTap() async {
+    if (_currentProjectId == null) return;
+    final int? wVal = int.tryParse(_inputValueController.text.trim());
+    final int? hVal = int.tryParse(_inputValueController2.text.trim());
+    if (wVal == null || hVal == null) return;
+    // Convert to pixels based on selected units and current DPI
+    int toPx(num v, String unit) {
+      switch (unit) {
+        case 'px':
+          return v.round();
+        case 'in':
+          return (v * _dpi).round();
+        case 'cm':
+          return (v * (_dpi / 2.54)).round();
+        case 'mm':
+          return (v * (_dpi / 25.4)).round();
+        default:
+          return v.round();
+      }
+    }
+
+    final int targetW = toPx(wVal, _widthUnit);
+    final int targetH = toPx(hVal, _heightUnit);
+    // Map interpolation string to a suitable name for cv script
+    final String interp = _interp; // already one of kInterpolations
+    await ref
+        .read(projectLogicProvider(_currentProjectId!))
+        .resizeToCv(targetW, targetH, interp);
+  }
+
   Future<void> _handleImageBytes(Uint8List bytes) async {
     if (_currentProjectId == null) return;
     // Decode to get dimensions in isolate
     final dims = await compute(ic.decodeDimensions, bytes);
+    // Best effort DPI detection (to be wired to ResolutionSelector)
+    // final int? dpi = await compute(ic.decodeDpi, bytes);
     final int? width = dims.width;
     final int? height = dims.height;
     final imagesDao = ref.read(appDatabaseProvider);
@@ -352,6 +378,8 @@ extension on _AppProjectDetailPageState {
     );
     // Update local UI controllers with dimensions
     _applyImageDims(width: width, height: height);
+    // TODO: if DPI is detected, set ResolutionSelector initial value
+    // This requires threading dpi into local state; for now, ignore if null
     _setHasImage(true);
   }
 
