@@ -52,6 +52,7 @@ class SectionInput extends StatelessWidget {
   final Widget? action; // optional custom trailing action
   final String? actionIconAsset;
   final VoidCallback? onActionTap; // Reserved for later use
+  final bool actionDisabled;
 
   const SectionInput({
     super.key,
@@ -61,6 +62,7 @@ class SectionInput extends StatelessWidget {
     this.action,
     this.actionIconAsset,
     this.onActionTap,
+    this.actionDisabled = false,
   });
 
   factory SectionInput.fullText({
@@ -101,7 +103,8 @@ class SectionInput extends StatelessWidget {
     final Widget trailing = action ??
         _ReservedActionIcon(
           asset: actionIconAsset,
-          onTap: onActionTap,
+          onTap: actionDisabled ? null : onActionTap,
+          disabled: actionDisabled,
         );
     children.addAll([const SizedBox(width: 8.0), trailing]);
 
@@ -115,8 +118,9 @@ class SectionInput extends StatelessWidget {
 class _ReservedActionIcon extends StatefulWidget {
   final String? asset;
   final VoidCallback? onTap;
+  final bool disabled;
 
-  const _ReservedActionIcon({this.asset, this.onTap});
+  const _ReservedActionIcon({this.asset, this.onTap, this.disabled = false});
 
   @override
   State<_ReservedActionIcon> createState() => _ReservedActionIconState();
@@ -130,14 +134,17 @@ class _ReservedActionIconState extends State<_ReservedActionIcon> {
     final bool hasAsset = widget.asset != null && widget.asset!.isNotEmpty;
 
     final Widget box = MouseRegion(
-      cursor: hasAsset ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _hovered = true),
+      cursor: hasAsset && !widget.disabled
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hovered = widget.disabled ? false : true),
       onExit: (_) => setState(() => _hovered = false),
       child: Container(
         width: 24.0,
         height: 24.0,
         decoration: BoxDecoration(
-          color: _hovered && hasAsset ? kGrey10 : kTransparent,
+          color:
+              _hovered && hasAsset && !widget.disabled ? kGrey10 : kTransparent,
           borderRadius: BorderRadius.circular(4.0),
         ),
         alignment: Alignment.center,
@@ -147,14 +154,15 @@ class _ReservedActionIconState extends State<_ReservedActionIcon> {
                 width: 16.0,
                 height: 16.0,
                 colorFilter: ColorFilter.mode(
-                    _hovered ? kGrey100 : kGrey70, BlendMode.srcIn),
+                    widget.disabled ? kGrey70 : (_hovered ? kGrey100 : kGrey70),
+                    BlendMode.srcIn),
               )
             : null,
       ),
     );
 
     if (!hasAsset) return box;
-    if (widget.onTap == null) return box;
+    if (widget.onTap == null || widget.disabled) return box;
     return GestureDetector(onTap: widget.onTap, child: box);
   }
 }

@@ -7,12 +7,14 @@ class InterpolationSelector extends StatefulWidget {
   final String value;
   final ValueChanged<String> onChanged;
   final bool enabled;
+  final bool readOnlyView;
 
   const InterpolationSelector({
     super.key,
     required this.value,
     required this.onChanged,
     this.enabled = true,
+    this.readOnlyView = false,
   });
 
   @override
@@ -60,6 +62,7 @@ class _InterpolationSelectorState extends State<InterpolationSelector> {
         selectedItem: null,
         variant: InputVariant.dropdown,
         readOnly: true,
+        readOnlyView: widget.readOnlyView,
         onChanged: null,
         onItemSelected: (v) => widget.onChanged(v),
       ),

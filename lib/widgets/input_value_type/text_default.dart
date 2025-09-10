@@ -19,6 +19,7 @@ class TextDefaultInput extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final int? maxLength;
   final TextCapitalization textCapitalization;
+  final bool readOnlyView;
 
   const TextDefaultInput({
     super.key,
@@ -33,6 +34,7 @@ class TextDefaultInput extends StatelessWidget {
     this.onChanged,
     this.maxLength,
     this.textCapitalization = TextCapitalization.none,
+    this.readOnlyView = false,
   });
 
   @override
@@ -52,6 +54,7 @@ class TextDefaultInput extends StatelessWidget {
         maxLength: maxLength,
         textCapitalization: textCapitalization,
         readOnly: false,
+        readOnlyView: readOnlyView,
         enableSelection: true,
         onSubmitted: onSubmitted,
       ),

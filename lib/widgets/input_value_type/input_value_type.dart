@@ -70,6 +70,8 @@ class InputValueType extends StatefulWidget {
   final String? dropdownIconAsset;
   // Testing/targeting aid: stable key for the tappable suffix widget
   final Key? suffixKey;
+  // Read-only visual mode: white bg, visible border, grey70 text/icons, no interactions
+  final bool readOnlyView;
 
   const InputValueType({
     super.key,
@@ -97,6 +99,7 @@ class InputValueType extends StatefulWidget {
     this.variant = InputValueType.defaultVariant,
     this.dropdownIconAsset,
     this.suffixKey,
+    this.readOnlyView = false,
   });
 
   factory InputValueType.text({
@@ -274,9 +277,9 @@ class _InputValueTypeState extends State<InputValueType> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isReadOnly = widget.readOnly;
+    final bool isReadOnly = widget.readOnly || widget.readOnlyView;
     final TextStyle textStyle = appTextStyles.bodyM.copyWith(
-      color: isReadOnly ? kGrey70 : kGrey100,
+      color: widget.readOnlyView ? kGrey70 : (isReadOnly ? kGrey70 : kGrey100),
       height: 1.0,
     );
     final TextStyle placeholderStyle = appTextStyles.bodyM.copyWith(
@@ -306,14 +309,14 @@ class _InputValueTypeState extends State<InputValueType> {
         height: 24.0,
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         decoration: BoxDecoration(
-          // All inputs should have no borders per latest instruction
-          color: kGrey10,
+          color: widget.readOnlyView ? kWhite : kGrey10,
           borderRadius: BorderRadius.circular(4.0),
-          // Keep a constant 1px border to prevent layout shift; make it transparent when not focused
-          border: Border.all(
-            color: _focusNode.hasFocus ? kInputFocus : kTransparent,
-            width: 1.0,
-          ),
+          border: widget.readOnlyView
+              ? Border.all(color: kBordersColor, width: 1.0)
+              : Border.all(
+                  color: _focusNode.hasFocus ? kInputFocus : kTransparent,
+                  width: 1.0,
+                ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -410,7 +413,8 @@ class _InputValueTypeState extends State<InputValueType> {
 
   Widget _buildSuffix(bool isReadOnly) {
     final bool hasDropdown =
-        (widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty);
+        (widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty) &&
+            !widget.readOnlyView;
     Widget suffixTextRow(String text) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -470,6 +474,7 @@ class _InputValueTypeState extends State<InputValueType> {
   }
 
   void _openOptions() {
+    if (widget.readOnlyView) return;
     if ((widget.dropdownItems ?? const <String>[]).isEmpty) return;
     _beforeOpenValue = _controller.value;
     setState(() {

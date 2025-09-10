@@ -14,6 +14,7 @@ class WidthRow extends StatefulWidget {
   final bool initialLinked;
   final ValueChanged<bool>? onLinkChanged;
   final ValueChanged<String>? onUnitChanged;
+  final bool readOnlyView;
 
   const WidthRow({
     super.key,
@@ -23,6 +24,7 @@ class WidthRow extends StatefulWidget {
     this.initialLinked = false,
     this.onLinkChanged,
     this.onUnitChanged,
+    this.readOnlyView = false,
   });
 
   @override
@@ -99,6 +101,7 @@ class _WidthRowState extends State<WidthRow> {
         selectedItem: _unit,
         variant: InputVariant.valueDropdown,
         readOnly: readOnly,
+        readOnlyView: widget.readOnlyView,
         onChanged: (raw) {
           final sanitized = raw.replaceAll(RegExp(r'[^0-9]'), '');
           if (sanitized != raw) {
@@ -133,6 +136,7 @@ class _WidthRowState extends State<WidthRow> {
       ),
       action: ButtonToggle(
         value: _linked,
+        disabled: widget.readOnlyView,
         onChanged: (v) {
           setState(() {
             _linked = v;

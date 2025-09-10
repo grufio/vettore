@@ -10,12 +10,14 @@ class HeightRow extends StatefulWidget {
   final TextEditingController heightController;
   final bool enabled;
   final ValueChanged<String>? onUnitChanged;
+  final bool readOnlyView;
 
   const HeightRow({
     super.key,
     required this.heightController,
     required this.enabled,
     this.onUnitChanged,
+    this.readOnlyView = false,
   });
 
   @override
@@ -42,6 +44,7 @@ class _HeightRowState extends State<HeightRow> {
         selectedItem: _unit,
         variant: InputVariant.valueDropdown,
         readOnly: readOnly,
+        readOnlyView: widget.readOnlyView,
         onChanged: (raw) {
           final sanitized = raw.replaceAll(RegExp(r'[^0-9]'), '');
           if (sanitized != raw) {

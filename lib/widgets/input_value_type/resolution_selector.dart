@@ -6,12 +6,14 @@ class ResolutionSelector extends StatefulWidget {
   final int value; // dpi
   final ValueChanged<int> onChanged;
   final bool enabled;
+  final bool readOnlyView;
 
   const ResolutionSelector({
     super.key,
     required this.value,
     required this.onChanged,
     this.enabled = true,
+    this.readOnlyView = false,
   });
 
   @override
@@ -60,6 +62,7 @@ class _ResolutionSelectorState extends State<ResolutionSelector> {
         suffixText: 'dpi',
         variant: InputVariant.dropdown,
         readOnly: true,
+        readOnlyView: widget.readOnlyView,
         onChanged: null,
         suffixKey: const ValueKey('dpi-suffix'),
         onItemSelected: (label) {

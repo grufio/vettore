@@ -7,6 +7,7 @@ class ButtonToggle extends StatefulWidget {
   final ValueChanged<bool> onChanged;
   final String onIconAsset; // shown when value == true (linked)
   final String offIconAsset; // shown when value == false (unlinked)
+  final bool disabled;
 
   const ButtonToggle({
     super.key,
@@ -14,6 +15,7 @@ class ButtonToggle extends StatefulWidget {
     required this.onChanged,
     this.onIconAsset = 'assets/icons/32/link.svg',
     this.offIconAsset = 'assets/icons/32/unlink.svg',
+    this.disabled = false,
   });
 
   @override
@@ -30,22 +32,23 @@ class _ButtonToggleState extends State<ButtonToggle> {
     final String asset =
         widget.value ? widget.onIconAsset : widget.offIconAsset;
     return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
+      onEnter: (_) => setState(() => _hovered = widget.disabled ? false : true),
       onExit: (_) => setState(() => _hovered = false),
       child: Semantics(
         button: true,
         label: widget.value ? 'Unlink dimensions' : 'Link dimensions',
-        onTap: _toggle,
+        enabled: !widget.disabled,
+        onTap: widget.disabled ? null : _toggle,
         child: GestureDetector(
-          onTap: _toggle,
+          onTap: widget.disabled ? null : _toggle,
           behavior: HitTestBehavior.opaque,
           child: Container(
             width: 24.0,
             height: 24.0,
             decoration: BoxDecoration(
-              color: _hovered ? kGrey10 : kTransparent,
+              color: _hovered && !widget.disabled ? kGrey10 : kTransparent,
               borderRadius: BorderRadius.circular(4.0),
-              border: widget.value
+              border: widget.value && !widget.disabled
                   ? Border.all(color: kBordersColor, width: 1.0)
                   : null,
             ),
@@ -55,7 +58,7 @@ class _ButtonToggleState extends State<ButtonToggle> {
               width: 16.0,
               height: 16.0,
               colorFilter: ColorFilter.mode(
-                _hovered ? kGrey100 : kGrey70,
+                widget.disabled ? kGrey70 : (_hovered ? kGrey100 : kGrey70),
                 BlendMode.srcIn,
               ),
             ),
