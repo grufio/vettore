@@ -32,27 +32,32 @@ class _ButtonToggleState extends State<ButtonToggle> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
+      child: Semantics(
+        button: true,
+        label: widget.value ? 'Unlink dimensions' : 'Link dimensions',
         onTap: _toggle,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          width: 24.0,
-          height: 24.0,
-          decoration: BoxDecoration(
-            color: _hovered ? kGrey10 : kTransparent,
-            borderRadius: BorderRadius.circular(4.0),
-            border: widget.value
-                ? Border.all(color: kBordersColor, width: 1.0)
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: SvgPicture.asset(
-            asset,
-            width: 16.0,
-            height: 16.0,
-            colorFilter: ColorFilter.mode(
-              _hovered ? kGrey100 : kGrey70,
-              BlendMode.srcIn,
+        child: GestureDetector(
+          onTap: _toggle,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: 24.0,
+            height: 24.0,
+            decoration: BoxDecoration(
+              color: _hovered ? kGrey10 : kTransparent,
+              borderRadius: BorderRadius.circular(4.0),
+              border: widget.value
+                  ? Border.all(color: kBordersColor, width: 1.0)
+                  : null,
+            ),
+            alignment: Alignment.center,
+            child: SvgPicture.asset(
+              asset,
+              width: 16.0,
+              height: 16.0,
+              colorFilter: ColorFilter.mode(
+                _hovered ? kGrey100 : kGrey70,
+                BlendMode.srcIn,
+              ),
             ),
           ),
         ),

@@ -411,38 +411,31 @@ class _InputValueTypeState extends State<InputValueType> {
   Widget _buildSuffix(bool isReadOnly) {
     final bool hasDropdown =
         (widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty);
+    Widget suffixTextRow(String text) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(width: 8.0),
+          Text(
+            text,
+            style: appTextStyles.bodyM.copyWith(color: kGrey70, height: 1.0),
+          ),
+        ],
+      );
+    }
+
     final String iconAsset =
         widget.dropdownIconAsset ?? 'assets/icons/32/chevron--down.svg';
 
     switch (widget.variant) {
       case InputVariant.regular:
         if (widget.suffixText == null) return const SizedBox.shrink();
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(width: 8.0),
-            Text(
-              widget.suffixText!,
-              style: appTextStyles.bodyM
-                  .copyWith(color: isReadOnly ? kGrey70 : kGrey70, height: 1.0),
-            ),
-          ],
-        );
+        return suffixTextRow(widget.suffixText!);
       case InputVariant.selector:
         if (!hasDropdown) {
           // Fallback to regular suffix text when no dropdown
           if (widget.suffixText == null) return const SizedBox.shrink();
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(width: 8.0),
-              Text(
-                widget.suffixText!,
-                style: appTextStyles.bodyM.copyWith(
-                    color: isReadOnly ? kGrey70 : kGrey70, height: 1.0),
-              ),
-            ],
-          );
+          return suffixTextRow(widget.suffixText!);
         }
         return ivt_sfx.HoverSelectorSuffix(
           key: widget.suffixKey,
@@ -463,17 +456,7 @@ class _InputValueTypeState extends State<InputValueType> {
       case InputVariant.valueDropdown:
         if (!hasDropdown) {
           if (_currentSuffix == null) return const SizedBox.shrink();
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(width: 8.0),
-              Text(
-                _currentSuffix!,
-                style: appTextStyles.bodyM.copyWith(
-                    color: isReadOnly ? kGrey70 : kGrey70, height: 1.0),
-              ),
-            ],
-          );
+          return suffixTextRow(_currentSuffix!);
         }
         return ivt_sfx.HoverSelectorSuffix(
           key: widget.suffixKey,

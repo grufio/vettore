@@ -111,7 +111,8 @@ OverlayEntry createDropdownOverlay({
                   child: SizedBox(
                     width: panelWidth,
                     child: Container(
-                      constraints: const BoxConstraints(maxHeight: 280),
+                      constraints:
+                          BoxConstraints(maxHeight: estimatedPanelHeight),
                       padding: const EdgeInsets.all(8.0),
                       decoration: BoxDecoration(
                         color: kGrey100,
@@ -120,6 +121,7 @@ OverlayEntry createDropdownOverlay({
                       child: highlightedIndexListenable == null
                           ? ListView.builder(
                               controller: listScrollController,
+                              physics: const ClampingScrollPhysics(),
                               shrinkWrap: true,
                               itemCount: items.length,
                               itemBuilder: (context, index) {
@@ -142,6 +144,7 @@ OverlayEntry createDropdownOverlay({
                               builder: (context, hi, _) {
                                 return ListView.builder(
                                   controller: listScrollController,
+                                  physics: const ClampingScrollPhysics(),
                                   shrinkWrap: true,
                                   itemCount: items.length,
                                   itemBuilder: (context, index) {

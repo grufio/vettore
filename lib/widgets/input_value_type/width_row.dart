@@ -3,6 +3,9 @@ import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
 import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 import 'package:vettore/widgets/button_toggle.dart';
 import 'package:vettore/widgets/constants/input_constants.dart';
+import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vettore/providers/application_providers.dart';
 
 class WidthRow extends StatefulWidget {
   final TextEditingController widthController;
@@ -10,7 +13,6 @@ class WidthRow extends StatefulWidget {
   final bool enabled;
   final bool initialLinked;
   final ValueChanged<bool>? onLinkChanged;
-  final int dpi;
   final ValueChanged<String>? onUnitChanged;
 
   const WidthRow({
@@ -20,7 +22,6 @@ class WidthRow extends StatefulWidget {
     required this.enabled,
     this.initialLinked = false,
     this.onLinkChanged,
-    this.dpi = 96,
     this.onUnitChanged,
   });
 
@@ -84,6 +85,7 @@ class _WidthRowState extends State<WidthRow> {
 
   @override
   Widget build(BuildContext context) {
+    final int dpi = ProviderScope.containerOf(context).read(dpiProvider);
     final bool readOnly = !widget.enabled;
     return SectionInput(
       full: InputValueType(
@@ -97,18 +99,28 @@ class _WidthRowState extends State<WidthRow> {
         selectedItem: _unit,
         variant: InputVariant.valueDropdown,
         readOnly: readOnly,
+        onChanged: (raw) {
+          final sanitized = raw.replaceAll(RegExp(r'[^0-9]'), '');
+          if (sanitized != raw) {
+            widget.widthController.text = sanitized;
+            final newOffset = sanitized.length.clamp(0, sanitized.length);
+            widget.widthController.selection =
+                TextSelection.collapsed(offset: newOffset);
+          }
+        },
         onItemSelected: (nextUnit) {
           final String text = widget.widthController.text.trim();
           final double? value = double.tryParse(text);
           setState(() {
             if (value != null) {
-              final double converted = _convertUnit(
+              final double converted = convertUnit(
                 value: value,
-                from: _unit,
-                to: nextUnit,
-                dpi: widget.dpi,
+                fromUnit: _unit,
+                toUnit: nextUnit,
+                dpi: dpi,
               );
-              widget.widthController.text = _formatValue(converted, nextUnit);
+              widget.widthController.text =
+                  formatUnitValue(converted, nextUnit);
               // If linked, immediately recompute height based on new width value
               if (_linked) {
                 _onWidthChanged();
@@ -135,51 +147,5 @@ class _WidthRowState extends State<WidthRow> {
     );
   }
 
-  static double _convertUnit({
-    required double value,
-    required String from,
-    required String to,
-    required int dpi,
-  }) {
-    double toInches(double v, String unit) {
-      switch (unit) {
-        case 'px':
-          return v / dpi;
-        case 'in':
-          return v;
-        case 'cm':
-          return v / 2.54;
-        case 'mm':
-          return v / 25.4;
-        default:
-          return v; // fallback assume inches
-      }
-    }
-
-    double fromInches(double inches, String unit) {
-      switch (unit) {
-        case 'px':
-          return inches * dpi;
-        case 'in':
-          return inches;
-        case 'cm':
-          return inches * 2.54;
-        case 'mm':
-          return inches * 25.4;
-        default:
-          return inches;
-      }
-    }
-
-    final double inches = toInches(value, from);
-    return fromInches(inches, to);
-  }
-
-  static String _formatValue(double v, String unit) {
-    if (unit == 'px') {
-      return v.round().toString();
-    }
-    // keep two decimals for physical units
-    return v.toStringAsFixed(2);
-  }
+  // Conversion moved to shared unit_conversion.dart
 }

@@ -43,3 +43,8 @@ final aiServiceProvider = Provider<AIService>((ref) {
 });
 
 // removed legacy projectNew service provider
+
+//-
+// UI State Providers
+//-
+final dpiProvider = StateProvider<int>((ref) => 96);

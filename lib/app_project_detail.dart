@@ -24,6 +24,7 @@ import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 import 'package:flutter/foundation.dart' show compute;
 import 'package:vettore/services/image_compute.dart' as ic;
+import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -259,13 +260,11 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                 onLinkChanged: (v) => setState(() {
                                   _linkWH = v;
                                 }),
-                                dpi: _dpi,
                                 onUnitChanged: (u) => _widthUnit = u,
                               ),
                               HeightRow(
                                 heightController: _inputValueController2,
                                 enabled: hasImage,
-                                dpi: _dpi,
                                 onUnitChanged: (u) => _heightUnit = u,
                               ),
                               InterpolationSelector(
@@ -277,10 +276,11 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                 enabled: hasImage,
                               ),
                               ResolutionSelector(
-                                value: 96,
+                                value: _dpi,
                                 onChanged: (dpi) {
                                   setState(() {
                                     _dpi = dpi;
+                                    ref.read(dpiProvider.notifier).state = dpi;
                                   });
                                 },
                                 enabled: hasImage,
@@ -333,7 +333,7 @@ extension on _AppProjectDetailPageState {
     final int targetW = toPx(wVal, _widthUnit);
     final int targetH = toPx(hVal, _heightUnit);
     // Map interpolation string to a suitable name for cv script
-    final String interp = _interp; // already one of kInterpolations
+    final String interp = kInterpolationToCvName[_interp] ?? 'linear';
     await ref
         .read(projectLogicProvider(_currentProjectId!))
         .resizeToCv(targetW, targetH, interp);
