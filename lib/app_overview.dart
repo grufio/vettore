@@ -79,7 +79,7 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   bool _showDetail = false;
   String _activeFilterId = 'completed';
   double _sidePanelWidth = 260.0;
-  int? _newProjectIdForDetail;
+  int? _newProjectIdForDetail; // deprecated; retained during transition
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
     const GrufioTabData(
@@ -154,33 +154,6 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   @override
   Widget build(BuildContext context) {
     if (Platform.isMacOS) {
-      if (_showDetail && widget.showHeader) {
-        return AppProjectDetailPage(
-          initialActiveIndex: _activeIndex,
-          onNavigateTab: (i) {
-            if (i == 0) {
-              // Navigate back to Home overview
-              setState(() {
-                _activeIndex = 0;
-                _showDetail = false;
-              });
-            }
-          },
-          projectId: _newProjectIdForDetail,
-          onProjectTitleSaved: (newTitle) {
-            // Update label of current tab in this headered view
-            if (_activeIndex >= 0 && _activeIndex < _tabs.length) {
-              final t = _tabs[_activeIndex];
-              _tabs[_activeIndex] = GrufioTabData(
-                iconPath: t.iconPath,
-                label: newTitle.isEmpty ? 'Untitled' : newTitle,
-                width: t.width,
-              );
-              setState(() {});
-            }
-          },
-        );
-      }
       if (!widget.showHeader) {
         // Render only the content area for Home (gallery)
         return ColoredBox(

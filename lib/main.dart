@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_overview.dart';
 import 'app_project_detail.dart';
+import 'app_image_detail.dart';
 import 'widgets/app_header_bar.dart';
 import 'models/grufio_tab_data.dart';
 import 'theme/app_theme_colors.dart';
@@ -14,6 +15,7 @@ import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/data/database.dart';
 import 'package:drift/drift.dart' show Value;
 import 'features/projects/widgets/vendor_colors_overview_page.dart';
+import 'package:vettore/providers/navigation_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -184,43 +186,63 @@ class _AppShellState extends State<_AppShell> {
                         vendorId: _tabs[_activeIndex].vendorId!,
                         vendorBrand: _tabs[_activeIndex].label ?? 'Vendor',
                       )
-                    : AppProjectDetailPage(
-                        initialActiveIndex: _activeIndex,
-                        onNavigateTab: (i) {
-                          if (i == 0) setState(() => _activeIndex = 0);
-                        },
-                        projectId: _currentProjectId,
-                        onProjectTitleSaved: (newTitle) {
-                          // Update the label of the active project tab
-                          if (_activeIndex > 0 && _activeIndex < _tabs.length) {
-                            final current = _tabs[_activeIndex];
-                            _tabs[_activeIndex] = GrufioTabData(
-                              iconPath: current.iconPath,
-                              label: newTitle.isEmpty ? 'Untitled' : newTitle,
-                              width: current.width,
-                              projectId: current.projectId,
+                    : Consumer(builder: (context, ref, _) {
+                        final page = ref.watch(currentPageProvider);
+                        switch (page) {
+                          case PageId.project:
+                            return AppProjectDetailPage(
+                              initialActiveIndex: _activeIndex,
+                              onNavigateTab: (i) {
+                                if (i == 0) setState(() => _activeIndex = 0);
+                              },
+                              projectId: _currentProjectId,
+                              onProjectTitleSaved: (newTitle) {
+                                if (_activeIndex > 0 &&
+                                    _activeIndex < _tabs.length) {
+                                  final current = _tabs[_activeIndex];
+                                  _tabs[_activeIndex] = GrufioTabData(
+                                    iconPath: current.iconPath,
+                                    label: newTitle.isEmpty
+                                        ? 'Untitled'
+                                        : newTitle,
+                                    width: current.width,
+                                    projectId: current.projectId,
+                                  );
+                                  setState(() {});
+                                }
+                              },
+                              onDeleteProject: (deletedId) {
+                                final idx = _tabs.indexWhere((t) =>
+                                    t.projectId != null &&
+                                    t.projectId == deletedId);
+                                if (idx != -1) {
+                                  setState(() {
+                                    _tabs.removeAt(idx);
+                                    _currentProjectId = null;
+                                    _activeIndex = 0;
+                                  });
+                                } else {
+                                  setState(() {
+                                    _currentProjectId = null;
+                                    _activeIndex = 0;
+                                  });
+                                }
+                              },
                             );
-                            setState(() {});
-                          }
-                        },
-                        onDeleteProject: (deletedId) {
-                          // Remove the tab associated with this project and go Home
-                          final idx = _tabs.indexWhere((t) =>
-                              t.projectId != null && t.projectId == deletedId);
-                          if (idx != -1) {
-                            setState(() {
-                              _tabs.removeAt(idx);
-                              _currentProjectId = null;
-                              _activeIndex = 0;
-                            });
-                          } else {
-                            setState(() {
-                              _currentProjectId = null;
-                              _activeIndex = 0;
-                            });
-                          }
-                        },
-                      ),
+                          case PageId.image:
+                            return const AppImageDetailPage();
+                          case PageId.conversion:
+                          case PageId.grid:
+                          case PageId.output:
+                            return AppProjectDetailPage(
+                              initialActiveIndex: _activeIndex,
+                              onNavigateTab: (i) {
+                                if (i == 0) setState(() => _activeIndex = 0);
+                              },
+                              projectId: _currentProjectId,
+                            );
+                        }
+                      }),
           ),
         ],
       ),

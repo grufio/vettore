@@ -12,7 +12,6 @@ import 'package:vettore/widgets/section_input.dart';
 import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/widgets/image_upload_area.dart';
-import 'package:vettore/widgets/input_value_type/text_default.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/data/database.dart';
@@ -196,7 +195,12 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
                 FilterItem(id: 'grid', label: 'Grid'),
                 FilterItem(id: 'output', label: 'Output'),
               ],
-              activeId: _detailFilterId,
+              activeId: (() {
+                final page = ref.watch(currentPageProvider);
+                if (page == PageId.image) return 'image';
+                if (page == PageId.project) return 'project';
+                return _detailFilterId;
+              })(),
               onChanged: (id) {
                 setState(() => _detailFilterId = id);
                 if (id == 'project') {
@@ -243,19 +247,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SectionSidebar(
-                          title: 'Projekt',
-                          children: [
-                            TextDefaultInput(
-                              controller: _projectController,
-                              focusNode: _projectTitleFocusNode,
-                              placeholder: null,
-                              suffixText: null,
-                              onActionTap: null,
-                              onSubmitted: (_) => _saveProjectTitle(),
-                            ),
-                          ],
-                        ),
                         Builder(builder: (context) {
                           final int? imageId = (_currentProjectId != null)
                               ? ref.watch(
