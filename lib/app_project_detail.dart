@@ -25,6 +25,7 @@ import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 // import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/providers/navigation_providers.dart';
+import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -54,6 +55,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   late final TextEditingController _inputValueController2;
   late final TextEditingController _singleInputController;
   late final TextEditingController _projectController;
+  late final TextEditingController _modelController;
   String _interp = 'nearest';
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
@@ -104,6 +106,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     _inputValueController2 = TextEditingController();
     _singleInputController = TextEditingController();
     _projectController = TextEditingController();
+    _modelController = TextEditingController();
     // Default interpolation shown in the field
     _singleInputController.text = _interp;
     _projectTitleFocusNode = FocusNode();
@@ -121,6 +124,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     _inputValueController2.dispose();
     _singleInputController.dispose();
     _projectController.dispose();
+    _modelController.dispose();
     _projectTitleFocusNode.dispose();
     _projectSub?.cancel();
     super.dispose();
@@ -253,6 +257,23 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                               suffixText: null,
                               onActionTap: null,
                               onSubmitted: (_) => _saveProjectTitle(),
+                            ),
+                          ],
+                        ),
+                        // Section: Model (placed directly below 'Projekt')
+                        SectionSidebar(
+                          title: 'Model',
+                          children: [
+                            SectionInput(
+                              full: InputValueType(
+                                controller: _modelController,
+                                placeholder: 'Select model',
+                                variant: InputVariant.dropdown,
+                                dropdownItems: const ['Bricks', 'Colors'],
+                                onItemSelected: (value) {
+                                  _modelController.text = value;
+                                },
+                              ),
                             ),
                           ],
                         ),

@@ -321,9 +321,10 @@ class _InputValueTypeState extends State<InputValueType> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            if (widget.prefixIconAsset != null) ...[
+            // Always show a prefix icon; default substitutes the label
+            ...[
               PrefixIcon(
-                asset: widget.prefixIconAsset!,
+                asset: widget.prefixIconAsset ?? 'assets/icons/16/help.svg',
                 size: widget.prefixIconWidth ?? 16.0,
                 fit: widget.prefixIconFit ?? BoxFit.none,
                 alignment: widget.prefixIconAlignment ?? Alignment.centerLeft,
