@@ -1,0 +1,172 @@
+blColorId,name,rgbHex,startYear,endYear,group
+1,White,#FFFFFF,1949,2025,Solid
+49,Very Light Gray,#E8E8E8,1997,2004,Solid
+99,Very Light Bluish Gray,#E4E8E8,2004,2013,Solid
+86,Light Bluish Gray,#AFB5C7,2003,2025,Solid
+9,Light Gray,#9C9C9C,1954,2008,Solid
+10,Dark Gray,#6B5A5A,1961,2006,Solid
+85,Dark Bluish Gray,#595D60,2003,2025,Solid
+11,Black,#212121,1957,2025,Solid
+59,Dark Red,#6A0E15,1957,2025,Solid
+5,Red,#B30006,1949,2025,Solid
+167,Reddish Orange,#FF5500,2024,2025,Solid
+231,Dark Salmon,#FF6326,2003,2003,Solid
+25,Salmon,#FF7D5D,1997,1999,Solid
+220,Coral,#FF8172,2019,2025,Solid
+26,Light Salmon,#FCC7B7,1997,2002,Solid
+58,Sand Red,#C58D80,2001,2004,Solid
+120,Dark Brown,#50372F,2007,2025,Solid
+168,Umber,#735442,2024,2025,Solid
+8,Brown,#6B3F22,1974,2006,Solid
+88,Reddish Brown,#82422A,2003,2025,Solid
+91,Light Brown,#99663E,2002,2006,Solid
+240,Medium Brown,#A16C42,2022,2025,Solid
+106,Fabuland Brown,#B3694E,1979,1991,Solid
+69,Dark Tan,#B89869,1961,2025,Solid
+2,Tan,#EED9A4,1957,2025,Solid
+90,Light Nougat,#FECCB0,2004,2025,Solid
+241,Medium Tan,#FBC685,2022,2025,Solid
+28,Nougat,#FFAF7D,1979,2025,Solid
+150,Medium Nougat,#E3A05B,2010,2025,Solid
+225,Dark Nougat,#CE7942,2001,2004,Solid
+169,Sienna,#EA8339,2024,2025,Solid
+160,Fabuland Orange,#EF9121,1983,1987,Solid
+29,Earth Orange,#E6881D,1982,2005,Solid
+68,Dark Orange,#B35408,1994,2025,Solid
+27,Rust,#B24817,1979,2005,Solid
+4,Orange,#FF7E14,1998,2025,Solid
+31,Medium Orange,#FFA531,1950,2007,Solid
+32,Light Orange,#FFBC36,1998,2004,Solid
+110,Bright Light Orange,#FFC700,2003,2025,Solid
+172,Warm Yellowish Orange,#FFD788,2004,2004,Solid
+96,Very Light Orange,#FFDCA4,2000,2000,Solid
+161,Dark Yellow,#DD982E,2004,2005,Solid
+173,Ochre Yellow,#D89905,2025,2025,Solid
+3,Yellow,#FFE001,1949,2025,Solid
+33,Light Yellow,#FEE89F,1994,2005,Solid
+103,Bright Light Yellow,#FFF08C,2004,2025,Solid
+236,Neon Yellow,#FFFC00,2022,2025,Solid
+171,Lemon,#EDDC44,1992,1992,Solid
+35,Light Lime,#ECEEBD,1998,2007,Solid
+158,Yellowish Green,#E7F2A7,2012,2025,Solid
+76,Medium Lime,#DFE000,1998,2005,Solid
+34,Lime,#C4E000,1998,2025,Solid
+248,Fabuland Lime,#ADD237,1982,1986,Solid
+155,Olive Green,#ABA953,2012,2025,Solid
+80,Dark Green,#2E5543,1961,2025,Solid
+6,Green,#00923D,1949,2025,Solid
+36,Bright Green,#10CB31,1950,2025,Solid
+37,Medium Green,#91DF8C,1950,2004,Solid
+38,Light Green,#D7EED1,1992,2005,Solid
+48,Sand Green,#A2BFA3,1957,2025,Solid
+39,Dark Turquoise,#00A29F,1998,2025,Solid
+40,Light Turquoise,#00C5BC,1998,2004,Solid
+41,Aqua,#BCE5DC,1998,2006,Solid
+152,Light Aqua,#CFEFEA,2011,2025,Solid
+63,Dark Blue,#243757,1961,2025,Solid
+7,Blue,#0057A6,1950,2025,Solid
+153,Dark Azure,#009FE0,2011,2025,Solid
+247,Little Robots Blue,#5DBFE4,2003,2004,Solid
+72,Maersk Blue,#7DC1D8,1974,2011,Solid
+156,Medium Azure,#6ACEE0,2012,2025,Solid
+87,Sky Blue,#8AD4E1,2003,2007,Solid
+42,Medium Blue,#82ADD8,1949,2025,Solid
+105,Bright Light Blue,#BCD1ED,2004,2025,Solid
+62,Light Blue,#C8D9E1,1950,2007,Solid
+55,Sand Blue,#8899AB,2001,2025,Solid
+109,Dark Blue-Violet,#2032B0,2004,2006,Solid
+43,Violet,#3448A4,1992,2004,Solid
+97,Blue-Violet,#506CEF,2004,2005,Solid
+245,Lilac,#7862CE,2004,2007,Solid
+73,Medium Violet,#9391E4,1999,2004,Solid
+246,Light Lilac,#CDCCEE,2004,2004,Solid
+44,Light Violet,#C9CAE2,1994,2002,Solid
+89,Dark Purple,#5F2683,2000,2025,Solid
+24,Purple,#7A238D,1997,2006,Solid
+93,Light Purple,#AF3195,2003,2006,Solid
+157,Medium Lavender,#C689D9,2012,2025,Solid
+154,Lavender,#D3BDE3,2011,2025,Solid
+227,Clikits Lavender,#E0AAD9,2005,2005,Solid
+54,Sand Purple,#B57DA5,2001,2002,Solid
+71,Magenta,#B72276,2000,2025,Solid
+47,Dark Pink,#EF5BB3,1994,2025,Solid
+94,Medium Dark Pink,#F785B1,1992,1993,Solid
+104,Bright Pink,#F7BCDA,2003,2025,Solid
+23,Pink,#F5CDD6,1992,2005,Solid
+56,Rose Pink,#F2D3D1,1991,1994,Solid
+12,Trans-Clear,#EEEEEE,1950,2025,Transparent
+13,Trans-Brown,#939484,1999,2025,Transparent
+251,Trans-Black,#777777,2023,2025,Transparent
+17,Trans-Red,#9C0010,1969,2025,Transparent
+18,Trans-Neon Orange,#FF4231,1993,2023,Transparent
+98,Trans-Orange,#E96F01,2003,2025,Transparent
+164,Trans-Light Orange,#E99A3A,2003,2006,Transparent
+121,Trans-Neon Yellow,#FFD700,2001,2006,Transparent
+19,Trans-Yellow,#EBF72D,1969,2025,Transparent
+16,Trans-Neon Green,#C0F500,1990,2024,Transparent
+108,Trans-Bright Green,#10CB31,2006,2025,Transparent
+221,Trans-Light Green,#94E5AB,2005,2006,Transparent
+226,Trans-Light Bright Green,#71EB54,2003,2006,Transparent
+20,Trans-Green,#217625,1969,2025,Transparent
+14,Trans-Dark Blue,#00296B,1978,2025,Transparent
+74,Trans-Medium Blue,#76A3C8,2001,2018,Transparent
+15,Trans-Light Blue,#68BCC5,1985,2025,Transparent
+113,Trans-Aqua,#B7C8BF,2003,2006,Transparent
+114,Trans-Light Purple,#B97AB1,2005,2006,Transparent
+234,Trans-Medium Purple,#9C41B6,2003,2006,Transparent
+51,Trans-Purple,#5525B7,2000,2025,Transparent
+50,Trans-Dark Pink,#CE1D9B,1999,2025,Transparent
+107,Trans-Pink,#FF8298,2003,2006,Transparent
+21,Chrome Gold,#F1F2E1,1989,2025,Chrome
+22,Chrome Silver,#DCDCDC,1966,2025,Chrome
+57,Chrome Antique Brass,#645A4C,2001,2005,Chrome
+122,Chrome Black,#544E4F,2009,2009,Chrome
+52,Chrome Blue,#5C66A4,1998,2006,Chrome
+64,Chrome Green,#3CB371,1999,1999,Chrome
+82,Chrome Pink,#AA4D8E,2001,2007,Chrome
+83,Pearl White,#FFFFFF,2003,2006,Pearl
+119,Pearl Very Light Gray,#D4D2CD,2002,2005,Pearl
+66,Pearl Light Gray,#ACB7C0,2000,2011,Pearl
+95,Flat Silver,#8D949C,2008,2025,Pearl
+239,Bionicle Silver,#A59287,2002,2002,Pearl
+77,Pearl Dark Gray,#666660,2000,2025,Pearl
+244,Pearl Black,#282725,2003,2006,Pearl
+61,Pearl Light Gold,#E7AE5A,2000,2005,Pearl
+115,Pearl Gold,#E79E1D,2004,2025,Pearl
+235,Reddish Gold,#E7891B,2003,2006,Pearl
+238,Bionicle Gold,#B9752F,2002,2002,Pearl
+81,Flat Dark Gold,#AD7118,2002,2006,Pearl
+249,Reddish Copper,#D06926,2017,2020,Pearl
+84,Copper,#AC6D52,2004,2008,Pearl
+237,Bionicle Copper,#985750,2001,2001,Pearl
+255,Pearl Brown,#815542,2003,2006,Pearl
+252,Pearl Red,#E54952,2003,2006,Pearl
+253,Pearl Green,#13A452,2003,2006,Pearl
+254,Pearl Blue,#3977C7,2003,2009,Pearl
+78,Pearl Sand Blue,#868FAA,2002,2005,Pearl
+228,Satin Trans-Clear,#FFFFFF,2020,2025,Satin
+229,Satin Trans-Brown,#939484,2020,2023,Satin
+170,Satin Trans-Yellow,#EBF72D,2024,2025,Satin
+233,Satin Trans-Bright Green,#7FE15B,2021,2025,Satin
+223,Satin Trans-Light Blue,#68BCC5,2020,2025,Satin
+232,Satin Trans-Dark Blue,#1552E2,2021,2025,Satin
+230,Satin Trans-Purple,#8320B7,2020,2025,Satin
+224,Satin Trans-Dark Pink,#CE1D9B,2020,2025,Satin
+67,Metallic Silver,#C0C0C0,1957,2025,Metallic
+70,Metallic Green,#BDB573,2001,2005,Metallic
+65,Metallic Gold,#B8860B,1997,2025,Metallic
+250,Metallic Copper,#C58259,2007,2012,Metallic
+60,Milky White,#D4D3DD,1963,2008,Milky
+159,Glow In Dark White,#D9D9D9,2011,2025,Milky
+46,Glow In Dark Opaque,#D4D5C9,1990,2011,Milky
+118,Glow In Dark Trans,#BDC6AD,2005,2011,Milky
+101,Glitter Trans-Clear,#B2ADAA,1999,2023,Glitter
+222,Glitter Trans-Orange,#D04010,2020,2020,Glitter
+163,Glitter Trans-Neon Green,#C0F500,2015,2018,Glitter
+162,Glitter Trans-Light Blue,#68BCC5,2015,2024,Glitter
+102,Glitter Trans-Purple,#3A2B82,2000,2025,Glitter
+100,Glitter Trans-Dark Pink,#CE1D9B,1999,2024,Glitter
+111,Speckle Black-Silver,#7C7E7C,2005,2013,Speckle
+151,Speckle Black-Gold,#AB9421,2010,2011,Speckle
+116,Speckle Black-Copper,#5F4E47,2006,2006,Speckle
+117,Speckle DBGray-Silver,#4A6363,2006,2006,Speckle

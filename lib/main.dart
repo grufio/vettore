@@ -16,6 +16,7 @@ import 'package:vettore/data/database.dart';
 import 'package:drift/drift.dart' show Value;
 import 'features/projects/widgets/vendor_colors_overview_page.dart';
 import 'package:vettore/providers/navigation_providers.dart';
+import 'package:vettore/services/lego_colors_importer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +73,7 @@ class _AppShellState extends State<_AppShell> {
   ];
   int? _currentProjectId;
   bool _adding = false;
+  bool _legoImported = false;
 
   void _handleSelect(int i) {
     setState(() => _activeIndex = i);
@@ -119,6 +121,21 @@ class _AppShellState extends State<_AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Kick off Lego colors import once after first frame
+    if (!_legoImported) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          final container = ProviderScope.containerOf(context);
+          final db = container.read(appDatabaseProvider);
+          await LegoColorsImporter(db)
+              .importFromAssetsCsv('assets/csv/lego_colors.csv');
+        } catch (_) {
+          // ignore import errors in UI
+        } finally {
+          if (mounted) setState(() => _legoImported = true);
+        }
+      });
+    }
     return ColoredBox(
       color: kWhite,
       child: Column(

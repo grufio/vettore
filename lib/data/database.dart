@@ -80,6 +80,20 @@ class Settings extends Table {
   Set<Column> get primaryKey => {key};
 }
 
+// Lego Colors Table (official)
+@DataClassName('DbLegoColor')
+class LegoColors extends Table {
+  IntColumn get blColorId => integer().named('bl_color_id')();
+  TextColumn get name => text()();
+  TextColumn get rgbHex => text().named('rgb_hex').nullable()();
+  IntColumn get startYear => integer().named('start_year').nullable()();
+  IntColumn get endYear => integer().named('end_year').nullable()();
+  TextColumn get groupName => text().named('group').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {blColorId};
+}
+
 // Images Table (new)
 @DataClassName('DbImage')
 class Images extends Table {
@@ -135,13 +149,14 @@ class Projects extends Table {
   ColorComponents,
   Settings,
   Images,
-  Projects
+  Projects,
+  LegoColors
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration {
@@ -250,6 +265,22 @@ class AppDatabase extends _$AppDatabase {
           if (hasLf.isEmpty) {
             await m.addColumn(vendorColors, vendorColors.lightfastness);
           }
+        }
+        if (from < 17) {
+          // previous temp table version; ignore
+        }
+        if (from < 18) {
+          await m.database.customStatement('DROP TABLE IF EXISTS lego_colors');
+          await m.database
+              .customStatement('CREATE TABLE IF NOT EXISTS lego_colors ('
+                  'bl_color_id INTEGER PRIMARY KEY NOT NULL, '
+                  'name TEXT NOT NULL, '
+                  'rgb_hex TEXT, '
+                  'start_year INTEGER, '
+                  'end_year INTEGER, '
+                  '"group" TEXT)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_lego_colors_name ON lego_colors(name)');
         }
       },
     );
