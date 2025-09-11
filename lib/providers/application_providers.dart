@@ -48,3 +48,6 @@ final aiServiceProvider = Provider<AIService>((ref) {
 // UI State Providers
 //-
 final dpiProvider = StateProvider<int>((ref) => 96);
+
+// Overview menu selection (HomeNavigation) - default Projects / All
+final homeNavSelectedIndexProvider = StateProvider<int>((ref) => 1);

@@ -79,7 +79,8 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   bool _showDetail = false;
   String _activeFilterId = 'completed';
   double _sidePanelWidth = 260.0;
-  int? _newProjectIdForDetail; // deprecated; retained during transition
+  // int? _newProjectIdForDetail; // removed
+  int _navSelectedIndex = 1; // Default selected: Projects / All
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
     const GrufioTabData(
@@ -142,7 +143,6 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
           );
           _activeIndex = insertIndex;
           _showDetail = true;
-          _newProjectIdForDetail = id;
         });
         // Set providers for new project and default page
         container.read(currentProjectIdProvider.notifier).state = id;
@@ -175,10 +175,17 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                 onResetWidth: () => setState(() {
                   _sidePanelWidth = 280.0;
                 }),
-                child: HomeNavigation(
-                  rowHeight: 24.0,
-                  onTap: (_) {},
-                ),
+                child: Consumer(builder: (context, ref, _) {
+                  _navSelectedIndex = ref.watch(homeNavSelectedIndexProvider);
+                  return HomeNavigation(
+                    rowHeight: 24.0,
+                    selectedIndex: _navSelectedIndex,
+                    onTap: (i) {
+                      ref.read(homeNavSelectedIndexProvider.notifier).state = i;
+                      setState(() => _navSelectedIndex = i);
+                    },
+                  );
+                }),
               ),
               Expanded(
                 child: Column(
@@ -202,6 +209,14 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                         child: _HomeGalleryContainer(
                       onOpenProject: widget.onOpenProject,
                       onOpenVendor: widget.onOpenVendor,
+                      showProjects:
+                          (_navSelectedIndex >= 0 && _navSelectedIndex <= 7)
+                              ? true
+                              : (_navSelectedIndex == 1),
+                      showVendors:
+                          (_navSelectedIndex >= 8 && _navSelectedIndex <= 11)
+                              ? true
+                              : (_navSelectedIndex == 9),
                     )),
                   ],
                 ),
@@ -248,10 +263,20 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                         onResetWidth: () => setState(() {
                           _sidePanelWidth = 280.0;
                         }),
-                        child: HomeNavigation(
-                          rowHeight: 24.0,
-                          onTap: (_) {},
-                        ),
+                        child: Consumer(builder: (context, ref, _) {
+                          _navSelectedIndex =
+                              ref.watch(homeNavSelectedIndexProvider);
+                          return HomeNavigation(
+                            rowHeight: 24.0,
+                            selectedIndex: _navSelectedIndex,
+                            onTap: (i) {
+                              ref
+                                  .read(homeNavSelectedIndexProvider.notifier)
+                                  .state = i;
+                              setState(() => _navSelectedIndex = i);
+                            },
+                          );
+                        }),
                       ),
                     Expanded(
                       child: Column(
@@ -309,6 +334,14 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                                               });
                                             },
                                         onOpenVendor: widget.onOpenVendor,
+                                        showProjects: (_navSelectedIndex >= 0 &&
+                                                _navSelectedIndex <= 7)
+                                            ? true
+                                            : (_navSelectedIndex == 1),
+                                        showVendors: (_navSelectedIndex >= 8 &&
+                                                _navSelectedIndex <= 11)
+                                            ? true
+                                            : (_navSelectedIndex == 9),
                                       )
                                     : Center(
                                         child: Text(
@@ -361,7 +394,14 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
 class _HomeGalleryContainer extends ConsumerWidget {
   final ValueChanged<int>? onOpenProject;
   final void Function(int vendorId, String vendorBrand)? onOpenVendor;
-  const _HomeGalleryContainer({this.onOpenProject, this.onOpenVendor});
+  final bool showProjects;
+  final bool showVendors;
+  const _HomeGalleryContainer({
+    this.onOpenProject,
+    this.onOpenVendor,
+    this.showProjects = true,
+    this.showVendors = true,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -377,53 +417,54 @@ class _HomeGalleryContainer extends ConsumerWidget {
             final double width = constraints.maxWidth;
             final int columns =
                 width.isFinite ? (width / 280.0).floor().clamp(1, 12) : 3;
+            final items = <Widget>[];
+            if (showVendors) {
+              for (final v in vendors) {
+                final now = DateTime.now();
+                String two(int n) => n.toString().padLeft(2, '0');
+                final formatted =
+                    '${two(now.day)}.${two(now.month)}.${now.year}, ${two(now.hour)}:${two(now.minute)}';
+                items.add(GestureDetector(
+                  onTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
+                  onDoubleTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
+                  child: ThumbnailTile(
+                    assetPath: null,
+                    imageBytes: null,
+                    footerHeight: 72.0,
+                    lines: [v.vendorName, v.vendorBrand, formatted],
+                    textPadding: 12.0,
+                    lineSpacing: 12.0,
+                  ),
+                ));
+              }
+            }
+            if (showProjects) {
+              for (final p in projects) {
+                items.add(Consumer(builder: (context, ref, _) {
+                  final bytesAsync = (p.imageId != null)
+                      ? ref.watch(imageBytesProvider(p.imageId!))
+                      : const AsyncValue<Uint8List?>.data(null);
+                  final bytes = bytesAsync.asData?.value;
+                  return GestureDetector(
+                    onDoubleTap: () => onOpenProject?.call(p.id),
+                    child: ThumbnailTile(
+                      imageBytes: bytes,
+                      footerHeight: 72.0,
+                      lines: [p.title, '324x240px', '30.12.2005, 12:24'],
+                      textPadding: 12.0,
+                      lineSpacing: 12.0,
+                    ),
+                  );
+                }));
+              }
+            }
             return MasonryGridView.count(
               crossAxisCount: columns,
               mainAxisSpacing: 16.0,
               crossAxisSpacing: 16.0,
               padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
-              itemCount: vendors.length + projects.length,
-              itemBuilder: (context, index) {
-                // Render vendor tiles first
-                if (index < vendors.length) {
-                  final v = vendors[index];
-                  final now = DateTime.now();
-                  String two(int n) => n.toString().padLeft(2, '0');
-                  final formatted =
-                      '${two(now.day)}.${two(now.month)}.${now.year}, ${two(now.hour)}:${two(now.minute)}';
-                  return GestureDetector(
-                    onTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
-                    onDoubleTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
-                    child: ThumbnailTile(
-                      assetPath: null,
-                      imageBytes: null,
-                      footerHeight: 72.0,
-                      lines: [v.vendorName, v.vendorBrand, formatted],
-                      textPadding: 12.0,
-                      lineSpacing: 12.0,
-                    ),
-                  );
-                }
-                final p = projects[index - vendors.length];
-                return Consumer(
-                  builder: (context, ref, _) {
-                    final bytesAsync = (p.imageId != null)
-                        ? ref.watch(imageBytesProvider(p.imageId!))
-                        : const AsyncValue<Uint8List?>.data(null);
-                    final bytes = bytesAsync.asData?.value;
-                    return GestureDetector(
-                      onDoubleTap: () => onOpenProject?.call(p.id),
-                      child: ThumbnailTile(
-                        imageBytes: bytes,
-                        footerHeight: 72.0,
-                        lines: [p.title, '324x240px', '30.12.2005, 12:24'],
-                        textPadding: 12.0,
-                        lineSpacing: 12.0,
-                      ),
-                    );
-                  },
-                );
-              },
+              itemCount: items.length,
+              itemBuilder: (context, index) => items[index],
             );
           },
         );

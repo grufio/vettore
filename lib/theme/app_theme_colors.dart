@@ -8,6 +8,7 @@ const Color kErrorColor = Color(0xFFdc3545); // A standard error red
 
 const Color kInputFocus = Color(0xFF7C5CFF);
 const Color kInputBackground = Color(0xFFCBBEFF);
+const Color kSelected = Color.fromARGB(255, 227, 221, 253);
 
 // Greys
 const Color kWhite = Color(0xFFFFFFFF);

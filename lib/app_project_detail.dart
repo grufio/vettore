@@ -3,7 +3,6 @@ import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' show Value;
-import 'dart:typed_data';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
@@ -11,7 +10,7 @@ import 'package:vettore/widgets/section_sidebar.dart';
 import 'package:vettore/widgets/section_input.dart';
 import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
-import 'package:vettore/widgets/image_upload_area.dart';
+// import 'package:vettore/widgets/image_upload_area.dart';
 import 'package:vettore/widgets/input_value_type/text_default.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
@@ -22,8 +21,8 @@ import 'package:vettore/widgets/input_value_type/height_row.dart';
 import 'package:vettore/services/dimensions_guard.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
-import 'package:flutter/foundation.dart' show compute;
-import 'package:vettore/services/image_compute.dart' as ic;
+// import 'package:flutter/foundation.dart' show compute;
+// import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/providers/navigation_providers.dart';
 
@@ -354,49 +353,7 @@ extension on _AppProjectDetailPageState {
         .resizeToCv(targetW, targetH, interp);
   }
 
-  Future<void> _handleImageBytes(Uint8List bytes) async {
-    if (_currentProjectId == null) return;
-    // Decode to get dimensions in isolate
-    final dims = await compute(ic.decodeDimensions, bytes);
-    // Best effort DPI detection (to be wired to ResolutionSelector)
-    // final int? dpi = await compute(ic.decodeDpi, bytes);
-    final int? width = dims.width;
-    final int? height = dims.height;
-    final imagesDao = ref.read(appDatabaseProvider);
-    // Insert image row
-    final imageId = await imagesDao.into(imagesDao.images).insert(
-          ImagesCompanion.insert(
-            origSrc: Value(bytes),
-            origBytes: Value(bytes.length),
-            origWidth: width != null ? Value(width) : const Value.absent(),
-            origHeight: height != null ? Value(height) : const Value.absent(),
-            // unique colors unknown here
-            thumbnail: const Value.absent(),
-            mimeType: const Value('image'),
-            convSrc: const Value.absent(),
-            convBytes: const Value.absent(),
-            convWidth: const Value.absent(),
-            convHeight: const Value.absent(),
-            convUniqueColors: const Value.absent(),
-            origUniqueColors: const Value.absent(),
-          ),
-        );
-    // Point project to this image
-    final repo = ref.read(projectRepositoryProvider);
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await repo.update(
-      ProjectsCompanion(
-        id: Value(_currentProjectId!),
-        imageId: Value(imageId),
-        updatedAt: Value(now),
-      ),
-    );
-    // Update local UI controllers with dimensions
-    _applyImageDims(width: width, height: height);
-    // TODO: if DPI is detected, set ResolutionSelector initial value
-    // This requires threading dpi into local state; for now, ignore if null
-    _setHasImage(true);
-  }
+  // _handleImageBytes removed; upload handled on Image Detail page
 
   // Dialog upload handled inside ImageUploadArea
 
@@ -474,29 +431,8 @@ extension on _AppProjectDetailPageState {
   }
 
   Widget _buildDetailBody() {
-    // Build consumes project/image streams to provide initial bytes to viewer
-    return StreamBuilder<DbProject?>(
-      stream: (_currentProjectId != null)
-          ? ref.read(projectRepositoryProvider).watchById(_currentProjectId!)
-          : const Stream.empty(),
-      builder: (context, snap) {
-        final project = snap.data;
-        final imageId = project?.imageId;
-        final bytesAsync = (imageId != null)
-            ? ref.watch(imageBytesProvider(imageId))
-            : const AsyncValue<Uint8List?>.data(null);
-        final bytes = bytesAsync.asData?.value;
-        return ColoredBox(
-          color: kGrey10,
-          child: Center(
-            child: ImageUploadArea(
-              initialBytes: bytes,
-              onBytesSelected: (b) => _handleImageBytes(b),
-            ),
-          ),
-        );
-      },
-    );
+    // Image upload/view moved to Image Detail; keep this area empty.
+    return const ColoredBox(color: kGrey10, child: SizedBox.expand());
   }
 }
 

@@ -76,7 +76,21 @@ class _AppShellState extends State<_AppShell> {
   bool _legoImported = false;
 
   void _handleSelect(int i) {
-    setState(() => _activeIndex = i);
+    setState(() {
+      _activeIndex = i;
+      // Sync current project when switching tabs
+      if (i == 0) {
+        _currentProjectId = null;
+      } else if (i > 0) {
+        final t = _tabs[i];
+        if (t.projectId != null) {
+          _currentProjectId = t.projectId;
+          final container = ProviderScope.containerOf(context);
+          container.read(currentProjectIdProvider.notifier).state = t.projectId;
+          container.read(currentPageProvider.notifier).state = PageId.project;
+        }
+      }
+    });
   }
 
   void _handleClose(int i) {
@@ -116,6 +130,10 @@ class _AppShellState extends State<_AppShell> {
       );
       _activeIndex = _tabs.length - 1;
     });
+    // Ensure detail shows Project page for the new tab
+    final container2 = ProviderScope.containerOf(context);
+    container2.read(currentProjectIdProvider.notifier).state = id;
+    container2.read(currentPageProvider.notifier).state = PageId.project;
     setState(() => _adding = false);
   }
 
