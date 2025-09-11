@@ -49,7 +49,32 @@ final projectsStreamProvider =
 class VendorColorAggregated {
   final VendorColor color;
   final String sizes; // e.g., "35,120,250"
-  VendorColorAggregated({required this.color, required this.sizes});
+  final String? rgbHex;
+  final int? startYear;
+  final int? endYear;
+  VendorColorAggregated({
+    required this.color,
+    required this.sizes,
+    this.rgbHex,
+    this.startYear,
+    this.endYear,
+  });
+
+  VendorColorAggregated copyWith({
+    VendorColor? color,
+    String? sizes,
+    String? rgbHex,
+    int? startYear,
+    int? endYear,
+  }) {
+    return VendorColorAggregated(
+      color: color ?? this.color,
+      sizes: sizes ?? this.sizes,
+      rgbHex: rgbHex ?? this.rgbHex,
+      startYear: startYear ?? this.startYear,
+      endYear: endYear ?? this.endYear,
+    );
+  }
 }
 
 final _vendorFilterProvider = StateProvider.autoDispose<String>((ref) => 'all');
@@ -84,9 +109,11 @@ final vendorColorsAggregatedProvider = StreamProvider.autoDispose
   await for (final _ in ref.watch(_debouncedFilterProvider.stream)) {
     final rowsStream = db.customSelect(
       'SELECT vc.id, vc.vendor_id, vc.name, vc.code, vc.image_url, vc.weight_in_grams, vc.color_density, '
+      'lc.rgb_hex, lc.start_year, lc.end_year, '
       'GROUP_CONCAT(vcv.size) AS sizes '
       'FROM vendor_colors vc '
       'LEFT JOIN vendor_color_variants vcv ON vcv.vendor_color_id = vc.id '
+      'LEFT JOIN lego_colors lc ON lc.bl_color_id = CAST(vc.code AS INTEGER) '
       'WHERE vc.vendor_id = ? '
       'GROUP BY vc.id '
       'ORDER BY vc.name ASC',
@@ -105,7 +132,13 @@ final vendorColorsAggregatedProvider = StreamProvider.autoDispose
           colorDensity: row.read<double?>('color_density'),
         );
         final sizes = row.read<String?>('sizes') ?? '';
-        return VendorColorAggregated(color: color, sizes: sizes);
+        // attach rgb for UI via an extension map entry on VendorColorAggregated using lines composition
+        final rgbHex = row.read<String?>('rgb_hex');
+        final sy = row.read<int?>('start_year');
+        final ey = row.read<int?>('end_year');
+        final extra = VendorColorAggregated(color: color, sizes: sizes);
+        // temporarily stash in color.code formatting if needed by UI; main use is in overview widget below
+        return extra.copyWith(rgbHex: rgbHex, startYear: sy, endYear: ey);
       }).toList();
       yield list;
     }

@@ -64,9 +64,15 @@ class _VendorColorsOverviewPageState
                   final density = row.color.colorDensity?.toString() ?? '';
                   final assetPath =
                       row.color.imageUrl.isNotEmpty ? row.color.imageUrl : null;
+                  final Color? bg = (assetPath == null &&
+                          row.rgbHex != null &&
+                          row.rgbHex!.isNotEmpty)
+                      ? _parseHex(row.rgbHex!)
+                      : null;
                   return ThumbnailTile(
                     assetPath: assetPath,
                     imageBytes: null,
+                    backgroundFill: bg,
                     lines: [row.color.name, sizes, density],
                   );
                 },
@@ -77,4 +83,10 @@ class _VendorColorsOverviewPageState
       ],
     );
   }
+}
+
+Color _parseHex(String hex) {
+  final s = hex.replaceAll('#', '');
+  final v = int.parse(s, radix: 16);
+  return Color(0xFF000000 | v);
 }
