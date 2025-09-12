@@ -80,7 +80,7 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   String _activeFilterId = 'completed';
   double _sidePanelWidth = 260.0;
   // int? _newProjectIdForDetail; // removed
-  int _navSelectedIndex = 1; // Default selected: Projects / All
+  // Persistent index now handled by provider
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
     const GrufioTabData(
@@ -176,50 +176,50 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                   _sidePanelWidth = 280.0;
                 }),
                 child: Consumer(builder: (context, ref, _) {
-                  _navSelectedIndex = ref.watch(homeNavSelectedIndexProvider);
+                  final navIndex = ref.watch(homeNavSelectedIndexProvider);
                   return HomeNavigation(
                     rowHeight: 24.0,
-                    selectedIndex: _navSelectedIndex,
+                    selectedIndex: navIndex,
                     onTap: (i) {
-                      ref.read(homeNavSelectedIndexProvider.notifier).state = i;
-                      setState(() => _navSelectedIndex = i);
+                      ref.read(homeNavSelectedIndexProvider.notifier).set(i);
                     },
                   );
                 }),
               ),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ContentToolbar(
-                      children: [
-                        AddProjectButton(
-                            onTap: widget.onAddProject ?? _onAddTab),
-                      ],
-                    ),
-                    ContentFilterBar(
-                      items: const [
-                        FilterItem(id: 'completed', label: 'Completed'),
-                        FilterItem(id: 'all', label: 'All'),
-                      ],
-                      activeId: _activeFilterId,
-                      onChanged: (id) => setState(() => _activeFilterId = id),
-                    ),
-                    Expanded(
-                        child: _HomeGalleryContainer(
-                      onOpenProject: widget.onOpenProject,
-                      onOpenVendor: widget.onOpenVendor,
-                      showProjects:
-                          (_navSelectedIndex >= 0 && _navSelectedIndex <= 7)
-                              ? true
-                              : (_navSelectedIndex == 1),
-                      showVendors:
-                          (_navSelectedIndex >= 8 && _navSelectedIndex <= 11)
-                              ? true
-                              : (_navSelectedIndex == 9),
-                    )),
-                  ],
-                ),
+                child: Consumer(builder: (context, ref, _) {
+                  final navIndex = ref.watch(homeNavSelectedIndexProvider);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ContentToolbar(
+                        children: [
+                          AddProjectButton(
+                              onTap: widget.onAddProject ?? _onAddTab),
+                        ],
+                      ),
+                      ContentFilterBar(
+                        items: const [
+                          FilterItem(id: 'completed', label: 'Completed'),
+                          FilterItem(id: 'all', label: 'All'),
+                        ],
+                        activeId: _activeFilterId,
+                        onChanged: (id) => setState(() => _activeFilterId = id),
+                      ),
+                      Expanded(
+                          child: _HomeGalleryContainer(
+                        onOpenProject: widget.onOpenProject,
+                        onOpenVendor: widget.onOpenVendor,
+                        showProjects: (navIndex >= 0 && navIndex <= 7)
+                            ? true
+                            : (navIndex == 1),
+                        showVendors: (navIndex >= 8 && navIndex <= 11)
+                            ? true
+                            : (navIndex == 9),
+                      )),
+                    ],
+                  );
+                }),
               ),
             ],
           ),
@@ -264,16 +264,15 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                           _sidePanelWidth = 280.0;
                         }),
                         child: Consumer(builder: (context, ref, _) {
-                          _navSelectedIndex =
+                          final navIndex =
                               ref.watch(homeNavSelectedIndexProvider);
                           return HomeNavigation(
                             rowHeight: 24.0,
-                            selectedIndex: _navSelectedIndex,
+                            selectedIndex: navIndex,
                             onTap: (i) {
                               ref
                                   .read(homeNavSelectedIndexProvider.notifier)
-                                  .state = i;
-                              setState(() => _navSelectedIndex = i);
+                                  .set(i);
                             },
                           );
                         }),
@@ -315,34 +314,39 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                                     }
                                   })
                                 : (_activeIndex == 0
-                                    ? _HomeGalleryContainer(
-                                        onOpenProject: widget.onOpenProject ??
-                                            (projId) {
-                                              final container =
-                                                  ProviderScope.containerOf(
-                                                      context);
-                                              container
-                                                  .read(currentProjectIdProvider
-                                                      .notifier)
-                                                  .state = projId;
-                                              container
-                                                  .read(currentPageProvider
-                                                      .notifier)
-                                                  .state = PageId.project;
-                                              setState(() {
-                                                _showDetail = true;
-                                              });
-                                            },
-                                        onOpenVendor: widget.onOpenVendor,
-                                        showProjects: (_navSelectedIndex >= 0 &&
-                                                _navSelectedIndex <= 7)
-                                            ? true
-                                            : (_navSelectedIndex == 1),
-                                        showVendors: (_navSelectedIndex >= 8 &&
-                                                _navSelectedIndex <= 11)
-                                            ? true
-                                            : (_navSelectedIndex == 9),
-                                      )
+                                    ? Consumer(builder: (context, ref2, _) {
+                                        final navIndex = ref2.watch(
+                                            homeNavSelectedIndexProvider);
+                                        return _HomeGalleryContainer(
+                                          onOpenProject: widget.onOpenProject ??
+                                              (projId) {
+                                                final container =
+                                                    ProviderScope.containerOf(
+                                                        context);
+                                                container
+                                                    .read(
+                                                        currentProjectIdProvider
+                                                            .notifier)
+                                                    .state = projId;
+                                                container
+                                                    .read(currentPageProvider
+                                                        .notifier)
+                                                    .state = PageId.project;
+                                                setState(() {
+                                                  _showDetail = true;
+                                                });
+                                              },
+                                          onOpenVendor: widget.onOpenVendor,
+                                          showProjects:
+                                              (navIndex >= 0 && navIndex <= 7)
+                                                  ? true
+                                                  : (navIndex == 1),
+                                          showVendors:
+                                              (navIndex >= 8 && navIndex <= 11)
+                                                  ? true
+                                                  : (navIndex == 9),
+                                        );
+                                      })
                                     : Center(
                                         child: Text(
                                             'Content for Tab ${_activeIndex + 1}'),

@@ -50,4 +50,25 @@ final aiServiceProvider = Provider<AIService>((ref) {
 final dpiProvider = StateProvider<int>((ref) => 96);
 
 // Overview menu selection (HomeNavigation) - default Projects / All
-final homeNavSelectedIndexProvider = StateProvider<int>((ref) => 1);
+class HomeNavIndexNotifier extends StateNotifier<int> {
+  final SettingsService _settings;
+  static const String _key = 'homeNavIndex';
+  HomeNavIndexNotifier(this._settings) : super(1) {
+    try {
+      final cached = _settings.getInt(_key, 1);
+      state = cached;
+    } catch (_) {
+      // ignore settings read errors
+    }
+  }
+  void set(int index) {
+    state = index;
+    _settings.setInt(_key, index);
+  }
+}
+
+final homeNavSelectedIndexProvider =
+    StateNotifierProvider<HomeNavIndexNotifier, int>((ref) {
+  final settings = ref.watch(settingsServiceProvider);
+  return HomeNavIndexNotifier(settings);
+});

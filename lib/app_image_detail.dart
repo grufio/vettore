@@ -501,18 +501,6 @@ extension on _AppImageDetailPageState {
             _lastImageBytes)
         : _lastImageBytes;
 
-    // Attach a bytes listener aligned with the current pid/imageId
-    if (pid != null && imageId != null) {
-      ref.listen(imageBytesProvider(imageId), (prev, next) {
-        final b = next.asData?.value;
-        debugPrint(
-            '[ImageDetail] listen pid=$pid imageId=$imageId bytes=${b?.length ?? 0}');
-        if (b != null && mounted) {
-          setState(() => _lastImageBytes = b);
-        }
-      });
-    }
-
     debugPrint(
         '[ImageDetail] build pid=$pid imageId=$imageId bytes=${bytes?.length ?? 0}');
 

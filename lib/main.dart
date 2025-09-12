@@ -17,6 +17,7 @@ import 'package:drift/drift.dart' show Value;
 import 'features/projects/widgets/vendor_colors_overview_page.dart';
 import 'package:vettore/providers/navigation_providers.dart';
 import 'package:vettore/services/lego_colors_importer.dart';
+import 'package:vettore/services/settings_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +28,18 @@ Future<void> main() async {
     await WindowManipulator.initialize();
   }
 
-  runApp(const ProviderScope(child: MyApp()));
+  // Initialize database and settings service before building UI
+  final db = AppDatabase();
+  final settings = SettingsService(db);
+  await settings.init();
+
+  runApp(ProviderScope(
+    overrides: [
+      settingsServiceProvider.overrideWithValue(settings),
+      appDatabaseProvider.overrideWithValue(db),
+    ],
+    child: const MyApp(),
+  ));
 
   // Only perform desktop window setup on macOS.
   if (Platform.isMacOS) {
@@ -74,6 +86,7 @@ class _AppShellState extends State<_AppShell> {
   int? _currentProjectId;
   bool _adding = false;
   bool _legoImported = false;
+  bool _vendorCleanupDone = false;
 
   void _handleSelect(int i) {
     setState(() {
@@ -151,6 +164,21 @@ class _AppShellState extends State<_AppShell> {
           // ignore import errors in UI
         } finally {
           if (mounted) setState(() => _legoImported = true);
+        }
+      });
+    }
+    if (!_vendorCleanupDone) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          final container = ProviderScope.containerOf(context);
+          final db = container.read(appDatabaseProvider);
+          // Delete empty LEGO vendors (no linked vendor_colors)
+          await db.customStatement(
+              "DELETE FROM vendors WHERE vendor_category='bricks' AND (vendor_brand LIKE 'Lego%' OR vendor_name LIKE 'Lego%') AND id NOT IN (SELECT DISTINCT vendor_id FROM vendor_colors WHERE vendor_id IS NOT NULL)");
+        } catch (_) {
+          // ignore cleanup errors in UI
+        } finally {
+          if (mounted) setState(() => _vendorCleanupDone = true);
         }
       });
     }

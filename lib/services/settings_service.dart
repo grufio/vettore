@@ -44,6 +44,11 @@ class SettingsService extends ChangeNotifier {
     // No need to notify listeners here, as this is called before the UI is built.
   }
 
+  // Generic helpers for external consumers
+  int getInt(String key, int defaultValue) =>
+      _getParsedValue<int>(key, defaultValue);
+  Future<void> setInt(String key, int value) => _setSetting(key, value);
+
   Future<void> _setSetting(String key, dynamic value) async {
     final stringValue = value.toString();
     await (_db.into(_db.settings).insertOnConflictUpdate(
