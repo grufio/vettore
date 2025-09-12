@@ -42,7 +42,8 @@ class _HeightRowState extends State<HeightRow> {
         prefixIconAlignment: Alignment.centerLeft,
         dropdownItems: _units,
         selectedItem: _unit,
-        variant: InputVariant.valueDropdown,
+        suffixText: _unit,
+        variant: InputVariant.selector,
         readOnly: readOnly,
         readOnlyView: widget.readOnlyView,
         onChanged: (raw) {

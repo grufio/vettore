@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:file_picker/file_picker.dart';
+// import 'package:file_picker/file_picker.dart';
 import 'package:flutter/widgets.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/image_upload_text.dart';
+// import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/widgets/snackbar_image.dart';
 
 class ImageUploadArea extends StatefulWidget {
@@ -48,23 +48,9 @@ class _ImageUploadAreaState extends State<ImageUploadArea> {
     }
   }
 
-  Future<void> _selectBytes(Uint8List bytes) async {
-    if (!mounted) return;
-    setState(() => _bytes = bytes);
-    await widget.onBytesSelected(bytes);
-  }
+  // Selection via drag/drop disabled in placeholder mode
 
-  Future<void> _pickViaDialog() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: widget.allowedExtensions,
-      withData: true,
-    );
-    final file = result?.files.first;
-    if (file?.bytes != null) {
-      await _selectBytes(file!.bytes!);
-    }
-  }
+  // Upload dialog not shown during initial load placeholder
 
   void _zoomIn() {
     final currentScale = _controller.scale ?? 1.0;
@@ -84,12 +70,8 @@ class _ImageUploadAreaState extends State<ImageUploadArea> {
   @override
   Widget build(BuildContext context) {
     if (_bytes == null) {
-      return Center(
-        child: ImageUploadText(
-          onImageDropped: (bytes) => _selectBytes(bytes),
-          onUploadTap: _pickViaDialog,
-        ),
-      );
+      // Show a gentle placeholder instead of upload prompt while awaiting bytes
+      return const ColoredBox(color: kGrey10);
     }
     return Stack(
       fit: StackFit.expand,

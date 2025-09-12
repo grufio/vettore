@@ -5,7 +5,7 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/input_value_type/dropdown_item.dart';
 
 const double kDropdownItemHeight = 24.0;
-const double kDropdownPanelWidth = 100.0;
+const double kDropdownPanelWidth = 120.0;
 
 OverlayEntry createDropdownOverlay({
   required BuildContext context,

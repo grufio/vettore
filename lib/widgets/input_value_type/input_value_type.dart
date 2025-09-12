@@ -23,13 +23,10 @@ import 'package:vettore/widgets/input_value_type/prefix_icon.dart';
 /// - regular: fixed suffix text (if provided), no dropdown.
 /// - selector: suffix text that turns into a chevron on hover; opens dropdown.
 /// - dropdown: chevron-only suffix; opens dropdown.
-/// - valueDropdown: numeric/text field with a suffix that is the selected
-///   dropdown value; clicking the suffix opens a dropdown centered on click.
 enum InputVariant {
   regular,
   selector,
   dropdown,
-  valueDropdown,
 }
 
 // (Removed old Shortcuts/Actions intents; RawAutocomplete now manages keys)
@@ -39,7 +36,6 @@ enum InputVariant {
 /// When [dropdownItems] is provided, the suffix acts based on [variant]:
 /// - [InputVariant.selector] shows suffix text that flips to a chevron on hover.
 /// - [InputVariant.dropdown] shows only a chevron.
-/// - [InputVariant.valueDropdown] shows the currently selected item as suffix.
 /// For read-only mode, selection/cursor are disabled and the caret is hidden.
 class InputValueType extends StatefulWidget {
   static const InputVariant defaultVariant = InputVariant.regular;
@@ -147,7 +143,6 @@ class _InputValueTypeState extends State<InputValueType> {
   // Deprecated overlay/highlight state removed with RawAutocomplete
   bool _forceOpen = false;
   // Legacy selection toggle no longer needed
-  String? _currentSuffix;
   // Persist selected item (for checkmark) across openings, even if parent doesn't manage it
   String? _selectedItem;
   TextEditingValue? _beforeOpenValue;
@@ -201,14 +196,11 @@ class _InputValueTypeState extends State<InputValueType> {
       _confirmHighlighted,
     );
     // Initialize current suffix for valueDropdown/selector so something is visible when not hovering
-    _currentSuffix = widget.selectedItem ??
-        widget.suffixText ??
+    // Initialize persisted selection for highlighting
+    _selectedItem = widget.selectedItem ??
         ((widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty)
             ? widget.dropdownItems!.first
             : null);
-    // Initialize persisted selection
-    _selectedItem = widget.selectedItem ??
-        (widget.variant == InputVariant.valueDropdown ? _currentSuffix : null);
   }
 
   @override
@@ -224,17 +216,10 @@ class _InputValueTypeState extends State<InputValueType> {
         _controller.selection = const TextSelection.collapsed(offset: 0);
       }
     }
-    // Keep _currentSuffix in sync if parent changes
+    // Keep selection in sync if parent changes
     if (oldWidget.selectedItem != widget.selectedItem &&
         widget.selectedItem != null) {
-      _currentSuffix = widget.selectedItem;
       _selectedItem = widget.selectedItem;
-    } else if (oldWidget.suffixText != widget.suffixText &&
-        _currentSuffix == null) {
-      _currentSuffix = widget.suffixText ??
-          ((widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty)
-              ? widget.dropdownItems!.first
-              : null);
     }
 
     // If dropdownItems changed, ensure selection still valid. In controlled mode,
@@ -249,11 +234,7 @@ class _InputValueTypeState extends State<InputValueType> {
         if (_selectedItem != null && !newItems.contains(_selectedItem)) {
           _selectedItem = newItems.isNotEmpty ? newItems.first : null;
         }
-        if (widget.variant == InputVariant.valueDropdown) {
-          if (_currentSuffix != null && !newItems.contains(_currentSuffix)) {
-            _currentSuffix = newItems.isNotEmpty ? newItems.first : null;
-          }
-        }
+        // no-op for selector/dropdown
       }
     }
   }
@@ -458,19 +439,6 @@ class _InputValueTypeState extends State<InputValueType> {
           onTap: _openOptions,
           onTapDown: (details) => _lastTapGlobal = details.globalPosition,
         );
-      case InputVariant.valueDropdown:
-        if (!hasDropdown) {
-          if (_currentSuffix == null) return const SizedBox.shrink();
-          return suffixTextRow(_currentSuffix!);
-        }
-        return ivt_sfx.HoverSelectorSuffix(
-          key: widget.suffixKey,
-          suffixText: _currentSuffix,
-          iconAsset: iconAsset,
-          onTap: _openOptions,
-          showAsIcon: (_dropdownEntry != null) || _usingOverlay || _forceOpen,
-          onTapDownGlobal: (pos) => _lastTapGlobal = pos,
-        );
     }
   }
 
@@ -489,12 +457,8 @@ class _InputValueTypeState extends State<InputValueType> {
     final items = widget.dropdownItems ?? const <String>[];
     // For valueDropdown, prefer the currently displayed suffix; otherwise use
     // explicit selectedItem, internal selection, or fall back to field text.
-    final String? selectionBasis = widget.variant == InputVariant.valueDropdown
-        ? (_currentSuffix ??
-            widget.selectedItem ??
-            _selectedItem ??
-            _controller.text)
-        : (widget.selectedItem ?? _selectedItem ?? _controller.text);
+    final String? selectionBasis =
+        (widget.selectedItem ?? _selectedItem ?? _controller.text);
     // Determine initial highlighted index
     final int initialIndex =
         selectionBasis != null ? items.indexOf(selectionBasis) : -1;
@@ -513,16 +477,13 @@ class _InputValueTypeState extends State<InputValueType> {
       targetKey: _targetKey,
       items: items,
       selectedValue: selectionBasis,
-      isValueDropdownVariant: widget.variant == InputVariant.valueDropdown,
+      isValueDropdownVariant: false,
       onItemSelected: (value) {
         widget.onItemSelected?.call(value);
         setState(() {
           // Only update internal selection when uncontrolled
           if (widget.selectedItem == null) {
             _selectedItem = value;
-          }
-          if (widget.variant == InputVariant.valueDropdown) {
-            _currentSuffix = value;
           }
         });
         // Return focus to the input field after a selection
@@ -532,7 +493,7 @@ class _InputValueTypeState extends State<InputValueType> {
         });
       },
       onDismiss: _removeDropdown,
-      panelWidth: 100.0,
+      panelWidth: ivt_ovl.kDropdownPanelWidth,
       highlightedIndexListenable: _highlightedIndex,
       listScrollController: _listScrollController,
       onHighlightNext: _highlightNext,
@@ -603,9 +564,6 @@ class _InputValueTypeState extends State<InputValueType> {
     setState(() {
       if (widget.selectedItem == null) {
         _selectedItem = value;
-      }
-      if (widget.variant == InputVariant.valueDropdown) {
-        _currentSuffix = value;
       }
     });
     _removeDropdown();

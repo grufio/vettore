@@ -39,6 +39,8 @@ class Vendors extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get vendorName => text()();
   TextColumn get vendorBrand => text()();
+  // Classification for filtering in UI (e.g., 'bricks', 'colors')
+  TextColumn get vendorCategory => text().nullable()();
 }
 
 class VendorColors extends Table {
@@ -132,6 +134,11 @@ class Projects extends Table {
   IntColumn get imageId => integer()
       .nullable()
       .references(Images, #id, onDelete: KeyAction.setNull)();
+  // Model and selected vendor for this project
+  TextColumn get model => text().nullable()(); // 'bricks' | 'colors'
+  IntColumn get vendorId => integer()
+      .nullable()
+      .references(Vendors, #id, onDelete: KeyAction.setNull)();
 }
 
 //-
@@ -156,7 +163,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration {
@@ -281,6 +288,47 @@ class AppDatabase extends _$AppDatabase {
                   '"group" TEXT)');
           await m.database.customStatement(
               'CREATE INDEX IF NOT EXISTS idx_lego_colors_name ON lego_colors(name)');
+        }
+        if (from < 19) {
+          // Add vendor_category to vendors if missing
+          final hasVendorCategory = await m.database
+              .customSelect(
+                  "SELECT 1 FROM pragma_table_info('vendors') WHERE name = 'vendor_category' LIMIT 1")
+              .get();
+          if (hasVendorCategory.isEmpty) {
+            await m.database.customStatement(
+                "ALTER TABLE vendors ADD COLUMN vendor_category TEXT");
+          }
+          // Add model to projects if missing
+          final hasModel = await m.database
+              .customSelect(
+                  "SELECT 1 FROM pragma_table_info('projects') WHERE name = 'model' LIMIT 1")
+              .get();
+          if (hasModel.isEmpty) {
+            await m.database
+                .customStatement("ALTER TABLE projects ADD COLUMN model TEXT");
+          }
+          // Add vendor_id to projects if missing
+          final hasVendorId = await m.database
+              .customSelect(
+                  "SELECT 1 FROM pragma_table_info('projects') WHERE name = 'vendor_id' LIMIT 1")
+              .get();
+          if (hasVendorId.isEmpty) {
+            await m.database.customStatement(
+                "ALTER TABLE projects ADD COLUMN vendor_id INTEGER");
+          }
+          // Seed Lego vendor and categorize Schmincke/Norma
+          await m.database.customStatement(
+              "INSERT INTO vendors (vendor_name, vendor_brand, vendor_category) SELECT 'Lego','Lego','bricks' WHERE NOT EXISTS (SELECT 1 FROM vendors WHERE vendor_brand='Lego')");
+          await m.database.customStatement(
+              "UPDATE vendors SET vendor_category='colors' WHERE vendor_brand='Norma professional' OR vendor_name='Schmincke'");
+          // Helpful indexes
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_vendors_vendor_category ON vendors(vendor_category)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_model ON projects(model)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_vendor_id ON projects(vendor_id)');
         }
       },
     );

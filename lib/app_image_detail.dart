@@ -21,7 +21,9 @@ import 'package:vettore/widgets/input_value_type/height_row.dart';
 import 'package:vettore/services/dimensions_guard.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
-import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter/foundation.dart' show compute, debugPrint;
+import 'package:file_picker/file_picker.dart';
+import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/providers/navigation_providers.dart';
@@ -69,6 +71,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
   // Guard to avoid re-initializing dimensions on stream rebuilds
   int? _lastDimsImageId;
   bool _dimsInitialized = false;
+  Uint8List? _lastImageBytes;
 
   void _setHasImage(bool value) {
     if (!mounted) return;
@@ -170,6 +173,13 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
         final dims = next.asData?.value;
         if (dims != null) {
           _applyImageDims(width: dims.$1, height: dims.$2);
+        }
+      });
+      // Also listen to bytes and cache last non-null to avoid flicker on rebuilds
+      ref.listen(imageBytesProvider(_imageIdForListen), (prev, next) {
+        final b = next.asData?.value;
+        if (b != null && mounted) {
+          setState(() => _lastImageBytes = b);
         }
       });
     }
@@ -346,6 +356,8 @@ extension on _AppImageDetailPageState {
 
   Future<void> _handleImageBytes(Uint8List bytes) async {
     if (_currentProjectId == null) return;
+    debugPrint(
+        '[ImageDetail] _handleImageBytes len=${bytes.length} pid=$_currentProjectId');
     // Decode to get dimensions in isolate
     final dims = await compute(ic.decodeDimensions, bytes);
     // Best effort DPI detection (to be wired to ResolutionSelector)
@@ -381,6 +393,7 @@ extension on _AppImageDetailPageState {
         updatedAt: Value(now),
       ),
     );
+    debugPrint('[ImageDetail] image stored id=$imageId; updating controllers');
     // Update local UI controllers with dimensions
     _applyImageDims(width: width, height: height);
     // TODO: if DPI is detected, set ResolutionSelector initial value
@@ -389,6 +402,17 @@ extension on _AppImageDetailPageState {
   }
 
   // Dialog upload handled inside ImageUploadArea
+  Future<void> _pickViaDialog() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['png', 'jpg', 'jpeg'],
+      withData: true,
+    );
+    final file = result?.files.first;
+    if (file?.bytes != null) {
+      await _handleImageBytes(file!.bytes!);
+    }
+  }
 
   Future<void> _initProject() async {
     // Determine project to load: prefer explicit id, else load first project if any
@@ -464,28 +488,55 @@ extension on _AppImageDetailPageState {
   }
 
   Widget _buildDetailBody() {
-    // Build consumes project/image streams to provide initial bytes to viewer
-    return StreamBuilder<DbProject?>(
-      stream: (_currentProjectId != null)
-          ? ref.read(projectRepositoryProvider).watchById(_currentProjectId!)
-          : const Stream.empty(),
-      builder: (context, snap) {
-        final project = snap.data;
-        final imageId = project?.imageId;
-        final bytesAsync = (imageId != null)
-            ? ref.watch(imageBytesProvider(imageId))
-            : const AsyncValue<Uint8List?>.data(null);
-        final bytes = bytesAsync.asData?.value;
-        return ColoredBox(
-          color: kGrey10,
-          child: Center(
-            child: ImageUploadArea(
-              initialBytes: bytes,
-              onBytesSelected: (b) => _handleImageBytes(b),
-            ),
-          ),
-        );
-      },
+    // Prefer explicit widget.projectId, then local state, then provider
+    final int? pid = widget.projectId ??
+        _currentProjectId ??
+        ref.watch(currentProjectIdProvider);
+    final project = (pid != null)
+        ? ref.watch(projectByIdProvider(pid)).asData?.value
+        : null;
+    final int? imageId = project?.imageId;
+    final Uint8List? bytes = (imageId != null)
+        ? (ref.watch(imageBytesProvider(imageId)).asData?.value ??
+            _lastImageBytes)
+        : _lastImageBytes;
+
+    // Attach a bytes listener aligned with the current pid/imageId
+    if (pid != null && imageId != null) {
+      ref.listen(imageBytesProvider(imageId), (prev, next) {
+        final b = next.asData?.value;
+        debugPrint(
+            '[ImageDetail] listen pid=$pid imageId=$imageId bytes=${b?.length ?? 0}');
+        if (b != null && mounted) {
+          setState(() => _lastImageBytes = b);
+        }
+      });
+    }
+
+    debugPrint(
+        '[ImageDetail] build pid=$pid imageId=$imageId bytes=${bytes?.length ?? 0}');
+
+    if (imageId == null) {
+      // No image attached → show upload prompt
+      return Center(
+        child: ImageUploadText(
+          onImageDropped: (b) => _handleImageBytes(b),
+          onUploadTap: _pickViaDialog,
+        ),
+      );
+    }
+
+    if (bytes == null) {
+      // Image expected but not yet loaded → show a small spinner
+      return const Center(child: CupertinoActivityIndicator());
+    }
+
+    return Center(
+      child: ImageUploadArea(
+        key: ValueKey('${imageId}:${bytes.length}'),
+        initialBytes: bytes,
+        onBytesSelected: (b) => _handleImageBytes(b),
+      ),
     );
   }
 }

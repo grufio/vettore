@@ -19,8 +19,6 @@ import 'dart:async';
 import 'package:vettore/widgets/input_value_type/width_row.dart';
 import 'package:vettore/widgets/input_value_type/height_row.dart';
 import 'package:vettore/services/dimensions_guard.dart';
-import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
-import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 // import 'package:flutter/foundation.dart' show compute;
 // import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
@@ -56,6 +54,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   late final TextEditingController _singleInputController;
   late final TextEditingController _projectController;
   late final TextEditingController _modelController;
+  late final TextEditingController _typeController;
   String _interp = 'nearest';
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
@@ -107,6 +106,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     _singleInputController = TextEditingController();
     _projectController = TextEditingController();
     _modelController = TextEditingController();
+    _typeController = TextEditingController();
     // Default interpolation shown in the field
     _singleInputController.text = _interp;
     _projectTitleFocusNode = FocusNode();
@@ -125,6 +125,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     _singleInputController.dispose();
     _projectController.dispose();
     _modelController.dispose();
+    _typeController.dispose();
     _projectTitleFocusNode.dispose();
     _projectSub?.cancel();
     super.dispose();
@@ -272,6 +273,37 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                 dropdownItems: const ['Bricks', 'Colors'],
                                 onItemSelected: (value) {
                                   _modelController.text = value;
+                                  // Update default Type when Model changes
+                                  if (value == 'Bricks') {
+                                    _typeController.text = 'Lego';
+                                  } else if (value == 'Colors') {
+                                    _typeController.text = 'Schmincke';
+                                  } else {
+                                    _typeController.text = '';
+                                  }
+                                  _persistModelAndVendorForLabels(
+                                      modelLabel: value,
+                                      typeLabel: _typeController.text);
+                                },
+                              ),
+                            ),
+                            // Type input moved into the Model section
+                            SectionInput(
+                              full: InputValueType(
+                                controller: _typeController,
+                                placeholder: 'Select type',
+                                variant: InputVariant.dropdown,
+                                dropdownItems: _modelController.text == 'Bricks'
+                                    ? const ['Lego']
+                                    : _modelController.text == 'Colors'
+                                        ? const ['Schmincke']
+                                        : const ['Lego', 'Schmincke'],
+                                onItemSelected: (value) {
+                                  _typeController.text = value;
+                                  _persistModelAndVendorForLabels(
+                                    modelLabel: _modelController.text,
+                                    typeLabel: value,
+                                  );
                                 },
                               ),
                             ),
@@ -285,7 +317,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                               : null;
                           final bool hasImage = imageId != null;
                           return SectionSidebar(
-                            title: 'Title',
+                            title: 'Dimensions',
                             children: [
                               WidthRow(
                                 widthController: _inputValueController,
@@ -301,24 +333,6 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                 heightController: _inputValueController2,
                                 enabled: hasImage,
                                 onUnitChanged: (u) => _heightUnit = u,
-                              ),
-                              InterpolationSelector(
-                                value: _interp,
-                                onChanged: (v) => setState(() {
-                                  _interp = v;
-                                  _singleInputController.text = v;
-                                }),
-                                enabled: hasImage,
-                              ),
-                              ResolutionSelector(
-                                value: _dpi,
-                                onChanged: (dpi) {
-                                  setState(() {
-                                    _dpi = dpi;
-                                    ref.read(dpiProvider.notifier).state = dpi;
-                                  });
-                                },
-                                enabled: hasImage,
                               ),
                               SectionInput(
                                 full: OutlinedActionButton(
@@ -344,6 +358,37 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
 }
 
 extension on _AppProjectDetailPageState {
+  Future<void> _persistModelAndVendorForLabels({
+    required String modelLabel,
+    required String typeLabel,
+  }) async {
+    if (_currentProjectId == null) return;
+    final db = ref.read(appDatabaseProvider);
+    // Map UI labels to DB values
+    final String modelValue =
+        modelLabel.toLowerCase() == 'bricks' ? 'bricks' : 'colors';
+    final String vendorBrand = typeLabel.toLowerCase().startsWith('lego')
+        ? 'Lego'
+        : 'Norma professional';
+    try {
+      // Lookup vendor id by brand (safe: controlled values; escape quotes)
+      final safeBrand = vendorBrand.replaceAll("'", "''");
+      final vendorRow = await db
+          .customSelect(
+              "SELECT id FROM vendors WHERE vendor_brand = '$safeBrand' LIMIT 1")
+          .getSingleOrNull();
+      final int? vendorId = vendorRow?.data['id'] as int?;
+
+      final safeModel = modelValue.replaceAll("'", "''");
+      final projId = _currentProjectId!;
+      // Persist model and vendor_id
+      await db.customStatement(
+          "UPDATE projects SET model = '$safeModel', vendor_id = ${vendorId ?? 'NULL'} WHERE id = $projId");
+    } catch (_) {
+      // Silent fail for now
+    }
+  }
+
   void _onResizeTap() async {
     if (_currentProjectId == null) return;
     final int? wVal = int.tryParse(_inputValueController.text.trim());
@@ -387,6 +432,25 @@ extension on _AppProjectDetailPageState {
         final p = await repo.getById(widget.projectId!);
         _projectController.text = p.title;
         _hasImage = p.imageId != null;
+        // Initialize Model/Type from DB if present
+        try {
+          final db = ref.read(appDatabaseProvider);
+          final String? model = (p as dynamic).model as String?; // nullable
+          if (model != null) {
+            _modelController.text = model == 'bricks' ? 'Bricks' : 'Colors';
+          }
+          final int? vId = (p as dynamic).vendorId as int?;
+          if (vId != null) {
+            final vrow = await db
+                .customSelect(
+                    'SELECT vendor_brand FROM vendors WHERE id = $vId LIMIT 1')
+                .getSingleOrNull();
+            final brand = vrow?.data['vendor_brand'] as String?;
+            if (brand != null) {
+              _typeController.text = brand == 'Lego' ? 'Lego' : 'Schmincke';
+            }
+          }
+        } catch (_) {}
         if (p.imageId != null) {
           await _loadImageDimensions(p.imageId!);
         } else {
@@ -394,6 +458,7 @@ extension on _AppProjectDetailPageState {
           _inputValueController2.text = '';
         }
         _subscribeToProject(_currentProjectId!);
+        if (mounted) setState(() {});
         return;
       }
       final all = await repo.getAll();
@@ -402,6 +467,25 @@ extension on _AppProjectDetailPageState {
         _currentProjectId = p.id;
         _projectController.text = p.title;
         _hasImage = p.imageId != null;
+        // Initialize Model/Type from DB if present
+        try {
+          final db = ref.read(appDatabaseProvider);
+          final String? model = (p as dynamic).model as String?; // nullable
+          if (model != null) {
+            _modelController.text = model == 'bricks' ? 'Bricks' : 'Colors';
+          }
+          final int? vId = (p as dynamic).vendorId as int?;
+          if (vId != null) {
+            final vrow = await db
+                .customSelect(
+                    'SELECT vendor_brand FROM vendors WHERE id = $vId LIMIT 1')
+                .getSingleOrNull();
+            final brand = vrow?.data['vendor_brand'] as String?;
+            if (brand != null) {
+              _typeController.text = brand == 'Lego' ? 'Lego' : 'Schmincke';
+            }
+          }
+        } catch (_) {}
         if (p.imageId != null) {
           await _loadImageDimensions(p.imageId!);
         } else {
@@ -409,6 +493,7 @@ extension on _AppProjectDetailPageState {
           _inputValueController2.text = '';
         }
         _subscribeToProject(_currentProjectId!);
+        if (mounted) setState(() {});
       }
     } catch (_) {
       // Ignore load errors for now; keep empty controller

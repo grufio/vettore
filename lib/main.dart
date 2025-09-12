@@ -265,7 +265,8 @@ class _AppShellState extends State<_AppShell> {
                               },
                             );
                           case PageId.image:
-                            return const AppImageDetailPage();
+                            return AppImageDetailPage(
+                                projectId: _currentProjectId);
                           case PageId.conversion:
                           case PageId.grid:
                           case PageId.output:

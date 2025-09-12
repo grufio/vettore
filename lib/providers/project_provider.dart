@@ -18,7 +18,7 @@ import 'package:vettore/services/logger.dart';
 
 // Image bytes provider (orig or conv)
 final imageBytesProvider =
-    FutureProvider.autoDispose.family<Uint8List?, int>((ref, imageId) async {
+    FutureProvider.family<Uint8List?, int>((ref, imageId) async {
   final db = ref.read(appDatabaseProvider);
   final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
       .getSingleOrNull();
@@ -27,7 +27,7 @@ final imageBytesProvider =
 
 // Image dimensions provider (origWidth/origHeight, fallback to conv if needed)
 final imageDimensionsProvider =
-    FutureProvider.autoDispose.family<(int?, int?), int>((ref, imageId) async {
+    FutureProvider.family<(int?, int?), int>((ref, imageId) async {
   final db = ref.read(appDatabaseProvider);
   final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
       .getSingleOrNull();
