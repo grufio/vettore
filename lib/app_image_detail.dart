@@ -11,7 +11,6 @@ import 'package:vettore/widgets/section_sidebar.dart';
 import 'package:vettore/widgets/section_input.dart';
 import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
-import 'package:vettore/widgets/image_upload_area.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/data/database.dart';
@@ -20,13 +19,13 @@ import 'package:vettore/widgets/input_value_type/width_row.dart';
 import 'package:vettore/widgets/input_value_type/height_row.dart';
 import 'package:vettore/services/dimensions_guard.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
-import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 import 'package:flutter/foundation.dart' show compute, debugPrint;
 import 'package:file_picker/file_picker.dart';
 import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/providers/navigation_providers.dart';
+import 'package:vettore/widgets/image_upload_area.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -72,6 +71,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
   int? _lastDimsImageId;
   bool _dimsInitialized = false;
   Uint8List? _lastImageBytes;
+  // Removed: canvas/image-layer state; PhotoView handles navigation
 
   void _setHasImage(bool value) {
     if (!mounted) return;
@@ -185,7 +185,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
     }
 
     return ColoredBox(
-      color: kWhite,
+      color: kGrey10,
       child: Column(
         children: [
           // Header handled by shared shell; keep content only when embedded
@@ -226,7 +226,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
           ),
           Expanded(
             child: ColoredBox(
-              color: kWhite,
+              color: kGrey10,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -290,16 +290,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
                                 }),
                                 enabled: hasImage,
                               ),
-                              ResolutionSelector(
-                                value: _dpi,
-                                onChanged: (dpi) {
-                                  setState(() {
-                                    _dpi = dpi;
-                                    ref.read(dpiProvider.notifier).state = dpi;
-                                  });
-                                },
-                                enabled: hasImage,
-                              ),
+                              // DPI selector removed: DPI is configured only on Project Detail (Canvas)
                               SectionInput(
                                 full: OutlinedActionButton(
                                   label: 'Resize',

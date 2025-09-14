@@ -118,6 +118,15 @@ class Images extends Table {
   // Extras
   BlobColumn get thumbnail => blob().nullable()();
   TextColumn get mimeType => text().nullable()();
+
+  // Image layer transform (non-destructive placement over canvas)
+  RealColumn get layerOffsetX => real().named('layer_offset_x').nullable()();
+  RealColumn get layerOffsetY => real().named('layer_offset_y').nullable()();
+  RealColumn get layerScale => real().named('layer_scale').nullable()();
+  RealColumn get layerRotationDeg =>
+      real().named('layer_rotation_deg').nullable()();
+  RealColumn get layerOpacity => real().named('layer_opacity').nullable()();
+  BoolColumn get layerVisible => boolean().named('layer_visible').nullable()();
 }
 
 // Projects Table (renamed from ProjectsNew)
@@ -139,6 +148,12 @@ class Projects extends Table {
   IntColumn get vendorId => integer()
       .nullable()
       .references(Vendors, #id, onDelete: KeyAction.setNull)();
+  // Canvas spec stored in pixels and dpi (independent of image)
+  IntColumn get canvasWidthPx =>
+      integer().named('canvas_width_px').nullable()();
+  IntColumn get canvasHeightPx =>
+      integer().named('canvas_height_px').nullable()();
+  IntColumn get canvasDpi => integer().named('canvas_dpi').nullable()();
 }
 
 //-
@@ -163,7 +178,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration {
@@ -329,6 +344,58 @@ class AppDatabase extends _$AppDatabase {
               'CREATE INDEX IF NOT EXISTS idx_projects_model ON projects(model)');
           await m.database.customStatement(
               'CREATE INDEX IF NOT EXISTS idx_projects_vendor_id ON projects(vendor_id)');
+        }
+        if (from < 20) {
+          // Add canvas columns to projects if missing
+          final hasCanvasW = await m.database
+              .customSelect(
+                  "SELECT 1 FROM pragma_table_info('projects') WHERE name = 'canvas_width_px' LIMIT 1")
+              .get();
+          if (hasCanvasW.isEmpty) {
+            await m.database.customStatement(
+                "ALTER TABLE projects ADD COLUMN canvas_width_px INTEGER");
+          }
+          final hasCanvasH = await m.database
+              .customSelect(
+                  "SELECT 1 FROM pragma_table_info('projects') WHERE name = 'canvas_height_px' LIMIT 1")
+              .get();
+          if (hasCanvasH.isEmpty) {
+            await m.database.customStatement(
+                "ALTER TABLE projects ADD COLUMN canvas_height_px INTEGER");
+          }
+          final hasCanvasDpi = await m.database
+              .customSelect(
+                  "SELECT 1 FROM pragma_table_info('projects') WHERE name = 'canvas_dpi' LIMIT 1")
+              .get();
+          if (hasCanvasDpi.isEmpty) {
+            await m.database.customStatement(
+                "ALTER TABLE projects ADD COLUMN canvas_dpi INTEGER");
+          }
+        }
+        if (from < 21) {
+          // Add image layer transform columns to images if missing
+          Future<void> _addIfMissing(String name, String sql) async {
+            final exists = await m.database
+                .customSelect(
+                    "SELECT 1 FROM pragma_table_info('images') WHERE name = '$name' LIMIT 1")
+                .get();
+            if (exists.isEmpty) {
+              await m.database.customStatement(sql);
+            }
+          }
+
+          await _addIfMissing('layer_offset_x',
+              "ALTER TABLE images ADD COLUMN layer_offset_x REAL");
+          await _addIfMissing('layer_offset_y',
+              "ALTER TABLE images ADD COLUMN layer_offset_y REAL");
+          await _addIfMissing(
+              'layer_scale', "ALTER TABLE images ADD COLUMN layer_scale REAL");
+          await _addIfMissing('layer_rotation_deg',
+              "ALTER TABLE images ADD COLUMN layer_rotation_deg REAL");
+          await _addIfMissing('layer_opacity',
+              "ALTER TABLE images ADD COLUMN layer_opacity REAL");
+          await _addIfMissing('layer_visible',
+              "ALTER TABLE images ADD COLUMN layer_visible INTEGER");
         }
       },
     );

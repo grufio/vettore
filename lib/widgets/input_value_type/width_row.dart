@@ -93,7 +93,7 @@ class _WidthRowState extends State<WidthRow> {
       full: InputValueType(
         key: const ValueKey('width'),
         controller: widget.widthController,
-        placeholder: widget.enabled ? null : 'Width',
+        placeholder: 'Width',
         prefixIconAsset: 'assets/icons/16/width.svg',
         prefixIconFit: BoxFit.none,
         prefixIconAlignment: Alignment.centerLeft,

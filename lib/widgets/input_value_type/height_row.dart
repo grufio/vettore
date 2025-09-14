@@ -27,6 +27,8 @@ class HeightRow extends StatefulWidget {
 class _HeightRowState extends State<HeightRow> {
   static const List<String> _units = kUnits;
   String _unit = 'px';
+  double? _aspect; // width/height inverse used by WidthRow;
+  bool _syncing = false;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +38,7 @@ class _HeightRowState extends State<HeightRow> {
       full: InputValueType(
         key: const ValueKey('height'),
         controller: widget.heightController,
-        placeholder: widget.enabled ? null : 'Height',
+        placeholder: 'Height',
         prefixIconAsset: 'assets/icons/16/height.svg',
         prefixIconFit: BoxFit.none,
         prefixIconAlignment: Alignment.centerLeft,
@@ -54,6 +56,11 @@ class _HeightRowState extends State<HeightRow> {
             widget.heightController.selection =
                 TextSelection.collapsed(offset: newOffset);
           }
+          // When linked, update width based on aspect (if known)
+          if (_syncing) return;
+          // Infer aspect from current fields when possible
+          final int? h = int.tryParse(widget.heightController.text);
+          // We cannot access linked state here; WidthRow handles forward link.
         },
         onItemSelected: (nextUnit) {
           final String text = widget.heightController.text.trim();

@@ -18,12 +18,13 @@ import 'package:vettore/data/database.dart';
 import 'dart:async';
 import 'package:vettore/widgets/input_value_type/width_row.dart';
 import 'package:vettore/widgets/input_value_type/height_row.dart';
-import 'package:vettore/services/dimensions_guard.dart';
+// import 'package:vettore/services/dimensions_guard.dart';
 // import 'package:flutter/foundation.dart' show compute;
 // import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/providers/navigation_providers.dart';
 import 'package:vettore/widgets/input_value_type/input_value_type.dart';
+import 'package:vettore/providers/canvas_providers.dart';
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -53,8 +54,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   late final TextEditingController _inputValueController2;
   late final TextEditingController _singleInputController;
   late final TextEditingController _projectController;
-  late final TextEditingController _modelController;
-  late final TextEditingController _typeController;
+  late final TextEditingController _resolutionController;
   String _interp = 'nearest';
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
@@ -66,36 +66,57 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   // Units and DPI state for resize wiring
   String _widthUnit = 'px';
   String _heightUnit = 'px';
-  int _dpi = 96;
+  int _dpi = 72;
+  // Canvas preview (pixels), updated on "Update Canvas"
+  double? _canvasPxW;
+  double? _canvasPxH;
   // Original dimensions no longer tracked here; DimensionsRow manages aspect
   // Guard to avoid re-initializing dimensions on stream rebuilds
-  int? _lastDimsImageId;
-  bool _dimsInitialized = false;
+  // Removed: last image id tracking; canvas decoupled
+  // Canvas no longer auto-initializes from image
 
   void _setHasImage(bool value) {
     if (!mounted) return;
     setState(() => _hasImage = value);
   }
 
+  void _recomputeCanvasFromInputs() {
+    double? parseValue(String s) => double.tryParse(s.trim());
+    final double? w = parseValue(_inputValueController.text);
+    final double? h = parseValue(_inputValueController2.text);
+    if (w == null || h == null || w <= 0 || h <= 0) {
+      setState(() {
+        _canvasPxW = null;
+        _canvasPxH = null;
+      });
+      return;
+    }
+    double toPx(num v, String unit) {
+      switch (unit) {
+        case 'px':
+          return v.toDouble();
+        case 'in':
+          return (v * _dpi).toDouble();
+        case 'cm':
+          return (v * (_dpi / 2.54)).toDouble();
+        case 'mm':
+          return (v * (_dpi / 25.4)).toDouble();
+        default:
+          return v.toDouble();
+      }
+    }
+
+    final double pxW = toPx(w, _widthUnit).clamp(1.0, 20000.0);
+    final double pxH = toPx(h, _heightUnit).clamp(1.0, 20000.0);
+    setState(() {
+      _canvasPxW = pxW;
+      _canvasPxH = pxH;
+    });
+  }
+
   // Linking logic is handled inside DimensionsRow
   void _applyImageDims({int? width, int? height}) {
-    final int? curW = int.tryParse(_inputValueController.text);
-    final int? curH = int.tryParse(_inputValueController2.text);
-    final bool should = DimensionsGuard.shouldApply(
-      currentWidth: curW,
-      currentHeight: curH,
-      newWidth: width,
-      newHeight: height,
-      initialized: _dimsInitialized,
-    );
-    if (!should) return;
-    DimensionsGuard.writeControllers(
-      widthController: _inputValueController,
-      heightController: _inputValueController2,
-      width: width,
-      height: height,
-    );
-    _dimsInitialized = true;
+    // Intentionally do nothing: Canvas size is user-entered and decoupled from image
   }
 
   @override
@@ -105,8 +126,10 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     _inputValueController2 = TextEditingController();
     _singleInputController = TextEditingController();
     _projectController = TextEditingController();
-    _modelController = TextEditingController();
-    _typeController = TextEditingController();
+    // Default Canvas: 100 x 100 @ 72dpi
+    _inputValueController.text = '100';
+    _inputValueController2.text = '100';
+    _resolutionController = TextEditingController(text: _dpi.toString());
     // Default interpolation shown in the field
     _singleInputController.text = _interp;
     _projectTitleFocusNode = FocusNode();
@@ -115,7 +138,18 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
         _saveProjectTitle();
       }
     });
+    // Initialize canvas preview to the default 100×100 @ 72 dpi
+    _recomputeCanvasFromInputs();
+    // Seed global canvas spec with default
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_canvasPxW != null && _canvasPxH != null) {
+        ref.read(canvasSpecProvider.notifier).setSpec(
+            CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!, dpi: _dpi));
+      }
+    });
     _initProject();
+    // Canvas preview updates only when tapping "Update Canvas"
   }
 
   @override
@@ -124,8 +158,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     _inputValueController2.dispose();
     _singleInputController.dispose();
     _projectController.dispose();
-    _modelController.dispose();
-    _typeController.dispose();
+    _resolutionController.dispose();
     _projectTitleFocusNode.dispose();
     _projectSub?.cancel();
     super.dispose();
@@ -150,38 +183,14 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     }
     // Image presence is determined via DB stream in the body below
     // Set up provider listeners at the start of build (required by Riverpod)
-    final int? _imageIdForListen = (_currentProjectId != null)
-        ? ref.watch(projectByIdProvider(_currentProjectId!)
-            .select((p) => p.asData?.value?.imageId))
-        : null;
-    if (_currentProjectId != null) {
-      ref.listen(projectByIdProvider(_currentProjectId!), (prev, next) {
-        final int? nextImageId = next.asData?.value?.imageId;
-        if (_lastDimsImageId != nextImageId) {
-          _lastDimsImageId = nextImageId;
-          _dimsInitialized = false;
-        }
-        if (nextImageId == null) {
-          if (_inputValueController.text.isNotEmpty) {
-            _inputValueController.text = '';
-          }
-          if (_inputValueController2.text.isNotEmpty) {
-            _inputValueController2.text = '';
-          }
-        }
-      });
-    }
-    if (_imageIdForListen != null) {
-      ref.listen(imageDimensionsProvider(_imageIdForListen), (prev, next) {
-        final dims = next.asData?.value;
-        if (dims != null) {
-          _applyImageDims(width: dims.$1, height: dims.$2);
-        }
-      });
-    }
+    // No image dimension listening for Canvas size
+    // Clear canvas fields if project loses image
+    // Do not clear canvas fields when project has no image; keep default canvas
+    // Canvas fields should not auto-fill from image dimensions
+    // (no-op)
 
     return ColoredBox(
-      color: kWhite,
+      color: kGrey10,
       child: Column(
         children: [
           // Header handled by shared shell; keep content only when embedded
@@ -217,7 +226,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
           ),
           Expanded(
             child: ColoredBox(
-              color: kWhite,
+              color: kGrey10,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -261,82 +270,53 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                             ),
                           ],
                         ),
-                        // Section: Model (placed directly below 'Projekt')
-                        SectionSidebar(
-                          title: 'Model',
-                          children: [
-                            SectionInput(
-                              full: InputValueType(
-                                controller: _modelController,
-                                placeholder: 'Select model',
-                                variant: InputVariant.dropdown,
-                                dropdownItems: const ['Bricks', 'Colors'],
-                                onItemSelected: (value) {
-                                  _modelController.text = value;
-                                  // Update default Type when Model changes
-                                  if (value == 'Bricks') {
-                                    _typeController.text = 'Lego';
-                                  } else if (value == 'Colors') {
-                                    _typeController.text = 'Schmincke';
-                                  } else {
-                                    _typeController.text = '';
-                                  }
-                                  _persistModelAndVendorForLabels(
-                                      modelLabel: value,
-                                      typeLabel: _typeController.text);
-                                },
-                              ),
-                            ),
-                            // Type input moved into the Model section
-                            SectionInput(
-                              full: InputValueType(
-                                controller: _typeController,
-                                placeholder: 'Select type',
-                                variant: InputVariant.dropdown,
-                                dropdownItems: _modelController.text == 'Bricks'
-                                    ? const ['Lego']
-                                    : _modelController.text == 'Colors'
-                                        ? const ['Schmincke']
-                                        : const ['Lego', 'Schmincke'],
-                                onItemSelected: (value) {
-                                  _typeController.text = value;
-                                  _persistModelAndVendorForLabels(
-                                    modelLabel: _modelController.text,
-                                    typeLabel: value,
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
+                        // Model section removed as requested
                         Builder(builder: (context) {
-                          final int? imageId = (_currentProjectId != null)
-                              ? ref.watch(
-                                  projectByIdProvider(_currentProjectId!)
-                                      .select((p) => p.asData?.value?.imageId))
-                              : null;
-                          final bool hasImage = imageId != null;
+                          // imageId not used for canvas; keep watch minimal
                           return SectionSidebar(
                             title: 'Dimensions',
                             children: [
                               WidthRow(
                                 widthController: _inputValueController,
                                 heightController: _inputValueController2,
-                                enabled: hasImage,
+                                enabled: true,
                                 initialLinked: _linkWH,
                                 onLinkChanged: (v) => setState(() {
                                   _linkWH = v;
                                 }),
-                                onUnitChanged: (u) => _widthUnit = u,
+                                onUnitChanged: (u) {
+                                  _widthUnit = u;
+                                },
                               ),
                               HeightRow(
                                 heightController: _inputValueController2,
-                                enabled: hasImage,
-                                onUnitChanged: (u) => _heightUnit = u,
+                                enabled: true,
+                                onUnitChanged: (u) {
+                                  _heightUnit = u;
+                                },
+                              ),
+                              SectionInput(
+                                full: InputValueType(
+                                  controller: _resolutionController,
+                                  placeholder: 'Resolution (DPI)',
+                                  variant: InputVariant.dropdown,
+                                  dropdownItems: const ['72', '96', '144'],
+                                  onItemSelected: (value) {
+                                    _resolutionController.text = value;
+                                    final dpi = int.tryParse(value);
+                                    if (dpi != null) {
+                                      setState(() {
+                                        _dpi = dpi;
+                                        ref.read(dpiProvider.notifier).state =
+                                            dpi;
+                                      });
+                                    }
+                                  },
+                                ),
                               ),
                               SectionInput(
                                 full: OutlinedActionButton(
-                                  label: 'Resize',
+                                  label: 'Update Canvas',
                                   onTap: _onResizeTap,
                                 ),
                               ),
@@ -358,42 +338,17 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
 }
 
 extension on _AppProjectDetailPageState {
-  Future<void> _persistModelAndVendorForLabels({
-    required String modelLabel,
-    required String typeLabel,
-  }) async {
-    if (_currentProjectId == null) return;
-    final db = ref.read(appDatabaseProvider);
-    // Map UI labels to DB values
-    final String modelValue =
-        modelLabel.toLowerCase() == 'bricks' ? 'bricks' : 'colors';
-    final String vendorBrand = typeLabel.toLowerCase().startsWith('lego')
-        ? 'Lego'
-        : 'Norma professional';
-    try {
-      // Lookup vendor id by brand (safe: controlled values; escape quotes)
-      final safeBrand = vendorBrand.replaceAll("'", "''");
-      final vendorRow = await db
-          .customSelect(
-              "SELECT id FROM vendors WHERE vendor_brand = '$safeBrand' LIMIT 1")
-          .getSingleOrNull();
-      final int? vendorId = vendorRow?.data['id'] as int?;
-
-      final safeModel = modelValue.replaceAll("'", "''");
-      final projId = _currentProjectId!;
-      // Persist model and vendor_id
-      await db.customStatement(
-          "UPDATE projects SET model = '$safeModel', vendor_id = ${vendorId ?? 'NULL'} WHERE id = $projId");
-    } catch (_) {
-      // Silent fail for now
-    }
-  }
-
   void _onResizeTap() async {
     if (_currentProjectId == null) return;
     final int? wVal = int.tryParse(_inputValueController.text.trim());
     final int? hVal = int.tryParse(_inputValueController2.text.trim());
     if (wVal == null || hVal == null) return;
+    // Update Canvas preview now
+    _recomputeCanvasFromInputs();
+    if (_canvasPxW != null && _canvasPxH != null) {
+      ref.read(canvasSpecProvider.notifier).setSpec(
+          CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!, dpi: _dpi));
+    }
     // Convert to pixels based on selected units and current DPI
     int toPx(num v, String unit) {
       switch (unit) {
@@ -414,6 +369,14 @@ extension on _AppProjectDetailPageState {
     final int targetH = toPx(hVal, _heightUnit);
     // Map interpolation string to a suitable name for cv script
     final String interp = kInterpolationToCvName[_interp] ?? 'linear';
+    // Persist canvas spec to DB (pixels + dpi)
+    try {
+      final db = ref.read(appDatabaseProvider);
+      await db.customStatement(
+          'UPDATE projects SET canvas_width_px=$targetW, canvas_height_px=$targetH, canvas_dpi=$_dpi WHERE id=${_currentProjectId!}');
+    } catch (_) {
+      // ignore persistence errors in UI
+    }
     await ref
         .read(projectLogicProvider(_currentProjectId!))
         .resizeToCv(targetW, targetH, interp);
@@ -432,30 +395,34 @@ extension on _AppProjectDetailPageState {
         final p = await repo.getById(widget.projectId!);
         _projectController.text = p.title;
         _hasImage = p.imageId != null;
-        // Initialize Model/Type from DB if present
+        // Load saved canvas spec if present
         try {
           final db = ref.read(appDatabaseProvider);
-          final String? model = (p as dynamic).model as String?; // nullable
-          if (model != null) {
-            _modelController.text = model == 'bricks' ? 'Bricks' : 'Colors';
-          }
-          final int? vId = (p as dynamic).vendorId as int?;
-          if (vId != null) {
-            final vrow = await db
-                .customSelect(
-                    'SELECT vendor_brand FROM vendors WHERE id = $vId LIMIT 1')
-                .getSingleOrNull();
-            final brand = vrow?.data['vendor_brand'] as String?;
-            if (brand != null) {
-              _typeController.text = brand == 'Lego' ? 'Lego' : 'Schmincke';
+          final row = await db
+              .customSelect(
+                  'SELECT canvas_width_px, canvas_height_px, canvas_dpi FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
+              .getSingleOrNull();
+          if (row != null) {
+            final int? cw = row.data['canvas_width_px'] as int?;
+            final int? ch = row.data['canvas_height_px'] as int?;
+            final int? cdpi = row.data['canvas_dpi'] as int?;
+            if (cdpi != null && cdpi > 0) {
+              _dpi = cdpi;
+              _resolutionController.text = cdpi.toString();
+              ref.read(dpiProvider.notifier).state = cdpi;
+            }
+            if (cw != null && ch != null && cw > 0 && ch > 0) {
+              _inputValueController.text = cw.toString();
+              _inputValueController2.text = ch.toString();
+              _recomputeCanvasFromInputs();
+              ref.read(canvasSpecProvider.notifier).setSpec(CanvasSpec(
+                  widthPx: cw.toDouble(), heightPx: ch.toDouble(), dpi: _dpi));
             }
           }
         } catch (_) {}
+        // Model/Type initialization removed
         if (p.imageId != null) {
           await _loadImageDimensions(p.imageId!);
-        } else {
-          _inputValueController.text = '';
-          _inputValueController2.text = '';
         }
         _subscribeToProject(_currentProjectId!);
         if (mounted) setState(() {});
@@ -467,30 +434,34 @@ extension on _AppProjectDetailPageState {
         _currentProjectId = p.id;
         _projectController.text = p.title;
         _hasImage = p.imageId != null;
-        // Initialize Model/Type from DB if present
+        // Load saved canvas spec if present
         try {
           final db = ref.read(appDatabaseProvider);
-          final String? model = (p as dynamic).model as String?; // nullable
-          if (model != null) {
-            _modelController.text = model == 'bricks' ? 'Bricks' : 'Colors';
-          }
-          final int? vId = (p as dynamic).vendorId as int?;
-          if (vId != null) {
-            final vrow = await db
-                .customSelect(
-                    'SELECT vendor_brand FROM vendors WHERE id = $vId LIMIT 1')
-                .getSingleOrNull();
-            final brand = vrow?.data['vendor_brand'] as String?;
-            if (brand != null) {
-              _typeController.text = brand == 'Lego' ? 'Lego' : 'Schmincke';
+          final row = await db
+              .customSelect(
+                  'SELECT canvas_width_px, canvas_height_px, canvas_dpi FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
+              .getSingleOrNull();
+          if (row != null) {
+            final int? cw = row.data['canvas_width_px'] as int?;
+            final int? ch = row.data['canvas_height_px'] as int?;
+            final int? cdpi = row.data['canvas_dpi'] as int?;
+            if (cdpi != null && cdpi > 0) {
+              _dpi = cdpi;
+              _resolutionController.text = cdpi.toString();
+              ref.read(dpiProvider.notifier).state = cdpi;
+            }
+            if (cw != null && ch != null && cw > 0 && ch > 0) {
+              _inputValueController.text = cw.toString();
+              _inputValueController2.text = ch.toString();
+              _recomputeCanvasFromInputs();
+              ref.read(canvasSpecProvider.notifier).setSpec(CanvasSpec(
+                  widthPx: cw.toDouble(), heightPx: ch.toDouble(), dpi: _dpi));
             }
           }
         } catch (_) {}
+        // Model/Type initialization removed
         if (p.imageId != null) {
           await _loadImageDimensions(p.imageId!);
-        } else {
-          _inputValueController.text = '';
-          _inputValueController2.text = '';
         }
         _subscribeToProject(_currentProjectId!);
         if (mounted) setState(() {});
@@ -520,25 +491,72 @@ extension on _AppProjectDetailPageState {
         ref.read(projectRepositoryProvider).watchById(projectId).listen((p) {
       if (!mounted) return;
       if (p == null) {
-        _inputValueController.text = '';
-        _inputValueController2.text = '';
         _setHasImage(false);
         return;
       }
       final nextHasImage = p.imageId != null;
       if (p.imageId != null) {
         _loadImageDimensions(p.imageId!);
-      } else {
-        _inputValueController.text = '';
-        _inputValueController2.text = '';
       }
       if (nextHasImage != _hasImage) _setHasImage(nextHasImage);
     });
   }
 
   Widget _buildDetailBody() {
-    // Image upload/view moved to Image Detail; keep this area empty.
-    return const ColoredBox(color: kGrey10, child: SizedBox.expand());
+    // Live Canvas preview: fit computed pixel size into a max box
+    const double maxPreviewW = 480.0;
+    const double maxPreviewH = 360.0;
+    final double? pxW = _canvasPxW;
+    final double? pxH = _canvasPxH;
+    if (pxW == null || pxH == null || pxW <= 0 || pxH <= 0) {
+      // Show default canvas preview when not computed yet: 100×100 @ 72 dpi
+      const double defW = 100.0;
+      const double defH = 100.0;
+      final double scale = (maxPreviewW / defW)
+          .clamp(0.0, double.infinity)
+          .clamp(0.0, (maxPreviewH / defH));
+      final double previewW = (defW * scale).clamp(1.0, maxPreviewW);
+      final double previewH = (defH * scale).clamp(1.0, maxPreviewH);
+      return ColoredBox(
+        color: kGrey10,
+        child: Center(
+          child: SizedBox(
+            width: previewW,
+            height: previewH,
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                color: kWhite,
+                border: Border.fromBorderSide(
+                    BorderSide(color: kBordersColor, width: 1.0)),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    final double scale = (pxW > 0 && pxH > 0)
+        ? (maxPreviewW / pxW)
+            .clamp(0.0, double.infinity)
+            .clamp(0.0, (maxPreviewH / pxH))
+        : 1.0;
+    final double previewW = (pxW * scale).clamp(1.0, maxPreviewW);
+    final double previewH = (pxH * scale).clamp(1.0, maxPreviewH);
+    return ColoredBox(
+      color: kGrey10,
+      child: Center(
+        child: SizedBox(
+          width: previewW,
+          height: previewH,
+          child: const DecoratedBox(
+            decoration: BoxDecoration(
+              color: kWhite,
+              border: Border.fromBorderSide(
+                  BorderSide(color: kBordersColor, width: 1.0)),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
