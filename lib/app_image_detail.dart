@@ -19,6 +19,7 @@ import 'package:vettore/widgets/input_value_type/width_row.dart';
 import 'package:vettore/widgets/input_value_type/height_row.dart';
 import 'package:vettore/services/dimensions_guard.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
+import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 import 'package:flutter/foundation.dart' show compute, debugPrint;
 import 'package:file_picker/file_picker.dart';
 import 'package:vettore/widgets/image_upload_text.dart';
@@ -26,7 +27,7 @@ import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/providers/navigation_providers.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:vettore/providers/canvas_providers.dart';
+
 import 'package:vettore/widgets/snackbar_image.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
@@ -64,10 +65,9 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
   StreamSubscription<DbProject?>? _projectSub;
   // Link/unlink width/height
   bool _linkWH = false;
-  // Units and DPI state for resize wiring
+  // Units for image resize wiring
   String _widthUnit = 'px';
   String _heightUnit = 'px';
-  int _dpi = 96;
   // Original dimensions no longer tracked here; DimensionsRow manages aspect
   // Guard to avoid re-initializing dimensions on stream rebuilds
   int? _lastDimsImageId;
@@ -279,10 +279,24 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
                                   _linkWH = v;
                                 }),
                                 onUnitChanged: (u) => _widthUnit = u,
+                                dpiOverride: (imageId != null)
+                                    ? (ref
+                                            .watch(imageDpiProvider(imageId))
+                                            .asData
+                                            ?.value ??
+                                        72)
+                                    : 72,
                               ),
                               HeightRow(
                                 heightController: _inputValueController2,
                                 enabled: hasImage,
+                                dpiOverride: (imageId != null)
+                                    ? (ref
+                                            .watch(imageDpiProvider(imageId))
+                                            .asData
+                                            ?.value ??
+                                        72)
+                                    : 72,
                                 onUnitChanged: (u) => _heightUnit = u,
                               ),
                               InterpolationSelector(
@@ -293,7 +307,29 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
                                 }),
                                 enabled: hasImage,
                               ),
-                              // DPI selector removed: DPI is configured only on Project Detail (Canvas)
+                              Builder(builder: (context) {
+                                final int? imgId = (_currentProjectId != null)
+                                    ? ref.watch(imageIdStableProvider(
+                                        _currentProjectId!))
+                                    : null;
+                                final dpiAsync = (imgId != null)
+                                    ? ref.watch(imageDpiProvider(imgId))
+                                    : const AsyncValue<int?>.data(null);
+                                final currentDpi = dpiAsync.asData?.value ?? 72;
+                                return ResolutionSelector(
+                                  value: currentDpi,
+                                  enabled: hasImage,
+                                  onChanged: (newDpi) async {
+                                    if (imgId == null) return;
+                                    final db = ref.read(appDatabaseProvider);
+                                    await db.customStatement(
+                                      'UPDATE images SET dpi = ? WHERE id = ?',
+                                      [newDpi, imgId],
+                                    );
+                                    ref.invalidate(imageDpiProvider(imgId));
+                                  },
+                                );
+                              }),
                               SectionInput(
                                 full: OutlinedActionButton(
                                   label: 'Resize',
@@ -324,16 +360,24 @@ extension on _AppImageDetailPageState {
     final int? hVal = int.tryParse(_inputValueController2.text.trim());
     if (wVal == null || hVal == null) return;
     // Convert to pixels based on selected units and current DPI
+    // Resolve current imageId and DPI
+    final int? imageId = (_currentProjectId != null)
+        ? ref.read(imageIdStableProvider(_currentProjectId!))
+        : null;
+    final int dpi = (imageId != null)
+        ? (ref.read(imageDpiProvider(imageId)).asData?.value ?? 72)
+        : 72;
+
     int toPx(num v, String unit) {
       switch (unit) {
         case 'px':
           return v.round();
         case 'in':
-          return (v * _dpi).round();
+          return (v * dpi).round();
         case 'cm':
-          return (v * (_dpi / 2.54)).round();
+          return (v * (dpi / 2.54)).round();
         case 'mm':
-          return (v * (_dpi / 25.4)).round();
+          return (v * (dpi / 25.4)).round();
         default:
           return v.round();
       }
@@ -355,8 +399,8 @@ extension on _AppImageDetailPageState {
         '[ImageDetail] _handleImageBytes len=${bytes.length} pid=$_currentProjectId');
     // Decode to get dimensions in isolate
     final dims = await compute(ic.decodeDimensions, bytes);
-    // Best effort DPI detection (to be wired to ResolutionSelector)
-    // final int? dpi = await compute(ic.decodeDpi, bytes);
+    // Detect DPI from metadata (must exist per spec)
+    final int? dpi = await compute(ic.decodeDpi, bytes);
     final int? width = dims.width;
     final int? height = dims.height;
     final imagesDao = ref.read(appDatabaseProvider);
@@ -378,6 +422,13 @@ extension on _AppImageDetailPageState {
             origUniqueColors: const Value.absent(),
           ),
         );
+    // Persist DPI (schema v22+): write both orig_dpi and dpi
+    if (dpi != null) {
+      await imagesDao.customStatement(
+        'UPDATE images SET orig_dpi = ?, dpi = ? WHERE id = ?',
+        [dpi, dpi, imageId],
+      );
+    }
     // Point project to this image
     final repo = ref.read(projectRepositoryProvider);
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -504,10 +555,10 @@ extension on _AppImageDetailPageState {
       });
     }
 
-    // Canvas artboard + image, PhotoView handles pan/zoom; border scales
-    final spec = ref.watch(canvasSpecProvider);
-    final double canvasW = (spec.widthPx > 0) ? spec.widthPx : 100.0;
-    final double canvasH = (spec.heightPx > 0) ? spec.heightPx : 100.0;
+    // Image view is independent from canvas; size to image dimensions
+    final dims = ref.watch(imageDimensionsProvider(imageId)).asData?.value;
+    final double canvasW = (dims?.$1 ?? 1000).toDouble();
+    final double canvasH = (dims?.$2 ?? 1000).toDouble();
     return Center(
       child: Stack(
         children: [

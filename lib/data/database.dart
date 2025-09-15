@@ -107,6 +107,8 @@ class Images extends Table {
   IntColumn get origWidth => integer().nullable()();
   IntColumn get origHeight => integer().nullable()();
   IntColumn get origUniqueColors => integer().nullable()();
+  // Original DPI (immutable, from metadata)
+  IntColumn get origDpi => integer().named('orig_dpi').nullable()();
 
   // Converted image
   BlobColumn get convSrc => blob().nullable()();
@@ -114,6 +116,8 @@ class Images extends Table {
   IntColumn get convWidth => integer().nullable()();
   IntColumn get convHeight => integer().nullable()();
   IntColumn get convUniqueColors => integer().nullable()();
+  // Current DPI (mutable, user-editable)
+  IntColumn get dpi => integer().named('dpi').nullable()();
 
   // Extras
   BlobColumn get thumbnail => blob().nullable()();
@@ -148,12 +152,11 @@ class Projects extends Table {
   IntColumn get vendorId => integer()
       .nullable()
       .references(Vendors, #id, onDelete: KeyAction.setNull)();
-  // Canvas spec stored in pixels and dpi (independent of image)
+  // Canvas spec stored in pixels (independent of image dpi)
   IntColumn get canvasWidthPx =>
       integer().named('canvas_width_px').nullable()();
   IntColumn get canvasHeightPx =>
       integer().named('canvas_height_px').nullable()();
-  IntColumn get canvasDpi => integer().named('canvas_dpi').nullable()();
 }
 
 //-
@@ -178,7 +181,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration {
@@ -396,6 +399,58 @@ class AppDatabase extends _$AppDatabase {
               "ALTER TABLE images ADD COLUMN layer_opacity REAL");
           await _addIfMissing('layer_visible',
               "ALTER TABLE images ADD COLUMN layer_visible INTEGER");
+        }
+        if (from < 22) {
+          // Add DPI columns to images if missing
+          Future<void> _addIfMissingImg(String name, String sql) async {
+            final exists = await m.database
+                .customSelect(
+                    "SELECT 1 FROM pragma_table_info('images') WHERE name = '$name' LIMIT 1")
+                .get();
+            if (exists.isEmpty) {
+              await m.database.customStatement(sql);
+            }
+          }
+
+          await _addIfMissingImg(
+              'orig_dpi', "ALTER TABLE images ADD COLUMN orig_dpi INTEGER");
+          await _addIfMissingImg(
+              'dpi', "ALTER TABLE images ADD COLUMN dpi INTEGER");
+        }
+        if (from < 23) {
+          // Remove projects.canvas_dpi by rebuilding the table
+          await m.database.customStatement(
+              'CREATE TABLE IF NOT EXISTS projects_tmp ('
+              'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, '
+              'title TEXT NOT NULL, '
+              'author TEXT, '
+              'status TEXT NOT NULL DEFAULT (\'draft\'), '
+              'created_at INTEGER NOT NULL, '
+              'updated_at INTEGER NOT NULL, '
+              'image_id INTEGER, '
+              'model TEXT, '
+              'vendor_id INTEGER, '
+              'canvas_width_px INTEGER, '
+              'canvas_height_px INTEGER, '
+              'FOREIGN KEY(image_id) REFERENCES images(id) ON DELETE SET NULL, '
+              'FOREIGN KEY(vendor_id) REFERENCES vendors(id) ON DELETE SET NULL)');
+          await m.database.customStatement('INSERT INTO projects_tmp '
+              '(id, title, author, status, created_at, updated_at, image_id, model, vendor_id, canvas_width_px, canvas_height_px) '
+              'SELECT id, title, author, status, created_at, updated_at, image_id, model, vendor_id, canvas_width_px, canvas_height_px '
+              'FROM projects');
+          await m.database.customStatement('DROP TABLE projects');
+          await m.database
+              .customStatement('ALTER TABLE projects_tmp RENAME TO projects');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_updatedAt ON projects(updated_at)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_title ON projects(title)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_model ON projects(model)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_vendor_id ON projects(vendor_id)');
         }
       },
     );

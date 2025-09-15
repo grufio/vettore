@@ -47,7 +47,7 @@ final aiServiceProvider = Provider<AIService>((ref) {
 //-
 // UI State Providers
 //-
-final dpiProvider = StateProvider<int>((ref) => 96);
+// Removed: DPI is now image-scoped (images.dpi)
 
 // Overview menu selection (HomeNavigation) - default Projects / All
 class HomeNavIndexNotifier extends StateNotifier<int> {

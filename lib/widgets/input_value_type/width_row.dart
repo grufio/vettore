@@ -4,8 +4,7 @@ import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 import 'package:vettore/widgets/button_toggle.dart';
 import 'package:vettore/widgets/constants/input_constants.dart';
 import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/providers/application_providers.dart';
+// no providers used here currently
 
 class WidthRow extends StatefulWidget {
   final TextEditingController widthController;
@@ -15,6 +14,8 @@ class WidthRow extends StatefulWidget {
   final ValueChanged<bool>? onLinkChanged;
   final ValueChanged<String>? onUnitChanged;
   final bool readOnlyView;
+  final int? dpiOverride;
+  final List<String>? units;
 
   const WidthRow({
     super.key,
@@ -25,6 +26,8 @@ class WidthRow extends StatefulWidget {
     this.onLinkChanged,
     this.onUnitChanged,
     this.readOnlyView = false,
+    this.dpiOverride,
+    this.units,
   });
 
   @override
@@ -32,7 +35,7 @@ class WidthRow extends StatefulWidget {
 }
 
 class _WidthRowState extends State<WidthRow> {
-  static const List<String> _units = kUnits;
+  static const List<String> _defaultUnits = kUnits;
 
   bool _linked = false;
   bool _syncing = false;
@@ -87,8 +90,11 @@ class _WidthRowState extends State<WidthRow> {
 
   @override
   Widget build(BuildContext context) {
-    final int dpi = ProviderScope.containerOf(context).read(dpiProvider);
+    // Source DPI from current image if available via a provider higher up.
+    // Fallback to 72 when not available in this context.
+    int dpi = widget.dpiOverride ?? 72;
     final bool readOnly = !widget.enabled;
+    final List<String> units = widget.units ?? _defaultUnits;
     return SectionInput(
       full: InputValueType(
         key: const ValueKey('width'),
@@ -97,7 +103,7 @@ class _WidthRowState extends State<WidthRow> {
         prefixIconAsset: 'assets/icons/16/width.svg',
         prefixIconFit: BoxFit.none,
         prefixIconAlignment: Alignment.centerLeft,
-        dropdownItems: _units,
+        dropdownItems: units,
         selectedItem: _unit,
         suffixText: _unit,
         variant: InputVariant.selector,

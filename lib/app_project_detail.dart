@@ -13,7 +13,6 @@ import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_area.dart';
 import 'package:vettore/widgets/input_value_type/text_default.dart';
 import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/data/database.dart';
 import 'dart:async';
 import 'package:vettore/widgets/input_value_type/width_row.dart';
@@ -21,9 +20,9 @@ import 'package:vettore/widgets/input_value_type/height_row.dart';
 // import 'package:vettore/services/dimensions_guard.dart';
 // import 'package:flutter/foundation.dart' show compute;
 // import 'package:vettore/services/image_compute.dart' as ic;
-import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
+
 import 'package:vettore/providers/navigation_providers.dart';
-import 'package:vettore/widgets/input_value_type/input_value_type.dart';
+// import removed: DPI control moved to Image Detail
 import 'package:vettore/providers/canvas_providers.dart';
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
@@ -54,8 +53,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   late final TextEditingController _inputValueController2;
   late final TextEditingController _singleInputController;
   late final TextEditingController _projectController;
-  late final TextEditingController _resolutionController;
-  String _interp = 'nearest';
+  // No interpolation in canvas page
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
   bool _hasImage = false;
@@ -63,10 +61,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   StreamSubscription<DbProject?>? _projectSub;
   // Link/unlink width/height
   bool _linkWH = false;
-  // Units and DPI state for resize wiring
-  String _widthUnit = 'px';
-  String _heightUnit = 'px';
-  int _dpi = 72;
+  // Canvas uses px only; no units or DPI
   // Canvas preview (pixels), updated on "Update Canvas"
   double? _canvasPxW;
   double? _canvasPxH;
@@ -91,33 +86,16 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
       });
       return;
     }
-    double toPx(num v, String unit) {
-      switch (unit) {
-        case 'px':
-          return v.toDouble();
-        case 'in':
-          return (v * _dpi).toDouble();
-        case 'cm':
-          return (v * (_dpi / 2.54)).toDouble();
-        case 'mm':
-          return (v * (_dpi / 25.4)).toDouble();
-        default:
-          return v.toDouble();
-      }
-    }
-
-    final double pxW = toPx(w, _widthUnit).clamp(1.0, 20000.0);
-    final double pxH = toPx(h, _heightUnit).clamp(1.0, 20000.0);
+    // Canvas strictly uses px values from fields
+    final double pxW = w.clamp(1.0, 20000.0);
+    final double pxH = h.clamp(1.0, 20000.0);
     setState(() {
       _canvasPxW = pxW;
       _canvasPxH = pxH;
     });
   }
 
-  // Linking logic is handled inside DimensionsRow
-  void _applyImageDims({int? width, int? height}) {
-    // Intentionally do nothing: Canvas size is user-entered and decoupled from image
-  }
+  // No image-dimension application in Project Detail; canvas is independent
 
   @override
   void initState() {
@@ -129,9 +107,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     // Default Canvas: 100 x 100 @ 72dpi
     _inputValueController.text = '100';
     _inputValueController2.text = '100';
-    _resolutionController = TextEditingController(text: _dpi.toString());
     // Default interpolation shown in the field
-    _singleInputController.text = _interp;
+    _singleInputController.text = '';
     _projectTitleFocusNode = FocusNode();
     _projectTitleFocusNode.addListener(() {
       if (!_projectTitleFocusNode.hasFocus) {
@@ -144,8 +121,9 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (_canvasPxW != null && _canvasPxH != null) {
-        ref.read(canvasSpecProvider.notifier).setSpec(
-            CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!, dpi: _dpi));
+        ref
+            .read(canvasSpecProvider.notifier)
+            .setSpec(CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!));
       }
     });
     _initProject();
@@ -158,7 +136,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
     _inputValueController2.dispose();
     _singleInputController.dispose();
     _projectController.dispose();
-    _resolutionController.dispose();
+
     _projectTitleFocusNode.dispose();
     _projectSub?.cancel();
     super.dispose();
@@ -284,35 +262,12 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                 onLinkChanged: (v) => setState(() {
                                   _linkWH = v;
                                 }),
-                                onUnitChanged: (u) {
-                                  _widthUnit = u;
-                                },
+                                units: const ['px'],
                               ),
                               HeightRow(
                                 heightController: _inputValueController2,
                                 enabled: true,
-                                onUnitChanged: (u) {
-                                  _heightUnit = u;
-                                },
-                              ),
-                              SectionInput(
-                                full: InputValueType(
-                                  controller: _resolutionController,
-                                  placeholder: 'Resolution (DPI)',
-                                  variant: InputVariant.dropdown,
-                                  dropdownItems: const ['72', '96', '144'],
-                                  onItemSelected: (value) {
-                                    _resolutionController.text = value;
-                                    final dpi = int.tryParse(value);
-                                    if (dpi != null) {
-                                      setState(() {
-                                        _dpi = dpi;
-                                        ref.read(dpiProvider.notifier).state =
-                                            dpi;
-                                      });
-                                    }
-                                  },
-                                ),
+                                units: const ['px'],
                               ),
                               SectionInput(
                                 full: OutlinedActionButton(
@@ -346,40 +301,22 @@ extension on _AppProjectDetailPageState {
     // Update Canvas preview now
     _recomputeCanvasFromInputs();
     if (_canvasPxW != null && _canvasPxH != null) {
-      ref.read(canvasSpecProvider.notifier).setSpec(
-          CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!, dpi: _dpi));
+      ref
+          .read(canvasSpecProvider.notifier)
+          .setSpec(CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!));
     }
-    // Convert to pixels based on selected units and current DPI
-    int toPx(num v, String unit) {
-      switch (unit) {
-        case 'px':
-          return v.round();
-        case 'in':
-          return (v * _dpi).round();
-        case 'cm':
-          return (v * (_dpi / 2.54)).round();
-        case 'mm':
-          return (v * (_dpi / 25.4)).round();
-        default:
-          return v.round();
-      }
-    }
-
-    final int targetW = toPx(wVal, _widthUnit);
-    final int targetH = toPx(hVal, _heightUnit);
-    // Map interpolation string to a suitable name for cv script
-    final String interp = kInterpolationToCvName[_interp] ?? 'linear';
+    // Canvas values are entered in px
+    final int targetW = wVal;
+    final int targetH = hVal;
     // Persist canvas spec to DB (pixels + dpi)
     try {
       final db = ref.read(appDatabaseProvider);
       await db.customStatement(
-          'UPDATE projects SET canvas_width_px=$targetW, canvas_height_px=$targetH, canvas_dpi=$_dpi WHERE id=${_currentProjectId!}');
+          'UPDATE projects SET canvas_width_px=$targetW, canvas_height_px=$targetH WHERE id=${_currentProjectId!}');
     } catch (_) {
       // ignore persistence errors in UI
     }
-    await ref
-        .read(projectLogicProvider(_currentProjectId!))
-        .resizeToCv(targetW, targetH, interp);
+    // Do not resize image here; canvas is independent
   }
 
   // _handleImageBytes removed; upload handled on Image Detail page
@@ -400,30 +337,22 @@ extension on _AppProjectDetailPageState {
           final db = ref.read(appDatabaseProvider);
           final row = await db
               .customSelect(
-                  'SELECT canvas_width_px, canvas_height_px, canvas_dpi FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
+                  'SELECT canvas_width_px, canvas_height_px FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
               .getSingleOrNull();
           if (row != null) {
             final int? cw = row.data['canvas_width_px'] as int?;
             final int? ch = row.data['canvas_height_px'] as int?;
-            final int? cdpi = row.data['canvas_dpi'] as int?;
-            if (cdpi != null && cdpi > 0) {
-              _dpi = cdpi;
-              _resolutionController.text = cdpi.toString();
-              ref.read(dpiProvider.notifier).state = cdpi;
-            }
             if (cw != null && ch != null && cw > 0 && ch > 0) {
               _inputValueController.text = cw.toString();
               _inputValueController2.text = ch.toString();
               _recomputeCanvasFromInputs();
-              ref.read(canvasSpecProvider.notifier).setSpec(CanvasSpec(
-                  widthPx: cw.toDouble(), heightPx: ch.toDouble(), dpi: _dpi));
+              ref.read(canvasSpecProvider.notifier).setSpec(
+                  CanvasSpec(widthPx: cw.toDouble(), heightPx: ch.toDouble()));
             }
           }
         } catch (_) {}
         // Model/Type initialization removed
-        if (p.imageId != null) {
-          await _loadImageDimensions(p.imageId!);
-        }
+        // Do not read image dimensions here; canvas is independent
         _subscribeToProject(_currentProjectId!);
         if (mounted) setState(() {});
         return;
@@ -439,30 +368,22 @@ extension on _AppProjectDetailPageState {
           final db = ref.read(appDatabaseProvider);
           final row = await db
               .customSelect(
-                  'SELECT canvas_width_px, canvas_height_px, canvas_dpi FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
+                  'SELECT canvas_width_px, canvas_height_px FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
               .getSingleOrNull();
           if (row != null) {
             final int? cw = row.data['canvas_width_px'] as int?;
             final int? ch = row.data['canvas_height_px'] as int?;
-            final int? cdpi = row.data['canvas_dpi'] as int?;
-            if (cdpi != null && cdpi > 0) {
-              _dpi = cdpi;
-              _resolutionController.text = cdpi.toString();
-              ref.read(dpiProvider.notifier).state = cdpi;
-            }
             if (cw != null && ch != null && cw > 0 && ch > 0) {
               _inputValueController.text = cw.toString();
               _inputValueController2.text = ch.toString();
               _recomputeCanvasFromInputs();
-              ref.read(canvasSpecProvider.notifier).setSpec(CanvasSpec(
-                  widthPx: cw.toDouble(), heightPx: ch.toDouble(), dpi: _dpi));
+              ref.read(canvasSpecProvider.notifier).setSpec(
+                  CanvasSpec(widthPx: cw.toDouble(), heightPx: ch.toDouble()));
             }
           }
         } catch (_) {}
         // Model/Type initialization removed
-        if (p.imageId != null) {
-          await _loadImageDimensions(p.imageId!);
-        }
+        // Do not read image dimensions here; canvas is independent
         _subscribeToProject(_currentProjectId!);
         if (mounted) setState(() {});
       }
@@ -496,7 +417,7 @@ extension on _AppProjectDetailPageState {
       }
       final nextHasImage = p.imageId != null;
       if (p.imageId != null) {
-        _loadImageDimensions(p.imageId!);
+        // Do not read image dimensions here; canvas is independent
       }
       if (nextHasImage != _hasImage) _setHasImage(nextHasImage);
     });
@@ -560,18 +481,4 @@ extension on _AppProjectDetailPageState {
   }
 }
 
-extension _ImageDimensions on _AppProjectDetailPageState {
-  Future<void> _loadImageDimensions(int imageId) async {
-    final db = ref.read(appDatabaseProvider);
-    try {
-      final row = await (db.select(db.images)
-            ..where((t) => t.id.equals(imageId)))
-          .getSingleOrNull();
-      final int? width = row?.origWidth;
-      final int? height = row?.origHeight;
-      _applyImageDims(width: width, height: height);
-    } catch (_) {
-      // ignore read errors
-    }
-  }
-}
+// Intentionally no image-dimension helpers in Project Detail; canvas is independent

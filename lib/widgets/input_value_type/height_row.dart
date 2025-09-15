@@ -3,14 +3,15 @@ import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
 import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 import 'package:vettore/widgets/constants/input_constants.dart';
 import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/providers/application_providers.dart';
+// no providers used here currently
 
 class HeightRow extends StatefulWidget {
   final TextEditingController heightController;
   final bool enabled;
   final ValueChanged<String>? onUnitChanged;
   final bool readOnlyView;
+  final int? dpiOverride;
+  final List<String>? units;
 
   const HeightRow({
     super.key,
@@ -18,6 +19,8 @@ class HeightRow extends StatefulWidget {
     required this.enabled,
     this.onUnitChanged,
     this.readOnlyView = false,
+    this.dpiOverride,
+    this.units,
   });
 
   @override
@@ -25,15 +28,15 @@ class HeightRow extends StatefulWidget {
 }
 
 class _HeightRowState extends State<HeightRow> {
-  static const List<String> _units = kUnits;
+  static const List<String> _defaultUnits = kUnits;
   String _unit = 'px';
-  double? _aspect; // width/height inverse used by WidthRow;
   bool _syncing = false;
 
   @override
   Widget build(BuildContext context) {
-    final int dpi = ProviderScope.containerOf(context).read(dpiProvider);
+    int dpi = widget.dpiOverride ?? 72;
     final bool readOnly = !widget.enabled;
+    final List<String> units = widget.units ?? _defaultUnits;
     return SectionInput(
       full: InputValueType(
         key: const ValueKey('height'),
@@ -42,7 +45,7 @@ class _HeightRowState extends State<HeightRow> {
         prefixIconAsset: 'assets/icons/16/height.svg',
         prefixIconFit: BoxFit.none,
         prefixIconAlignment: Alignment.centerLeft,
-        dropdownItems: _units,
+        dropdownItems: units,
         selectedItem: _unit,
         suffixText: _unit,
         variant: InputVariant.selector,
@@ -59,7 +62,7 @@ class _HeightRowState extends State<HeightRow> {
           // When linked, update width based on aspect (if known)
           if (_syncing) return;
           // Infer aspect from current fields when possible
-          final int? h = int.tryParse(widget.heightController.text);
+          // keep input sanitized; width-row linkage handles paired updates
           // We cannot access linked state here; WidthRow handles forward link.
         },
         onItemSelected: (nextUnit) {

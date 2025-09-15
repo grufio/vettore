@@ -19,7 +19,7 @@ import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/providers/navigation_providers.dart';
 import 'package:vettore/app_image_detail.dart';
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' as drift show Value;
 import 'package:vettore/data/database.dart';
 // import 'package:vettore/widgets/preview_gallery.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -122,11 +122,11 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
       final now = DateTime.now().millisecondsSinceEpoch;
       final id = await repo.insert(ProjectsCompanion.insert(
         title: 'Untitled',
-        author: const Value(null),
-        status: const Value('draft'),
+        author: const drift.Value(null),
+        status: const drift.Value('draft'),
         createdAt: now,
         updatedAt: now,
-        imageId: const Value(null),
+        imageId: const drift.Value(null),
       ));
       // Insert new tab labeled with project title and navigate to detail
       if (mounted) {
@@ -450,9 +450,36 @@ class _HomeGalleryContainer extends ConsumerWidget {
                       ? ref.watch(imageBytesProvider(p.imageId!))
                       : const AsyncValue<Uint8List?>.data(null);
                   final bytes = bytesAsync.asData?.value;
+                  // Image dimensions: converted if present else original
+                  final dimsAsync = (p.imageId != null)
+                      ? ref.watch(imageDimensionsProvider(p.imageId!))
+                      : const AsyncValue<(int?, int?)>.data((null, null));
+                  final dims = dimsAsync.asData?.value;
+                  final int? w = dims?.$1;
+                  final int? h = dims?.$2;
+                  String baseSize = '';
+                  if (w != null && h != null) {
+                    baseSize = '${w}px x ${h}px';
+                  }
+                  String two(int n) => n.toString().padLeft(2, '0');
+                  final dt = DateTime.fromMillisecondsSinceEpoch(p.createdAt);
+                  final line3 =
+                      '${two(dt.day)}.${two(dt.month)}.${dt.year}, ${two(dt.hour)}:${two(dt.minute)}';
+
+                  // Read DPI from image (per spec: DPI belongs to image)
+                  final dpiAsync = (p.imageId != null)
+                      ? ref.watch(imageDpiProvider(p.imageId!))
+                      : const AsyncValue<int?>.data(null);
+                  final int? dpi = dpiAsync.asData?.value;
+                  final String line2 = (dpi == null || dpi == 0)
+                      ? baseSize
+                      : (baseSize.isEmpty
+                          ? '${dpi} dpi'
+                          : '$baseSize, ${dpi} dpi');
                   return _ProjectThumbnail(
                     bytes: bytes,
                     title: p.title,
+                    lines: [p.title, line2, line3],
                     onOpen: () => onOpenProject?.call(p.id),
                     onDelete: () async {
                       final repo = ref.read(projectRepositoryProvider);
@@ -480,6 +507,7 @@ class _HomeGalleryContainer extends ConsumerWidget {
 class _ProjectThumbnail extends StatefulWidget {
   final Uint8List? bytes;
   final String title;
+  final List<String>? lines;
   final VoidCallback onOpen;
   final Future<void> Function() onDelete;
   const _ProjectThumbnail({
@@ -487,6 +515,7 @@ class _ProjectThumbnail extends StatefulWidget {
     required this.title,
     required this.onOpen,
     required this.onDelete,
+    this.lines,
   });
   @override
   State<_ProjectThumbnail> createState() => _ProjectThumbnailState();
@@ -522,7 +551,7 @@ class _ProjectThumbnailState extends State<_ProjectThumbnail> {
       child: ThumbnailTile(
         imageBytes: widget.bytes,
         footerHeight: 72.0,
-        lines: [widget.title, '', ''],
+        lines: widget.lines ?? [widget.title, '', ''],
         textPadding: 12.0,
         lineSpacing: 12.0,
         borderWidth: 2.0,

@@ -7,6 +7,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' hide Column;
+import 'package:drift/drift.dart' as drift show Variable;
 import 'package:image/image.dart' as img;
 import 'package:flutter/foundation.dart' show compute;
 import 'package:vettore/services/image_compute.dart' as ic;
@@ -61,6 +62,16 @@ final imageDimensionsProvider =
     _loggedDimsOnce.add(imageId);
   }
   return (w, h);
+});
+
+// Image DPI provider: returns the mutable image DPI (images.dpi)
+final imageDpiProvider = FutureProvider.family<int?, int>((ref, imageId) async {
+  final db = ref.read(appDatabaseProvider);
+  final row = await db.customSelect(
+      'SELECT dpi FROM images WHERE id = ? LIMIT 1',
+      variables: [drift.Variable<int>(imageId)]).getSingleOrNull();
+  if (row == null) return null;
+  return row.data['dpi'] as int?;
 });
 
 // Projects list provider (stream)
