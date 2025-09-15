@@ -25,7 +25,9 @@ import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/providers/navigation_providers.dart';
-import 'package:vettore/widgets/image_upload_area.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:vettore/providers/canvas_providers.dart';
+import 'package:vettore/widgets/snackbar_image.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -72,6 +74,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
   bool _dimsInitialized = false;
   Uint8List? _lastImageBytes;
   // Removed: canvas/image-layer state; PhotoView handles navigation
+  late final PhotoViewController _pvController;
+  late final PhotoViewScaleStateController _pvScaleController;
 
   void _setHasImage(bool value) {
     if (!mounted) return;
@@ -114,6 +118,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
         _saveProjectTitle();
       }
     });
+    _pvController = PhotoViewController();
+    _pvScaleController = PhotoViewScaleStateController();
     _initProject();
   }
 
@@ -483,10 +489,8 @@ extension on _AppImageDetailPageState {
     final int? pid = widget.projectId ??
         _currentProjectId ??
         ref.watch(currentProjectIdProvider);
-    final project = (pid != null)
-        ? ref.watch(projectByIdProvider(pid)).asData?.value
-        : null;
-    final int? imageId = project?.imageId;
+    final int? imageId =
+        (pid != null) ? ref.watch(imageIdStableProvider(pid)) : null;
     final Uint8List? bytes = (imageId != null)
         ? (ref.watch(imageBytesProvider(imageId)).asData?.value ??
             _lastImageBytes)
@@ -495,8 +499,8 @@ extension on _AppImageDetailPageState {
     debugPrint(
         '[ImageDetail] build pid=$pid imageId=$imageId bytes=${bytes?.length ?? 0}');
 
+    // Always render canvas artboard; only show upload prompt when no imageId
     if (imageId == null) {
-      // No image attached → show upload prompt
       return Center(
         child: ImageUploadText(
           onImageDropped: (b) => _handleImageBytes(b),
@@ -505,16 +509,77 @@ extension on _AppImageDetailPageState {
       );
     }
 
-    if (bytes == null) {
-      // Image expected but not yet loaded → show a small spinner
-      return const Center(child: CupertinoActivityIndicator());
-    }
-
+    // Canvas artboard + image, PhotoView handles pan/zoom; border scales
+    final spec = ref.watch(canvasSpecProvider);
+    final double canvasW = (spec.widthPx > 0) ? spec.widthPx : 100.0;
+    final double canvasH = (spec.heightPx > 0) ? spec.heightPx : 100.0;
     return Center(
-      child: ImageUploadArea(
-        key: ValueKey('${imageId}:${bytes.length}'),
-        initialBytes: bytes,
-        onBytesSelected: (b) => _handleImageBytes(b),
+      child: Stack(
+        children: [
+          PhotoView.customChild(
+            controller: _pvController,
+            scaleStateController: _pvScaleController,
+            backgroundDecoration: const BoxDecoration(color: kGrey10),
+            initialScale: PhotoViewComputedScale.contained,
+            minScale: PhotoViewComputedScale.contained,
+            maxScale: PhotoViewComputedScale.covered * 4.0,
+            childSize: Size(canvasW, canvasH),
+            child: Center(
+              child: SizedBox(
+                width: canvasW,
+                height: canvasH,
+                child: ClipRect(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const DecoratedBox(
+                        decoration: BoxDecoration(color: kWhite),
+                      ),
+                      if (bytes != null)
+                        SizedBox.expand(
+                          child: FittedBox(
+                            fit: BoxFit.contain,
+                            child: Image.memory(
+                              bytes,
+                              filterQuality: FilterQuality.none,
+                            ),
+                          ),
+                        ),
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.fromBorderSide(
+                            BorderSide(color: kGrey100, width: 1.0),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (bytes != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 16.0,
+              child: Center(
+                child: SnackbarImage(
+                  onZoomIn: () {
+                    final s = _pvController.scale ?? 1.0;
+                    _pvController.scale = s + 0.25;
+                  },
+                  onZoomOut: () {
+                    final s = _pvController.scale ?? 1.0;
+                    _pvController.scale = (s - 0.25).clamp(0.25, 50.0);
+                  },
+                  onFitToScreen: () {
+                    _pvScaleController.scaleState = PhotoViewScaleState.initial;
+                  },
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

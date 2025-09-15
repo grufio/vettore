@@ -204,6 +204,23 @@ final projectByIdProvider =
   return repo.watchById(projectId);
 });
 
+// Stable imageId provider: caches last non-null imageId to avoid flicker
+final _imageIdCacheProvider =
+    StateProvider.family<int?, int>((ref, projectId) => null);
+
+final imageIdStableProvider = Provider.family<int?, int>((ref, projectId) {
+  // Write to cache in a listener (outside of provider build) to avoid init writes
+  ref.listen(projectByIdProvider(projectId), (prev, next) {
+    final v = next.asData?.value?.imageId;
+    if (v != null) {
+      ref.read(_imageIdCacheProvider(projectId).notifier).state = v;
+    }
+  });
+  final current = ref.watch(projectByIdProvider(projectId)).asData?.value;
+  final cached = ref.watch(_imageIdCacheProvider(projectId));
+  return current?.imageId ?? cached;
+});
+
 // A provider for the business logic of the project editor.
 final projectLogicProvider =
     Provider.autoDispose.family<ProjectLogic, int>((ref, projectId) {
