@@ -73,6 +73,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
   int? _lastDimsImageId;
   bool _dimsInitialized = false;
   Uint8List? _lastImageBytes;
+  int? _requestedDimsForImageId;
   // Removed: canvas/image-layer state; PhotoView handles navigation
   late final PhotoViewController _pvController;
   late final PhotoViewScaleStateController _pvScaleController;
@@ -93,6 +94,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
       newHeight: height,
       initialized: _dimsInitialized,
     );
+    debugPrint(
+        '[ImageDetail] _applyImageDims cur=${curW}x${curH} new=${width}x${height} init=${_dimsInitialized} should=$should');
     if (!should) return;
     DimensionsGuard.writeControllers(
       widthController: _inputValueController,
@@ -154,8 +157,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
     // Image presence is determined via DB stream in the body below
     // Set up provider listeners at the start of build (required by Riverpod)
     final int? _imageIdForListen = (_currentProjectId != null)
-        ? ref.watch(projectByIdProvider(_currentProjectId!)
-            .select((p) => p.asData?.value?.imageId))
+        ? ref.watch(imageIdStableProvider(_currentProjectId!))
         : null;
     if (_currentProjectId != null) {
       ref.listen(projectByIdProvider(_currentProjectId!), (prev, next) {
@@ -164,20 +166,16 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
           _lastDimsImageId = nextImageId;
           _dimsInitialized = false;
         }
-        if (nextImageId == null) {
-          if (_inputValueController.text.isNotEmpty) {
-            _inputValueController.text = '';
-          }
-          if (_inputValueController2.text.isNotEmpty) {
-            _inputValueController2.text = '';
-          }
-        }
+        // Do not clear fields when image becomes null; keep last known size
       });
     }
     if (_imageIdForListen != null) {
       ref.listen(imageDimensionsProvider(_imageIdForListen), (prev, next) {
         final dims = next.asData?.value;
         if (dims != null) {
+          debugPrint('[ImageDetail] provider dims=${dims.$1}x${dims.$2}');
+          _dimsInitialized =
+              false; // always apply current working size on tab enter
           _applyImageDims(width: dims.$1, height: dims.$2);
         }
       });
@@ -266,8 +264,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
                         Builder(builder: (context) {
                           final int? imageId = (_currentProjectId != null)
                               ? ref.watch(
-                                  projectByIdProvider(_currentProjectId!)
-                                      .select((p) => p.asData?.value?.imageId))
+                                  imageIdStableProvider(_currentProjectId!))
                               : null;
                           final bool hasImage = imageId != null;
                           return SectionSidebar(
@@ -349,6 +346,7 @@ extension on _AppImageDetailPageState {
     await ref
         .read(projectLogicProvider(_currentProjectId!))
         .resizeToCv(targetW, targetH, interp);
+    // Keep showing original bytes per baseline; no session flip
   }
 
   Future<void> _handleImageBytes(Uint8List bytes) async {
@@ -391,7 +389,9 @@ extension on _AppImageDetailPageState {
       ),
     );
     debugPrint('[ImageDetail] image stored id=$imageId; updating controllers');
-    // Update local UI controllers with dimensions
+    // Ensure the new image dimensions overwrite any previous values in fields
+    _lastDimsImageId = imageId;
+    _dimsInitialized = false;
     _applyImageDims(width: width, height: height);
     // TODO: if DPI is detected, set ResolutionSelector initial value
     // This requires threading dpi into local state; for now, ignore if null
@@ -420,12 +420,7 @@ extension on _AppImageDetailPageState {
         final p = await repo.getById(widget.projectId!);
         _projectController.text = p.title;
         _hasImage = p.imageId != null;
-        if (p.imageId != null) {
-          await _loadImageDimensions(p.imageId!);
-        } else {
-          _inputValueController.text = '';
-          _inputValueController2.text = '';
-        }
+        // Do not clear Width/Height on rebuilds
         _subscribeToProject(_currentProjectId!);
         return;
       }
@@ -435,12 +430,7 @@ extension on _AppImageDetailPageState {
         _currentProjectId = p.id;
         _projectController.text = p.title;
         _hasImage = p.imageId != null;
-        if (p.imageId != null) {
-          await _loadImageDimensions(p.imageId!);
-        } else {
-          _inputValueController.text = '';
-          _inputValueController2.text = '';
-        }
+        // Do not clear Width/Height on rebuilds
         _subscribeToProject(_currentProjectId!);
       }
     } catch (_) {
@@ -468,18 +458,11 @@ extension on _AppImageDetailPageState {
         ref.read(projectRepositoryProvider).watchById(projectId).listen((p) {
       if (!mounted) return;
       if (p == null) {
-        _inputValueController.text = '';
-        _inputValueController2.text = '';
         _setHasImage(false);
         return;
       }
       final nextHasImage = p.imageId != null;
-      if (p.imageId != null) {
-        _loadImageDimensions(p.imageId!);
-      } else {
-        _inputValueController.text = '';
-        _inputValueController2.text = '';
-      }
+      // Do not clear Width/Height on rebuilds
       if (nextHasImage != _hasImage) _setHasImage(nextHasImage);
     });
   }
@@ -507,6 +490,18 @@ extension on _AppImageDetailPageState {
           onUploadTap: _pickViaDialog,
         ),
       );
+    }
+
+    // If entering Image tab and fields are empty, fetch dims once and apply
+    if ((_inputValueController.text.isEmpty ||
+            _inputValueController2.text.isEmpty) &&
+        _requestedDimsForImageId != imageId) {
+      _requestedDimsForImageId = imageId;
+      ref.read(imageDimensionsProvider(imageId).future).then((dims) {
+        if (!mounted) return;
+        _dimsInitialized = false;
+        _applyImageDims(width: dims.$1, height: dims.$2);
+      });
     }
 
     // Canvas artboard + image, PhotoView handles pan/zoom; border scales
@@ -583,18 +578,4 @@ extension on _AppImageDetailPageState {
   }
 }
 
-extension _ImageDimensions on _AppImageDetailPageState {
-  Future<void> _loadImageDimensions(int imageId) async {
-    final db = ref.read(appDatabaseProvider);
-    try {
-      final row = await (db.select(db.images)
-            ..where((t) => t.id.equals(imageId)))
-          .getSingleOrNull();
-      final int? width = row?.origWidth;
-      final int? height = row?.origHeight;
-      _applyImageDims(width: width, height: height);
-    } catch (_) {
-      // ignore read errors
-    }
-  }
-}
+// _loadImageDimensions removed; dimensions are provided exclusively by imageDimensionsProvider

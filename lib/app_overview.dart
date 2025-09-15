@@ -24,6 +24,7 @@ import 'package:vettore/data/database.dart';
 // import 'package:vettore/widgets/preview_gallery.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:vettore/widgets/thumbnail_tile.dart';
+import 'package:vettore/widgets/context_menu.dart';
 
 const double _kToolbarHeight = 40.0;
 
@@ -449,15 +450,14 @@ class _HomeGalleryContainer extends ConsumerWidget {
                       ? ref.watch(imageBytesProvider(p.imageId!))
                       : const AsyncValue<Uint8List?>.data(null);
                   final bytes = bytesAsync.asData?.value;
-                  return GestureDetector(
-                    onDoubleTap: () => onOpenProject?.call(p.id),
-                    child: ThumbnailTile(
-                      imageBytes: bytes,
-                      footerHeight: 72.0,
-                      lines: [p.title, '324x240px', '30.12.2005, 12:24'],
-                      textPadding: 12.0,
-                      lineSpacing: 12.0,
-                    ),
+                  return _ProjectThumbnail(
+                    bytes: bytes,
+                    title: p.title,
+                    onOpen: () => onOpenProject?.call(p.id),
+                    onDelete: () async {
+                      final repo = ref.read(projectRepositoryProvider);
+                      await repo.delete(p.id);
+                    },
                   );
                 }));
               }
@@ -473,6 +473,61 @@ class _HomeGalleryContainer extends ConsumerWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _ProjectThumbnail extends StatefulWidget {
+  final Uint8List? bytes;
+  final String title;
+  final VoidCallback onOpen;
+  final Future<void> Function() onDelete;
+  const _ProjectThumbnail({
+    required this.bytes,
+    required this.title,
+    required this.onOpen,
+    required this.onDelete,
+  });
+  @override
+  State<_ProjectThumbnail> createState() => _ProjectThumbnailState();
+}
+
+class _ProjectThumbnailState extends State<_ProjectThumbnail> {
+  bool _focused = false;
+
+  void _showMenu(Offset pos) {
+    setState(() => _focused = true);
+    ContextMenu.show(
+      context: context,
+      globalPosition: pos,
+      items: [
+        ContextMenuItem(label: 'Open', onTap: widget.onOpen),
+        ContextMenuItem(
+          label: 'Delete',
+          onTap: () async {
+            await widget.onDelete();
+          },
+        ),
+      ],
+      onClose: () => setState(() => _focused = false),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onDoubleTap: widget.onOpen,
+      onSecondaryTapDown: (d) => _showMenu(d.globalPosition),
+      onTapDown: (_) => setState(() => _focused = false),
+      child: ThumbnailTile(
+        imageBytes: widget.bytes,
+        footerHeight: 72.0,
+        lines: [widget.title, '', ''],
+        textPadding: 12.0,
+        lineSpacing: 12.0,
+        borderWidth: _focused ? 2.0 : 1.0,
+        borderColor: _focused ? kInputFocus : kBordersColor,
+      ),
     );
   }
 }

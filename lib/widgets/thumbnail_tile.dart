@@ -15,6 +15,8 @@ class ThumbnailTile extends StatelessWidget {
   final double lineSpacing;
   final BorderRadius borderRadius;
   final Widget? leading; // optional icon
+  final double borderWidth;
+  final Color borderColor;
 
   const ThumbnailTile({
     super.key,
@@ -27,13 +29,15 @@ class ThumbnailTile extends StatelessWidget {
     this.lineSpacing = 12.0,
     this.borderRadius = const BorderRadius.all(Radius.circular(6.0)),
     this.leading,
+    this.borderWidth = 1.0,
+    this.borderColor = kBordersColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: kBordersColor, width: 1.0),
+        border: Border.all(color: borderColor, width: borderWidth),
         borderRadius: borderRadius,
       ),
       child: ClipRRect(

@@ -16,25 +16,50 @@ import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/services/logger.dart';
 
-// Image bytes provider (orig or conv)
+// Image bytes provider: render converted (working) bytes when present, else original
+// Minimal one-time logging to verify source selection
+final Set<int> _loggedBytesOnce = <int>{};
 final imageBytesProvider =
     FutureProvider.family<Uint8List?, int>((ref, imageId) async {
   final db = ref.read(appDatabaseProvider);
   final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
       .getSingleOrNull();
-  return row?.convSrc ?? row?.origSrc;
+  if (row?.convSrc != null && (row?.convBytes ?? 0) > 0) {
+    if (!_loggedBytesOnce.contains(imageId)) {
+      // ignore: avoid_print
+      print(
+          '[imageBytesProvider] imageId=$imageId -> conv_src (${row?.convBytes ?? 0} bytes)');
+      _loggedBytesOnce.add(imageId);
+    }
+    return row!.convSrc;
+  }
+  if (!_loggedBytesOnce.contains(imageId)) {
+    // ignore: avoid_print
+    print(
+        '[imageBytesProvider] imageId=$imageId -> orig_src (${row?.origBytes ?? 0} bytes)');
+    _loggedBytesOnce.add(imageId);
+  }
+  return row?.origSrc;
 });
 
-// Image dimensions provider (origWidth/origHeight, fallback to conv if needed)
+// Image dimensions provider: show converted size when a working image exists,
+// otherwise show original size. Minimal one-time logging to verify source.
+final Set<int> _loggedDimsOnce = <int>{};
 final imageDimensionsProvider =
     FutureProvider.family<(int?, int?), int>((ref, imageId) async {
   final db = ref.read(appDatabaseProvider);
   final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
       .getSingleOrNull();
-  // Prefer converted dimensions if available (reflect latest resize),
-  // fallback to original when no converted dims exist.
-  final w = row?.convWidth ?? row?.origWidth;
-  final h = row?.convHeight ?? row?.origHeight;
+  final hasConv = (row?.convSrc != null && (row?.convBytes ?? 0) > 0);
+  final w = hasConv ? row?.convWidth : row?.origWidth;
+  final h = hasConv ? row?.convHeight : row?.origHeight;
+  if (!_loggedDimsOnce.contains(imageId)) {
+    // ignore: avoid_print
+    print('[imageDimensionsProvider] imageId=$imageId -> ' +
+        (hasConv ? 'conv' : 'orig') +
+        ' dims ${w ?? 0}x${h ?? 0}');
+    _loggedDimsOnce.add(imageId);
+  }
   return (w, h);
 });
 
