@@ -536,13 +536,11 @@ extension on _AppImageDetailPageState {
                         decoration: BoxDecoration(color: kWhite),
                       ),
                       if (bytes != null)
-                        SizedBox.expand(
-                          child: FittedBox(
-                            fit: BoxFit.contain,
-                            child: Image.memory(
-                              bytes,
-                              filterQuality: FilterQuality.none,
-                            ),
+                        Center(
+                          child: Image.memory(
+                            bytes,
+                            fit: BoxFit.none,
+                            filterQuality: FilterQuality.none,
                           ),
                         ),
                       const DecoratedBox(
