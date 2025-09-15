@@ -525,7 +525,7 @@ class _ProjectThumbnailState extends State<_ProjectThumbnail> {
         lines: [widget.title, '', ''],
         textPadding: 12.0,
         lineSpacing: 12.0,
-        borderWidth: _focused ? 2.0 : 1.0,
+        borderWidth: 2.0,
         borderColor: _focused ? kInputFocus : kBordersColor,
       ),
     );

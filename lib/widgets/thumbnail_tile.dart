@@ -29,19 +29,24 @@ class ThumbnailTile extends StatelessWidget {
     this.lineSpacing = 12.0,
     this.borderRadius = const BorderRadius.all(Radius.circular(6.0)),
     this.leading,
-    this.borderWidth = 1.0,
+    this.borderWidth = 2.0,
     this.borderColor = kBordersColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Keep inner clip radius aligned to the inner edge of the stroke so
+    // the thumbnail edge and the border edge visually match for any border width.
+    final double _outerRadius = borderRadius.topLeft.x;
+    final double _innerRadius =
+        (_outerRadius - borderWidth).clamp(0.0, _outerRadius);
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: borderColor, width: borderWidth),
         borderRadius: borderRadius,
       ),
       child: ClipRRect(
-        borderRadius: borderRadius,
+        borderRadius: BorderRadius.all(Radius.circular(_innerRadius)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
