@@ -55,7 +55,7 @@ class _HeightRowState extends State<HeightRow> {
         readOnly: readOnly,
         readOnlyView: widget.readOnlyView,
         onChanged: (raw) {
-          final sanitized = raw.replaceAll(RegExp(r'[^0-9]'), '');
+          final sanitized = raw.replaceAll(RegExp(r'[^0-9\.]'), '');
           if (sanitized != raw) {
             widget.heightController.text = sanitized;
             final newOffset = sanitized.length.clamp(0, sanitized.length);
@@ -80,7 +80,7 @@ class _HeightRowState extends State<HeightRow> {
                 dpi: dpi,
               );
               widget.heightController.text =
-                  formatUnitValue(converted, nextUnit);
+                  formatFieldUnitValue(converted, nextUnit);
             }
             _unit = nextUnit;
             widget.onUnitChanged?.call(_unit);

@@ -440,13 +440,7 @@ extension on _AppImageDetailPageState {
         updatedAt: Value(now),
       ),
     );
-    // Ensure project has a valid canvas size (safety): backfill 100x100 if <=0
-    try {
-      await imagesDao.customStatement(
-        'UPDATE projects SET canvas_width_px = COALESCE(NULLIF(canvas_width_px, 0), 100), canvas_height_px = COALESCE(NULLIF(canvas_height_px, 0), 100) WHERE id = ?',
-        [_currentProjectId!],
-      );
-    } catch (_) {}
+    // Do not modify project canvas from Image upload path (strict decoupling)
     debugPrint('[ImageDetail] image stored id=$imageId; updating controllers');
     // Ensure the new image dimensions overwrite any previous values in fields
     _lastDimsImageId = imageId;
@@ -651,16 +645,21 @@ extension on _AppImageDetailPageState {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          const DecoratedBox(
-                            decoration: BoxDecoration(color: kWhite),
+                          const Positioned.fill(
+                            child: ColoredBox(color: kWhite),
                           ),
-                          // Image centered relative to pasteboard, not clipped by canvas
+                          // Image 1:1, niemals gestreckt; kann über Artboard überstehen
                           if (bytes != null)
-                            Positioned.fill(
-                              child: Center(
+                            Center(
+                              child: OverflowBox(
+                                minWidth: 0,
+                                minHeight: 0,
+                                maxWidth: double.infinity,
+                                maxHeight: double.infinity,
                                 child: Image.memory(
                                   bytes,
                                   fit: BoxFit.none,
+                                  alignment: Alignment.center,
                                   filterQuality: FilterQuality.none,
                                 ),
                               ),
@@ -669,9 +668,12 @@ extension on _AppImageDetailPageState {
                           LayoutBuilder(builder: (context, constraints) {
                             final double s =
                                 _ivController.value.getMaxScaleOnAxis();
+                            final double dpr =
+                                MediaQuery.of(context).devicePixelRatio;
                             return IgnorePointer(
                               child: CustomPaint(
-                                painter: _HairlineBorderPainter(scale: s),
+                                painter:
+                                    _HairlineBorderPainter(scale: s, dpr: dpr),
                                 size: Size(constraints.maxWidth,
                                     constraints.maxHeight),
                               ),
@@ -741,11 +743,14 @@ class _HairlineCanvasBorderPainter extends CustomPainter {
 
 class _HairlineBorderPainter extends CustomPainter {
   final double scale;
-  const _HairlineBorderPainter({required this.scale});
+  final double dpr;
+  const _HairlineBorderPainter({required this.scale, required this.dpr});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double hair = scale == 0 ? 1.0 : (1.0 / scale);
+    // Aim for 1 device pixel thickness regardless of zoom
+    final double hair =
+        (scale == 0 ? 1.0 : (1.0 / scale)) / (dpr == 0 ? 1.0 : dpr);
     final Paint p = Paint()
       ..color = kGrey100
       ..strokeWidth = hair

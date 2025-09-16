@@ -113,7 +113,8 @@ class _WidthRowState extends State<WidthRow> {
         readOnly: readOnly,
         readOnlyView: widget.readOnlyView,
         onChanged: (raw) {
-          final sanitized = raw.replaceAll(RegExp(r'[^0-9]'), '');
+          // allow digits and dot for decimal input
+          final sanitized = raw.replaceAll(RegExp(r'[^0-9\.]'), '');
           if (sanitized != raw) {
             widget.widthController.text = sanitized;
             final newOffset = sanitized.length.clamp(0, sanitized.length);
@@ -133,7 +134,7 @@ class _WidthRowState extends State<WidthRow> {
                 dpi: dpi,
               );
               widget.widthController.text =
-                  formatUnitValue(converted, nextUnit);
+                  formatFieldUnitValue(converted, nextUnit);
               // If linked, immediately recompute height based on new width value
               if (_linked) {
                 _onWidthChanged();
