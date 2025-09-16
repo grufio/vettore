@@ -17,6 +17,7 @@ import 'package:vettore/app_project_detail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
+import 'package:vettore/providers/image_providers.dart';
 import 'package:vettore/providers/navigation_providers.dart';
 import 'package:vettore/app_image_detail.dart';
 import 'package:drift/drift.dart' as drift show Value;
@@ -120,14 +121,27 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
       final container = ProviderScope.containerOf(context);
       final repo = container.read(projectRepositoryProvider);
       final now = DateTime.now().millisecondsSinceEpoch;
-      final id = await repo.insert(ProjectsCompanion.insert(
-        title: 'Untitled',
-        author: const drift.Value(null),
-        status: const drift.Value('draft'),
-        createdAt: now,
-        updatedAt: now,
-        imageId: const drift.Value(null),
-      ));
+      int id;
+      try {
+        id = await repo.insert(ProjectsCompanion.insert(
+          title: 'Untitled',
+          author: const drift.Value(null),
+          status: const drift.Value('draft'),
+          createdAt: now,
+          updatedAt: now,
+          imageId: const drift.Value(null),
+          canvasWidthPx: const drift.Value(100),
+          canvasHeightPx: const drift.Value(100),
+          canvasWidthValue: const drift.Value(100.0),
+          canvasWidthUnit: const drift.Value('mm'),
+          canvasHeightValue: const drift.Value(100.0),
+          canvasHeightUnit: const drift.Value('mm'),
+        ));
+      } catch (e) {
+        // ignore: avoid_print
+        print('[overview] project insert failed: $e');
+        rethrow;
+      }
       // Insert new tab labeled with project title and navigate to detail
       if (mounted) {
         setState(() {

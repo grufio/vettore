@@ -154,9 +154,18 @@ class Projects extends Table {
       .references(Vendors, #id, onDelete: KeyAction.setNull)();
   // Canvas spec stored in pixels (independent of image dpi)
   IntColumn get canvasWidthPx =>
-      integer().named('canvas_width_px').nullable()();
+      integer().named('canvas_width_px').withDefault(const Constant(100))();
   IntColumn get canvasHeightPx =>
-      integer().named('canvas_height_px').nullable()();
+      integer().named('canvas_height_px').withDefault(const Constant(100))();
+  // New: store canvas value + unit (e.g., 100 mm)
+  RealColumn get canvasWidthValue =>
+      real().named('canvas_width_value').withDefault(const Constant(100.0))();
+  TextColumn get canvasWidthUnit =>
+      text().named('canvas_width_unit').withDefault(const Constant('mm'))();
+  RealColumn get canvasHeightValue =>
+      real().named('canvas_height_value').withDefault(const Constant(100.0))();
+  TextColumn get canvasHeightUnit =>
+      text().named('canvas_height_unit').withDefault(const Constant('mm'))();
 }
 
 //-
@@ -181,7 +190,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration {
@@ -451,6 +460,63 @@ class AppDatabase extends _$AppDatabase {
               'CREATE INDEX IF NOT EXISTS idx_projects_model ON projects(model)');
           await m.database.customStatement(
               'CREATE INDEX IF NOT EXISTS idx_projects_vendor_id ON projects(vendor_id)');
+        }
+        if (from < 24) {
+          // Rebuild projects table to enforce NOT NULL + defaults + checks on canvas columns
+          await m.database.customStatement(
+              'CREATE TABLE IF NOT EXISTS projects_tmp2 ('
+              'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, '
+              'title TEXT NOT NULL, '
+              'author TEXT, '
+              'status TEXT NOT NULL DEFAULT (\'draft\'), '
+              'created_at INTEGER NOT NULL, '
+              'updated_at INTEGER NOT NULL, '
+              'image_id INTEGER, '
+              'model TEXT, '
+              'vendor_id INTEGER, '
+              'canvas_width_px INTEGER NOT NULL DEFAULT 100 CHECK (canvas_width_px > 0), '
+              'canvas_height_px INTEGER NOT NULL DEFAULT 100 CHECK (canvas_height_px > 0), '
+              'FOREIGN KEY(image_id) REFERENCES images(id) ON DELETE SET NULL, '
+              'FOREIGN KEY(vendor_id) REFERENCES vendors(id) ON DELETE SET NULL)');
+          // Copy with backfill (treat 0 or NULL as 100)
+          await m.database.customStatement('INSERT INTO projects_tmp2 '
+              '(id, title, author, status, created_at, updated_at, image_id, model, vendor_id, canvas_width_px, canvas_height_px) '
+              'SELECT id, title, author, status, created_at, updated_at, image_id, model, vendor_id, '
+              'COALESCE(NULLIF(canvas_width_px, 0), 100), COALESCE(NULLIF(canvas_height_px, 0), 100) '
+              'FROM projects');
+          await m.database.customStatement('DROP TABLE projects');
+          await m.database
+              .customStatement('ALTER TABLE projects_tmp2 RENAME TO projects');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_updatedAt ON projects(updated_at)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_title ON projects(title)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_model ON projects(model)');
+          await m.database.customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_projects_vendor_id ON projects(vendor_id)');
+        }
+        if (from < 25) {
+          // Add canvas value+unit columns with defaults; backfill existing rows
+          await m.database.customStatement(
+              "ALTER TABLE projects ADD COLUMN canvas_width_value REAL DEFAULT 100.0");
+          await m.database.customStatement(
+              "ALTER TABLE projects ADD COLUMN canvas_width_unit TEXT DEFAULT 'mm'");
+          await m.database.customStatement(
+              "ALTER TABLE projects ADD COLUMN canvas_height_value REAL DEFAULT 100.0");
+          await m.database.customStatement(
+              "ALTER TABLE projects ADD COLUMN canvas_height_unit TEXT DEFAULT 'mm'");
+          // Backfill: set defaults where NULL
+          await m.database.customStatement(
+              "UPDATE projects SET canvas_width_value = COALESCE(canvas_width_value, 100.0)");
+          await m.database.customStatement(
+              "UPDATE projects SET canvas_width_unit = COALESCE(canvas_width_unit, 'mm')");
+          await m.database.customStatement(
+              "UPDATE projects SET canvas_height_value = COALESCE(canvas_height_value, 100.0)");
+          await m.database.customStatement(
+              "UPDATE projects SET canvas_height_unit = COALESCE(canvas_height_unit, 'mm')");
         }
       },
     );

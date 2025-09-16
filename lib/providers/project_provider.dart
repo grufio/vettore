@@ -16,63 +16,21 @@ import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/services/logger.dart';
+import 'package:vettore/providers/image_providers.dart';
+import 'package:vettore/services/coupling_guard.dart';
 
 // Image bytes provider: render converted (working) bytes when present, else original
 // Minimal one-time logging to verify source selection
 final Set<int> _loggedBytesOnce = <int>{};
-final imageBytesProvider =
-    FutureProvider.family<Uint8List?, int>((ref, imageId) async {
-  final db = ref.read(appDatabaseProvider);
-  final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
-      .getSingleOrNull();
-  if (row?.convSrc != null && (row?.convBytes ?? 0) > 0) {
-    if (!_loggedBytesOnce.contains(imageId)) {
-      // ignore: avoid_print
-      print(
-          '[imageBytesProvider] imageId=$imageId -> conv_src (${row?.convBytes ?? 0} bytes)');
-      _loggedBytesOnce.add(imageId);
-    }
-    return row!.convSrc;
-  }
-  if (!_loggedBytesOnce.contains(imageId)) {
-    // ignore: avoid_print
-    print(
-        '[imageBytesProvider] imageId=$imageId -> orig_src (${row?.origBytes ?? 0} bytes)');
-    _loggedBytesOnce.add(imageId);
-  }
-  return row?.origSrc;
-});
+// moved to image_providers.dart
 
 // Image dimensions provider: show converted size when a working image exists,
 // otherwise show original size. Minimal one-time logging to verify source.
 final Set<int> _loggedDimsOnce = <int>{};
-final imageDimensionsProvider =
-    FutureProvider.family<(int?, int?), int>((ref, imageId) async {
-  final db = ref.read(appDatabaseProvider);
-  final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
-      .getSingleOrNull();
-  final hasConv = (row?.convSrc != null && (row?.convBytes ?? 0) > 0);
-  final w = hasConv ? row?.convWidth : row?.origWidth;
-  final h = hasConv ? row?.convHeight : row?.origHeight;
-  if (!_loggedDimsOnce.contains(imageId)) {
-    // ignore: avoid_print
-    print('[imageDimensionsProvider] imageId=$imageId -> ' +
-        (hasConv ? 'conv' : 'orig') +
-        ' dims ${w ?? 0}x${h ?? 0}');
-    _loggedDimsOnce.add(imageId);
-  }
-  return (w, h);
-});
+// moved to image_providers.dart
 
 // Image DPI provider: returns the mutable image DPI (images.dpi)
-final imageDpiProvider = FutureProvider.family<int?, int>((ref, imageId) async {
-  final db = ref.read(appDatabaseProvider);
-  final row = await db.customSelect(
-      'SELECT dpi FROM images WHERE id = ? LIMIT 1',
-      variables: [drift.Variable<int>(imageId)]).getSingleOrNull();
-  if (row == null) return null;
-  return row.data['dpi'] as int?;
-});
+// moved to image_providers.dart
 
 // Projects list provider (stream)
 final projectsStreamProvider =

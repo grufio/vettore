@@ -12,6 +12,7 @@ class HeightRow extends StatefulWidget {
   final bool readOnlyView;
   final int? dpiOverride;
   final List<String>? units;
+  final String? initialUnit;
 
   const HeightRow({
     super.key,
@@ -21,6 +22,7 @@ class HeightRow extends StatefulWidget {
     this.readOnlyView = false,
     this.dpiOverride,
     this.units,
+    this.initialUnit,
   });
 
   @override
@@ -37,6 +39,7 @@ class _HeightRowState extends State<HeightRow> {
     int dpi = widget.dpiOverride ?? 72;
     final bool readOnly = !widget.enabled;
     final List<String> units = widget.units ?? _defaultUnits;
+    _unit = widget.initialUnit ?? _unit;
     return SectionInput(
       full: InputValueType(
         key: const ValueKey('height'),

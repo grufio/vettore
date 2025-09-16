@@ -17,6 +17,8 @@ import 'package:vettore/data/database.dart';
 import 'dart:async';
 import 'package:vettore/widgets/input_value_type/width_row.dart';
 import 'package:vettore/widgets/input_value_type/height_row.dart';
+import 'package:vettore/widgets/constants/input_constants.dart';
+import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
 // import 'package:vettore/services/dimensions_guard.dart';
 // import 'package:flutter/foundation.dart' show compute;
 // import 'package:vettore/services/image_compute.dart' as ic;
@@ -65,6 +67,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   // Canvas preview (pixels), updated on "Update Canvas"
   double? _canvasPxW;
   double? _canvasPxH;
+  String _canvasWUnit = 'mm';
+  String _canvasHUnit = 'mm';
   // Original dimensions no longer tracked here; DimensionsRow manages aspect
   // Guard to avoid re-initializing dimensions on stream rebuilds
   // Removed: last image id tracking; canvas decoupled
@@ -262,12 +266,16 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                 onLinkChanged: (v) => setState(() {
                                   _linkWH = v;
                                 }),
-                                units: const ['px'],
+                                units: kUnits,
+                                initialUnit: _canvasWUnit,
+                                onUnitChanged: (u) => _canvasWUnit = u,
                               ),
                               HeightRow(
                                 heightController: _inputValueController2,
                                 enabled: true,
-                                units: const ['px'],
+                                units: kUnits,
+                                initialUnit: _canvasHUnit,
+                                onUnitChanged: (u) => _canvasHUnit = u,
                               ),
                               SectionInput(
                                 full: OutlinedActionButton(
@@ -295,24 +303,35 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
 extension on _AppProjectDetailPageState {
   void _onResizeTap() async {
     if (_currentProjectId == null) return;
-    final int? wVal = int.tryParse(_inputValueController.text.trim());
-    final int? hVal = int.tryParse(_inputValueController2.text.trim());
+    final double? wVal = double.tryParse(_inputValueController.text.trim());
+    final double? hVal = double.tryParse(_inputValueController2.text.trim());
     if (wVal == null || hVal == null) return;
-    // Update Canvas preview now
-    _recomputeCanvasFromInputs();
-    if (_canvasPxW != null && _canvasPxH != null) {
-      ref
-          .read(canvasSpecProvider.notifier)
-          .setSpec(CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!));
-    }
-    // Canvas values are entered in px
-    final int targetW = wVal;
-    final int targetH = hVal;
-    // Persist canvas spec to DB (pixels + dpi)
+    // Convert to px for preview using 96 dpi (3.7795 px/mm baseline)
+    const int previewDpi = 96;
+    final double wPx = convertUnit(
+        value: wVal, fromUnit: _canvasWUnit, toUnit: 'px', dpi: previewDpi);
+    final double hPx = convertUnit(
+        value: hVal, fromUnit: _canvasHUnit, toUnit: 'px', dpi: previewDpi);
+    setState(() {
+      _canvasPxW = wPx;
+      _canvasPxH = hPx;
+    });
+    ref
+        .read(canvasSpecProvider.notifier)
+        .setSpec(CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!));
+    // Persist value + unit to DB (do not convert)
     try {
       final db = ref.read(appDatabaseProvider);
       await db.customStatement(
-          'UPDATE projects SET canvas_width_px=$targetW, canvas_height_px=$targetH WHERE id=${_currentProjectId!}');
+          'UPDATE projects SET canvas_width_value = ?, canvas_width_unit = ?, canvas_height_value = ?, canvas_height_unit = ?, updated_at = ? WHERE id = ?',
+          [
+            wVal,
+            _canvasWUnit,
+            hVal,
+            _canvasHUnit,
+            DateTime.now().millisecondsSinceEpoch,
+            _currentProjectId!
+          ]);
     } catch (_) {
       // ignore persistence errors in UI
     }
@@ -337,18 +356,34 @@ extension on _AppProjectDetailPageState {
           final db = ref.read(appDatabaseProvider);
           final row = await db
               .customSelect(
-                  'SELECT canvas_width_px, canvas_height_px FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
+                  'SELECT canvas_width_value, canvas_width_unit, canvas_height_value, canvas_height_unit FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
               .getSingleOrNull();
           if (row != null) {
-            final int? cw = row.data['canvas_width_px'] as int?;
-            final int? ch = row.data['canvas_height_px'] as int?;
-            if (cw != null && ch != null && cw > 0 && ch > 0) {
-              _inputValueController.text = cw.toString();
-              _inputValueController2.text = ch.toString();
-              _recomputeCanvasFromInputs();
-              ref.read(canvasSpecProvider.notifier).setSpec(
-                  CanvasSpec(widthPx: cw.toDouble(), heightPx: ch.toDouble()));
-            }
+            final double? cw = row.data['canvas_width_value'] as double?;
+            final String? cuw = row.data['canvas_width_unit'] as String?;
+            final double? ch = row.data['canvas_height_value'] as double?;
+            final String? cuh = row.data['canvas_height_unit'] as String?;
+            _canvasWUnit = cuw ?? 'mm';
+            _canvasHUnit = cuh ?? 'mm';
+            _inputValueController.text = (cw ?? 100).toString();
+            _inputValueController2.text = (ch ?? 100).toString();
+            // Set preview in px for spec
+            const int previewDpi = 96;
+            final double wPx = convertUnit(
+                value: cw ?? 100,
+                fromUnit: _canvasWUnit,
+                toUnit: 'px',
+                dpi: previewDpi);
+            final double hPx = convertUnit(
+                value: ch ?? 100,
+                fromUnit: _canvasHUnit,
+                toUnit: 'px',
+                dpi: previewDpi);
+            _canvasPxW = wPx;
+            _canvasPxH = hPx;
+            ref
+                .read(canvasSpecProvider.notifier)
+                .setSpec(CanvasSpec(widthPx: wPx, heightPx: hPx));
           }
         } catch (_) {}
         // Model/Type initialization removed
@@ -368,18 +403,33 @@ extension on _AppProjectDetailPageState {
           final db = ref.read(appDatabaseProvider);
           final row = await db
               .customSelect(
-                  'SELECT canvas_width_px, canvas_height_px FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
+                  'SELECT canvas_width_value, canvas_width_unit, canvas_height_value, canvas_height_unit FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
               .getSingleOrNull();
           if (row != null) {
-            final int? cw = row.data['canvas_width_px'] as int?;
-            final int? ch = row.data['canvas_height_px'] as int?;
-            if (cw != null && ch != null && cw > 0 && ch > 0) {
-              _inputValueController.text = cw.toString();
-              _inputValueController2.text = ch.toString();
-              _recomputeCanvasFromInputs();
-              ref.read(canvasSpecProvider.notifier).setSpec(
-                  CanvasSpec(widthPx: cw.toDouble(), heightPx: ch.toDouble()));
-            }
+            final double? cw = row.data['canvas_width_value'] as double?;
+            final String? cuw = row.data['canvas_width_unit'] as String?;
+            final double? ch = row.data['canvas_height_value'] as double?;
+            final String? cuh = row.data['canvas_height_unit'] as String?;
+            _canvasWUnit = cuw ?? 'mm';
+            _canvasHUnit = cuh ?? 'mm';
+            _inputValueController.text = (cw ?? 100).toString();
+            _inputValueController2.text = (ch ?? 100).toString();
+            const int previewDpi = 96;
+            final double wPx = convertUnit(
+                value: cw ?? 100,
+                fromUnit: _canvasWUnit,
+                toUnit: 'px',
+                dpi: previewDpi);
+            final double hPx = convertUnit(
+                value: ch ?? 100,
+                fromUnit: _canvasHUnit,
+                toUnit: 'px',
+                dpi: previewDpi);
+            _canvasPxW = wPx;
+            _canvasPxH = hPx;
+            ref
+                .read(canvasSpecProvider.notifier)
+                .setSpec(CanvasSpec(widthPx: wPx, heightPx: hPx));
           }
         } catch (_) {}
         // Model/Type initialization removed

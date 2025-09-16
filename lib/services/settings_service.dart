@@ -21,6 +21,8 @@ const String _kcKey = 'kc';
 const String _khKey = 'kh';
 const String _printBordersKey = 'printBorders';
 const String _printNumbersKey = 'printNumbers';
+const String _unitProjectDefaultKey = 'unit_project_default';
+const String _unitImageDefaultKey = 'unit_image_default';
 
 final settingsServiceProvider = Provider<SettingsService>((ref) {
   // This provider is overridden in main.dart after the service is initialized.
@@ -148,4 +150,14 @@ class SettingsService extends ChangeNotifier {
   bool get printNumbers => _getParsedValue(_printNumbersKey, true);
   Future<void> setPrintNumbers(bool value) =>
       _setSetting(_printNumbersKey, value);
+
+  // Unit preferences
+  String get projectDefaultUnit =>
+      _getParsedValue(_unitProjectDefaultKey, 'mm');
+  Future<void> setProjectDefaultUnit(String unit) =>
+      _setSetting(_unitProjectDefaultKey, unit);
+
+  String get imageDefaultUnit => _getParsedValue(_unitImageDefaultKey, 'px');
+  Future<void> setImageDefaultUnit(String unit) =>
+      _setSetting(_unitImageDefaultKey, unit);
 }

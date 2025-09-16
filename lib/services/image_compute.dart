@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
+import 'package:exif/exif.dart' as exif;
 
 class DecodedDimensions {
   final int? width;
@@ -42,7 +43,25 @@ UniqueColorsResult decodeUniqueColors(Uint8List bytes) {
 /// - For PNG: reads pHYs chunk (pixels per meter) and converts to DPI.
 /// - For JPEG: reads APP0 JFIF density (pixels per inch or per cm).
 /// Returns null if not present.
-int? decodeDpi(Uint8List bytes) {
+Future<int?> decodeDpi(Uint8List bytes) async {
+  // 1) Try EXIF first (JPEGs typically)
+  try {
+    final Map<String, exif.IfdTag> tags = await exif.readExifFromBytes(bytes);
+    final dynamic xResVal = tags['XResolution']?.values;
+    final String? unitPrintable = tags['ResolutionUnit']?.printable;
+    if (xResVal != null && xResVal is List && xResVal.isNotEmpty) {
+      final String s = xResVal.first.toString(); // e.g., 300/1
+      int dpi = _parseRationalToInt(s);
+      if (unitPrintable != null &&
+          unitPrintable.toLowerCase().contains('centimeter')) {
+        dpi = (dpi * 2.54).round();
+      }
+      if (dpi > 0) return dpi;
+    }
+  } catch (_) {
+    // ignore
+  }
+
   if (bytes.length < 12) return null;
   // PNG signature: 89 50 4E 47 0D 0A 1A 0A
   const pngSig = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
@@ -81,7 +100,7 @@ int? decodeDpi(Uint8List bytes) {
     }
     return null;
   }
-  // JPEG: SOI 0xFFD8
+  // 2) JPEG JFIF fallback: SOI 0xFFD8
   if (bytes.length >= 4 && bytes[0] == 0xFF && bytes[1] == 0xD8) {
     int offset = 2;
     while (offset + 4 <= bytes.length) {
@@ -119,17 +138,14 @@ int? decodeDpi(Uint8List bytes) {
             final int units = bytes[payload + 7];
             final int xDensity = (bytes[payload + 8] << 8) | bytes[payload + 9];
             // final int yDensity = (bytes[payload +10] << 8) | bytes[payload +11];
-            int dpi;
             if (units == 1) {
-              // pixels per inch
-              dpi = xDensity;
+              return xDensity; // pixels per inch
             } else if (units == 2) {
-              // pixels per cm
-              dpi = (xDensity * 2.54).round();
+              return (xDensity * 2.54).round(); // pixels per cm -> dpi
             } else {
-              dpi = xDensity; // unknown units; treat as px/inch
+              // unknown units; do not trust density
+              return null;
             }
-            return dpi;
           }
         }
       }
@@ -141,4 +157,20 @@ int? decodeDpi(Uint8List bytes) {
 
 int _u32(Uint8List b, int off) {
   return (b[off] << 24) | (b[off + 1] << 16) | (b[off + 2] << 8) | b[off + 3];
+}
+
+// removed duplicate _parseRationalToInt
+
+int _parseRationalToInt(String s) {
+  if (s.contains('/')) {
+    final parts = s.split('/');
+    if (parts.length == 2) {
+      final num? nume = num.tryParse(parts[0]);
+      final num? den = num.tryParse(parts[1]);
+      if (nume != null && den != null && den != 0) {
+        return (nume / den).round();
+      }
+    }
+  }
+  return int.tryParse(s) ?? 0;
 }

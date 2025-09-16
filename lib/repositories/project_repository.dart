@@ -35,6 +35,12 @@ class ProjectRepository {
       createdAt: createdAt ?? now,
       updatedAt: updatedAt ?? now,
       imageId: Value(imageId),
+      canvasWidthPx: const Value(100),
+      canvasHeightPx: const Value(100),
+      canvasWidthValue: const Value(100.0),
+      canvasWidthUnit: const Value('mm'),
+      canvasHeightValue: const Value(100.0),
+      canvasHeightUnit: const Value('mm'),
     );
     return _db.into(_db.projects).insert(data);
   }

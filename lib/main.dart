@@ -128,6 +128,12 @@ class _AppShellState extends State<_AppShell> {
       createdAt: now,
       updatedAt: now,
       imageId: const Value(null),
+      canvasWidthPx: const Value(100),
+      canvasHeightPx: const Value(100),
+      canvasWidthValue: const Value(100.0),
+      canvasWidthUnit: const Value('mm'),
+      canvasHeightValue: const Value(100.0),
+      canvasHeightUnit: const Value('mm'),
     ));
     setState(() {
       _currentProjectId = id;

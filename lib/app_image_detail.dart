@@ -13,10 +13,14 @@ import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
+import 'package:vettore/providers/image_providers.dart';
 import 'package:vettore/data/database.dart';
 import 'dart:async';
 import 'package:vettore/widgets/input_value_type/width_row.dart';
 import 'package:vettore/widgets/input_value_type/height_row.dart';
+import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
+import 'package:vettore/services/canvas_image_helpers.dart';
+import 'package:vettore/services/coupling_guard.dart';
 import 'package:vettore/services/dimensions_guard.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
@@ -26,7 +30,7 @@ import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/services/image_compute.dart' as ic;
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/providers/navigation_providers.dart';
-import 'package:photo_view/photo_view.dart';
+// PhotoView removed in favor of InteractiveViewer for infinite pasteboard
 
 import 'package:vettore/widgets/snackbar_image.dart';
 
@@ -74,9 +78,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
   bool _dimsInitialized = false;
   Uint8List? _lastImageBytes;
   int? _requestedDimsForImageId;
-  // Removed: canvas/image-layer state; PhotoView handles navigation
-  late final PhotoViewController _pvController;
-  late final PhotoViewScaleStateController _pvScaleController;
+  // InteractiveViewer transform controller for pan/zoom
+  final TransformationController _ivController = TransformationController();
 
   void _setHasImage(bool value) {
     if (!mounted) return;
@@ -121,8 +124,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
         _saveProjectTitle();
       }
     });
-    _pvController = PhotoViewController();
-    _pvScaleController = PhotoViewScaleStateController();
     _initProject();
   }
 
@@ -400,7 +401,7 @@ extension on _AppImageDetailPageState {
     // Decode to get dimensions in isolate
     final dims = await compute(ic.decodeDimensions, bytes);
     // Detect DPI from metadata (must exist per spec)
-    final int? dpi = await compute(ic.decodeDpi, bytes);
+    final int? decodedDpi = await compute(ic.decodeDpi, bytes);
     final int? width = dims.width;
     final int? height = dims.height;
     final imagesDao = ref.read(appDatabaseProvider);
@@ -423,12 +424,12 @@ extension on _AppImageDetailPageState {
           ),
         );
     // Persist DPI (schema v22+): write both orig_dpi and dpi
-    if (dpi != null) {
-      await imagesDao.customStatement(
-        'UPDATE images SET orig_dpi = ?, dpi = ? WHERE id = ?',
-        [dpi, dpi, imageId],
-      );
-    }
+    final int resolvedDpi =
+        (decodedDpi != null && decodedDpi > 0) ? decodedDpi : 72;
+    await imagesDao.customStatement(
+      'UPDATE images SET orig_dpi = ?, dpi = ? WHERE id = ?',
+      [resolvedDpi, resolvedDpi, imageId],
+    );
     // Point project to this image
     final repo = ref.read(projectRepositoryProvider);
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -439,6 +440,13 @@ extension on _AppImageDetailPageState {
         updatedAt: Value(now),
       ),
     );
+    // Ensure project has a valid canvas size (safety): backfill 100x100 if <=0
+    try {
+      await imagesDao.customStatement(
+        'UPDATE projects SET canvas_width_px = COALESCE(NULLIF(canvas_width_px, 0), 100), canvas_height_px = COALESCE(NULLIF(canvas_height_px, 0), 100) WHERE id = ?',
+        [_currentProjectId!],
+      );
+    } catch (_) {}
     debugPrint('[ImageDetail] image stored id=$imageId; updating controllers');
     // Ensure the new image dimensions overwrite any previous values in fields
     _lastDimsImageId = imageId;
@@ -450,6 +458,7 @@ extension on _AppImageDetailPageState {
   }
 
   // Dialog upload handled inside ImageUploadArea
+  // Dialog upload for ImageUploadText
   Future<void> _pickViaDialog() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -533,18 +542,12 @@ extension on _AppImageDetailPageState {
     debugPrint(
         '[ImageDetail] build pid=$pid imageId=$imageId bytes=${bytes?.length ?? 0}');
 
-    // Always render canvas artboard; only show upload prompt when no imageId
-    if (imageId == null) {
-      return Center(
-        child: ImageUploadText(
-          onImageDropped: (b) => _handleImageBytes(b),
-          onUploadTap: _pickViaDialog,
-        ),
-      );
-    }
+    // Decide if upload overlay should be shown
+    final bool showUpload = (imageId == null);
 
     // If entering Image tab and fields are empty, fetch dims once and apply
-    if ((_inputValueController.text.isEmpty ||
+    if (imageId != null &&
+        (_inputValueController.text.isEmpty ||
             _inputValueController2.text.isEmpty) &&
         _requestedDimsForImageId != imageId) {
       _requestedDimsForImageId = imageId;
@@ -555,49 +558,129 @@ extension on _AppImageDetailPageState {
       });
     }
 
-    // Image view is independent from canvas; size to image dimensions
-    final dims = ref.watch(imageDimensionsProvider(imageId)).asData?.value;
-    final double canvasW = (dims?.$1 ?? 1000).toDouble();
-    final double canvasH = (dims?.$2 ?? 1000).toDouble();
+    // Canvas size comes from project (independent of image)
+    final projectAsync = (pid != null)
+        ? ref.watch(projectByIdProvider(pid))
+        : const AsyncValue<DbProject?>.data(null);
+    final project = projectAsync.asData?.value;
+    if (project == null) {
+      const double placeholderW = 100.0;
+      const double placeholderH = 100.0;
+      return Center(
+        child: SizedBox(
+          width: placeholderW,
+          height: placeholderH,
+          child: Stack(
+            children: [
+              const DecoratedBox(decoration: BoxDecoration(color: kWhite)),
+              CustomPaint(painter: _HairlineCanvasBorderPainter()),
+            ],
+          ),
+        ),
+      );
+    }
+    // Convert canvas value+unit to px for on-screen preview at 96 dpi
+    const int previewDpi = 96;
+    debugPrint(
+        '[ImageDetail] canvas units: ${project.canvasWidthValue} ${project.canvasWidthUnit} x ${project.canvasHeightValue} ${project.canvasHeightUnit}');
+    CouplingGuard.enterCanvasSizing();
+    final Size canvasPx = getCanvasPreviewPx(
+      widthValue: project.canvasWidthValue,
+      widthUnit: project.canvasWidthUnit,
+      heightValue: project.canvasHeightValue,
+      heightUnit: project.canvasHeightUnit,
+      previewDpi: previewDpi,
+    );
+    CouplingGuard.leaveCanvasSizing();
+    debugPrint(
+        '[ImageDetail] canvas preview px: ${canvasPx.width.toStringAsFixed(2)} x ${canvasPx.height.toStringAsFixed(2)}');
+    if (canvasPx.width <= 0 || canvasPx.height <= 0) {
+      const double placeholderW = 100.0;
+      const double placeholderH = 100.0;
+      return Center(
+        child: SizedBox(
+          width: placeholderW,
+          height: placeholderH,
+          child: Stack(
+            children: [
+              const DecoratedBox(decoration: BoxDecoration(color: kWhite)),
+              CustomPaint(painter: _HairlineCanvasBorderPainter()),
+            ],
+          ),
+        ),
+      );
+    }
+    // project is non-null; use converted px for preview only
+    final double canvasW = canvasPx.width;
+    final double canvasH = canvasPx.height;
+    // Compute content extents (pasteboard) from canvas and image sizes
+    final dims = (imageId != null)
+        ? ref.watch(imageDimensionsProvider(imageId)).asData?.value
+        : null;
+    final double imgW = (dims?.$1 ?? canvasW.toInt()).toDouble();
+    final double imgH = (dims?.$2 ?? canvasH.toInt()).toDouble();
+    final double boardW = (imgW > canvasW ? imgW : canvasW) + 200.0;
+    final double boardH = (imgH > canvasH ? imgH : canvasH) + 200.0;
+    if (showUpload) {
+      return Center(
+        child: ImageUploadText(
+          onImageDropped: (b) => _handleImageBytes(b),
+          onUploadTap: _pickViaDialog,
+        ),
+      );
+    }
     return Center(
       child: Stack(
         children: [
-          PhotoView.customChild(
-            controller: _pvController,
-            scaleStateController: _pvScaleController,
-            backgroundDecoration: const BoxDecoration(color: kGrey10),
-            initialScale: PhotoViewComputedScale.contained,
-            minScale: PhotoViewComputedScale.contained,
-            maxScale: PhotoViewComputedScale.covered * 4.0,
-            childSize: Size(canvasW, canvasH),
-            child: Center(
+          ClipRect(
+            child: InteractiveViewer(
+              transformationController: _ivController,
+              minScale: 0.25,
+              maxScale: 8.0,
               child: SizedBox(
-                width: canvasW,
-                height: canvasH,
-                child: ClipRect(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      const DecoratedBox(
-                        decoration: BoxDecoration(color: kWhite),
-                      ),
-                      if (bytes != null)
-                        Center(
-                          child: Image.memory(
-                            bytes,
-                            fit: BoxFit.none,
-                            filterQuality: FilterQuality.none,
+                width: boardW,
+                height: boardH,
+                child: Stack(
+                  children: [
+                    // Canvas (artboard) centered on pasteboard
+                    Positioned(
+                      left: (boardW - canvasW) / 2,
+                      top: (boardH - canvasH) / 2,
+                      width: canvasW,
+                      height: canvasH,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const DecoratedBox(
+                            decoration: BoxDecoration(color: kWhite),
                           ),
-                        ),
-                      const DecoratedBox(
-                        decoration: BoxDecoration(
-                          border: Border.fromBorderSide(
-                            BorderSide(color: kGrey100, width: 1.0),
-                          ),
-                        ),
+                          // Image centered relative to pasteboard, not clipped by canvas
+                          if (bytes != null)
+                            Positioned.fill(
+                              child: Center(
+                                child: Image.memory(
+                                  bytes,
+                                  fit: BoxFit.none,
+                                  filterQuality: FilterQuality.none,
+                                ),
+                              ),
+                            ),
+                          // Constant hairline border over image
+                          LayoutBuilder(builder: (context, constraints) {
+                            final double s =
+                                _ivController.value.getMaxScaleOnAxis();
+                            return IgnorePointer(
+                              child: CustomPaint(
+                                painter: _HairlineBorderPainter(scale: s),
+                                size: Size(constraints.maxWidth,
+                                    constraints.maxHeight),
+                              ),
+                            );
+                          }),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -610,23 +693,69 @@ extension on _AppImageDetailPageState {
               child: Center(
                 child: SnackbarImage(
                   onZoomIn: () {
-                    final s = _pvController.scale ?? 1.0;
-                    _pvController.scale = s + 0.25;
+                    final double cur = _ivController.value.getMaxScaleOnAxis();
+                    final double next = (cur * 1.25).clamp(0.25, 8.0);
+                    final Matrix4 m = _ivController.value.clone();
+                    final double factor = next / cur;
+                    _ivController.value = m..scale(factor);
                   },
                   onZoomOut: () {
-                    final s = _pvController.scale ?? 1.0;
-                    _pvController.scale = (s - 0.25).clamp(0.25, 50.0);
+                    final double cur = _ivController.value.getMaxScaleOnAxis();
+                    final double next = (cur / 1.25).clamp(0.25, 8.0);
+                    final Matrix4 m = _ivController.value.clone();
+                    final double factor = next / cur;
+                    _ivController.value = m..scale(factor);
                   },
                   onFitToScreen: () {
-                    _pvScaleController.scaleState = PhotoViewScaleState.initial;
+                    _ivController.value = Matrix4.identity();
                   },
                 ),
+              ),
+            ),
+          // If no image, show only the upload prompt (no canvas under it)
+          if (showUpload)
+            const Positioned.fill(
+              child: Center(
+                child: SizedBox.shrink(),
               ),
             ),
         ],
       ),
     );
   }
+}
+
+class _HairlineCanvasBorderPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint p = Paint()
+      ..color = kGrey100
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawRect(Offset.zero & size, p);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _HairlineBorderPainter extends CustomPainter {
+  final double scale;
+  const _HairlineBorderPainter({required this.scale});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double hair = scale == 0 ? 1.0 : (1.0 / scale);
+    final Paint p = Paint()
+      ..color = kGrey100
+      ..strokeWidth = hair
+      ..style = PaintingStyle.stroke;
+    canvas.drawRect(Offset.zero & size, p);
+  }
+
+  @override
+  bool shouldRepaint(covariant _HairlineBorderPainter oldDelegate) =>
+      oldDelegate.scale != scale;
 }
 
 // _loadImageDimensions removed; dimensions are provided exclusively by imageDimensionsProvider

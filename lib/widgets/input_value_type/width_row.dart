@@ -16,6 +16,7 @@ class WidthRow extends StatefulWidget {
   final bool readOnlyView;
   final int? dpiOverride;
   final List<String>? units;
+  final String? initialUnit;
 
   const WidthRow({
     super.key,
@@ -28,6 +29,7 @@ class WidthRow extends StatefulWidget {
     this.readOnlyView = false,
     this.dpiOverride,
     this.units,
+    this.initialUnit,
   });
 
   @override
@@ -46,6 +48,7 @@ class _WidthRowState extends State<WidthRow> {
   void initState() {
     super.initState();
     _linked = widget.initialLinked;
+    _unit = widget.initialUnit ?? _unit;
     _seedAspectFromFields();
     widget.widthController.addListener(_onWidthChanged);
     widget.heightController.addListener(_onHeightChanged);
