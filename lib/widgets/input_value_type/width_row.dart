@@ -43,6 +43,8 @@ class _WidthRowState extends State<WidthRow> {
   bool _syncing = false;
   double? _aspect; // height / width
   String _unit = 'px';
+  // Preserve high-precision value in base pixels to avoid mm→px→mm drift
+  double? _valuePx; // may be fractional
 
   @override
   void initState() {
@@ -52,6 +54,17 @@ class _WidthRowState extends State<WidthRow> {
     _seedAspectFromFields();
     widget.widthController.addListener(_onWidthChanged);
     widget.heightController.addListener(_onHeightChanged);
+    // Initialize internal px value from current text if present
+    final int dpi = widget.dpiOverride ?? 72;
+    final double? initial = double.tryParse(widget.widthController.text);
+    if (initial != null) {
+      _valuePx = convertUnit(
+        value: initial,
+        fromUnit: _unit,
+        toUnit: 'px',
+        dpi: dpi,
+      );
+    }
   }
 
   @override
@@ -121,15 +134,33 @@ class _WidthRowState extends State<WidthRow> {
             widget.widthController.selection =
                 TextSelection.collapsed(offset: newOffset);
           }
+          // Update precise px cache from current unit value
+          final double? v = double.tryParse(sanitized);
+          if (v != null) {
+            _valuePx = convertUnit(
+              value: v,
+              fromUnit: _unit,
+              toUnit: 'px',
+              dpi: dpi,
+            );
+          }
         },
         onItemSelected: (nextUnit) {
           final String text = widget.widthController.text.trim();
           final double? value = double.tryParse(text);
           setState(() {
             if (value != null) {
+              // Convert using high-precision px cache to avoid drift
+              final double pxValue = _valuePx ??
+                  convertUnit(
+                    value: value,
+                    fromUnit: _unit,
+                    toUnit: 'px',
+                    dpi: dpi,
+                  );
               final double converted = convertUnit(
-                value: value,
-                fromUnit: _unit,
+                value: pxValue,
+                fromUnit: 'px',
                 toUnit: nextUnit,
                 dpi: dpi,
               );

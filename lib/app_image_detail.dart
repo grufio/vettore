@@ -18,7 +18,6 @@ import 'package:vettore/data/database.dart';
 import 'dart:async';
 import 'package:vettore/widgets/input_value_type/width_row.dart';
 import 'package:vettore/widgets/input_value_type/height_row.dart';
-import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
 import 'package:vettore/services/canvas_image_helpers.dart';
 import 'package:vettore/services/coupling_guard.dart';
 import 'package:vettore/services/dimensions_guard.dart';
@@ -100,12 +99,15 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
     debugPrint(
         '[ImageDetail] _applyImageDims cur=${curW}x${curH} new=${width}x${height} init=${_dimsInitialized} should=$should');
     if (!should) return;
-    DimensionsGuard.writeControllers(
-      widthController: _inputValueController,
-      heightController: _inputValueController2,
-      width: width,
-      height: height,
-    );
+    // Do not auto-convert user units. Only populate when both fields are 'px'.
+    if (_widthUnit == 'px' && _heightUnit == 'px') {
+      DimensionsGuard.writeControllers(
+        widthController: _inputValueController,
+        heightController: _inputValueController2,
+        width: width,
+        height: height,
+      );
+    }
     _dimsInitialized = true;
   }
 
@@ -175,9 +177,11 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
         final dims = next.asData?.value;
         if (dims != null) {
           debugPrint('[ImageDetail] provider dims=${dims.$1}x${dims.$2}');
-          _dimsInitialized =
-              false; // always apply current working size on tab enter
-          _applyImageDims(width: dims.$1, height: dims.$2);
+          // Apply only on first init or after image change; do not clobber
+          // user's edited values once initialized.
+          if (!_dimsInitialized) {
+            _applyImageDims(width: dims.$1, height: dims.$2);
+          }
         }
       });
       // Also listen to bytes and cache last non-null to avoid flicker on rebuilds
@@ -748,19 +752,31 @@ class _HairlineBorderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Aim for 1 device pixel thickness regardless of zoom
-    final double hair =
-        (scale == 0 ? 1.0 : (1.0 / scale)) / (dpr == 0 ? 1.0 : dpr);
+    // Draw a crisp hairline (1 physical pixel) regardless of zoom/DPR.
+    // Use strokeWidth=0.0 (Flutter hairline) and snap the rect to the
+    // device pixel grid in the transformed space by insetting by
+    // 0.5/(dpr*scale) on all sides to avoid antialias broadening.
+    final double s = scale <= 0 ? 1.0 : scale;
+    final double ratio = dpr <= 0 ? 1.0 : dpr;
+    final double inset = 0.5 / (ratio * s);
+    final Rect rect = Rect.fromLTWH(
+      inset,
+      inset,
+      size.width - inset * 2.0,
+      size.height - inset * 2.0,
+    );
+
     final Paint p = Paint()
       ..color = kGrey100
-      ..strokeWidth = hair
+      ..strokeWidth = 0.0 // true hairline
+      ..isAntiAlias = false
       ..style = PaintingStyle.stroke;
-    canvas.drawRect(Offset.zero & size, p);
+    canvas.drawRect(rect, p);
   }
 
   @override
   bool shouldRepaint(covariant _HairlineBorderPainter oldDelegate) =>
-      oldDelegate.scale != scale;
+      oldDelegate.scale != scale || oldDelegate.dpr != dpr;
 }
 
 // _loadImageDimensions removed; dimensions are provided exclusively by imageDimensionsProvider

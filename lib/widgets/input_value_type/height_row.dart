@@ -33,13 +33,29 @@ class _HeightRowState extends State<HeightRow> {
   static const List<String> _defaultUnits = kUnits;
   String _unit = 'px';
   bool _syncing = false;
+  double? _valuePx; // preserve precise px value
+
+  @override
+  void initState() {
+    super.initState();
+    _unit = widget.initialUnit ?? _unit;
+    final int dpi = widget.dpiOverride ?? 72;
+    final double? initial = double.tryParse(widget.heightController.text);
+    if (initial != null) {
+      _valuePx = convertUnit(
+        value: initial,
+        fromUnit: _unit,
+        toUnit: 'px',
+        dpi: dpi,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     int dpi = widget.dpiOverride ?? 72;
     final bool readOnly = !widget.enabled;
     final List<String> units = widget.units ?? _defaultUnits;
-    _unit = widget.initialUnit ?? _unit;
     return SectionInput(
       full: InputValueType(
         key: const ValueKey('height'),
@@ -67,15 +83,32 @@ class _HeightRowState extends State<HeightRow> {
           // Infer aspect from current fields when possible
           // keep input sanitized; width-row linkage handles paired updates
           // We cannot access linked state here; WidthRow handles forward link.
+          // Update precise px cache
+          final double? v = double.tryParse(sanitized);
+          if (v != null) {
+            _valuePx = convertUnit(
+              value: v,
+              fromUnit: _unit,
+              toUnit: 'px',
+              dpi: dpi,
+            );
+          }
         },
         onItemSelected: (nextUnit) {
           final String text = widget.heightController.text.trim();
           final double? value = double.tryParse(text);
           setState(() {
             if (value != null) {
+              final double pxValue = _valuePx ??
+                  convertUnit(
+                    value: value,
+                    fromUnit: _unit,
+                    toUnit: 'px',
+                    dpi: dpi,
+                  );
               final double converted = convertUnit(
-                value: value,
-                fromUnit: _unit,
+                value: pxValue,
+                fromUnit: 'px',
                 toUnit: nextUnit,
                 dpi: dpi,
               );
