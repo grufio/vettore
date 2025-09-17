@@ -18,8 +18,7 @@ import 'package:vettore/data/database.dart';
 import 'dart:async';
 import 'package:vettore/widgets/input_value_type/width_row.dart';
 import 'package:vettore/widgets/input_value_type/height_row.dart';
-import 'package:vettore/services/canvas_image_helpers.dart';
-import 'package:vettore/services/coupling_guard.dart';
+import 'package:vettore/providers/canvas_preview_provider.dart';
 import 'package:vettore/services/dimensions_guard.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
@@ -79,6 +78,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
   int? _requestedDimsForImageId;
   // InteractiveViewer transform controller for pan/zoom
   final TransformationController _ivController = TransformationController();
+  // Apply 48px padding only on first open of the Image tab
+  bool _initialPaddingPending = true;
 
   void _setHasImage(bool value) {
     if (!mounted) return;
@@ -137,6 +138,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
     _projectController.dispose();
     _projectTitleFocusNode.dispose();
     _projectSub?.cancel();
+    _ivController.dispose();
     super.dispose();
   }
 
@@ -361,10 +363,9 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
 extension on _AppImageDetailPageState {
   void _onResizeTap() async {
     if (_currentProjectId == null) return;
-    final int? wVal = int.tryParse(_inputValueController.text.trim());
-    final int? hVal = int.tryParse(_inputValueController2.text.trim());
+    final double? wVal = double.tryParse(_inputValueController.text.trim());
+    final double? hVal = double.tryParse(_inputValueController2.text.trim());
     if (wVal == null || hVal == null) return;
-    // Convert to pixels based on selected units and current DPI
     // Resolve current imageId and DPI
     final int? imageId = (_currentProjectId != null)
         ? ref.read(imageIdStableProvider(_currentProjectId!))
@@ -450,13 +451,9 @@ extension on _AppImageDetailPageState {
     _lastDimsImageId = imageId;
     _dimsInitialized = false;
     _applyImageDims(width: width, height: height);
-    // TODO: if DPI is detected, set ResolutionSelector initial value
-    // This requires threading dpi into local state; for now, ignore if null
     _setHasImage(true);
   }
 
-  // Dialog upload handled inside ImageUploadArea
-  // Dialog upload for ImageUploadText
   Future<void> _pickViaDialog() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -478,7 +475,6 @@ extension on _AppImageDetailPageState {
         final p = await repo.getById(widget.projectId!);
         _projectController.text = p.title;
         _hasImage = p.imageId != null;
-        // Do not clear Width/Height on rebuilds
         _subscribeToProject(_currentProjectId!);
         return;
       }
@@ -488,7 +484,6 @@ extension on _AppImageDetailPageState {
         _currentProjectId = p.id;
         _projectController.text = p.title;
         _hasImage = p.imageId != null;
-        // Do not clear Width/Height on rebuilds
         _subscribeToProject(_currentProjectId!);
       }
     } catch (_) {
@@ -506,7 +501,6 @@ extension on _AppImageDetailPageState {
       updatedAt: Value(now),
     );
     await repo.update(companion);
-    // Notify shell to update tab label
     widget.onProjectTitleSaved?.call(_projectController.text);
   }
 
@@ -520,7 +514,6 @@ extension on _AppImageDetailPageState {
         return;
       }
       final nextHasImage = p.imageId != null;
-      // Do not clear Width/Height on rebuilds
       if (nextHasImage != _hasImage) _setHasImage(nextHasImage);
     });
   }
@@ -540,10 +533,8 @@ extension on _AppImageDetailPageState {
     debugPrint(
         '[ImageDetail] build pid=$pid imageId=$imageId bytes=${bytes?.length ?? 0}');
 
-    // Decide if upload overlay should be shown
     final bool showUpload = (imageId == null);
 
-    // If entering Image tab and fields are empty, fetch dims once and apply
     if (imageId != null &&
         (_inputValueController.text.isEmpty ||
             _inputValueController2.text.isEmpty) &&
@@ -556,12 +547,8 @@ extension on _AppImageDetailPageState {
       });
     }
 
-    // Canvas size comes from project (independent of image)
-    final projectAsync = (pid != null)
-        ? ref.watch(projectByIdProvider(pid))
-        : const AsyncValue<DbProject?>.data(null);
-    final project = projectAsync.asData?.value;
-    if (project == null) {
+    // Canvas via project fields (decoupled) — fallback placeholder when missing
+    if (pid == null) {
       const double placeholderW = 100.0;
       const double placeholderH = 100.0;
       return Center(
@@ -577,21 +564,8 @@ extension on _AppImageDetailPageState {
         ),
       );
     }
-    // Convert canvas value+unit to px for on-screen preview at 96 dpi
-    const int previewDpi = 96;
-    debugPrint(
-        '[ImageDetail] canvas units: ${project.canvasWidthValue} ${project.canvasWidthUnit} x ${project.canvasHeightValue} ${project.canvasHeightUnit}');
-    CouplingGuard.enterCanvasSizing();
-    final Size canvasPx = getCanvasPreviewPx(
-      widthValue: project.canvasWidthValue,
-      widthUnit: project.canvasWidthUnit,
-      heightValue: project.canvasHeightValue,
-      heightUnit: project.canvasHeightUnit,
-      previewDpi: previewDpi,
-    );
-    CouplingGuard.leaveCanvasSizing();
-    debugPrint(
-        '[ImageDetail] canvas preview px: ${canvasPx.width.toStringAsFixed(2)} x ${canvasPx.height.toStringAsFixed(2)}');
+    final canvasAsync = ref.watch(canvasPreviewPxProvider(pid));
+    final Size canvasPx = canvasAsync.asData?.value ?? const Size(100.0, 100.0);
     if (canvasPx.width <= 0 || canvasPx.height <= 0) {
       const double placeholderW = 100.0;
       const double placeholderH = 100.0;
@@ -608,10 +582,9 @@ extension on _AppImageDetailPageState {
         ),
       );
     }
-    // project is non-null; use converted px for preview only
+
     final double canvasW = canvasPx.width;
     final double canvasH = canvasPx.height;
-    // Compute content extents (pasteboard) from canvas and image sizes
     final dims = (imageId != null)
         ? ref.watch(imageDimensionsProvider(imageId)).asData?.value
         : null;
@@ -619,6 +592,7 @@ extension on _AppImageDetailPageState {
     final double imgH = (dims?.$2 ?? canvasH.toInt()).toDouble();
     final double boardW = (imgW > canvasW ? imgW : canvasW) + 200.0;
     final double boardH = (imgH > canvasH ? imgH : canvasH) + 200.0;
+
     if (showUpload) {
       return Center(
         child: ImageUploadText(
@@ -627,105 +601,152 @@ extension on _AppImageDetailPageState {
         ),
       );
     }
-    return Center(
-      child: Stack(
-        children: [
-          ClipRect(
-            child: InteractiveViewer(
-              transformationController: _ivController,
-              minScale: 0.25,
-              maxScale: 8.0,
-              child: SizedBox(
-                width: boardW,
-                height: boardH,
-                child: Stack(
-                  children: [
-                    // Canvas (artboard) centered on pasteboard
-                    Positioned(
-                      left: (boardW - canvasW) / 2,
-                      top: (boardH - canvasH) / 2,
-                      width: canvasW,
-                      height: canvasH,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Positioned.fill(
-                            child: ColoredBox(color: kWhite),
-                          ),
-                          // Image 1:1, niemals gestreckt; kann über Artboard überstehen
-                          if (bytes != null)
-                            Center(
-                              child: OverflowBox(
-                                minWidth: 0,
-                                minHeight: 0,
-                                maxWidth: double.infinity,
-                                maxHeight: double.infinity,
-                                child: Image.memory(
-                                  bytes,
-                                  fit: BoxFit.none,
-                                  alignment: Alignment.center,
-                                  filterQuality: FilterQuality.none,
+
+    // Apply 48px padding only on first open
+    final double pad = _initialPaddingPending ? 48.0 : 0.0;
+    if (_initialPaddingPending) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _initialPaddingPending = false);
+      });
+    }
+    return Stack(
+      children: [
+        _ArtboardView(
+          controller: _ivController,
+          boardW: boardW,
+          boardH: boardH,
+          canvasW: canvasW,
+          canvasH: canvasH,
+          bytes: bytes,
+          outerPad: pad,
+        ),
+        if (bytes != null)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 16.0,
+            child: Center(
+              child: SnackbarImage(
+                onZoomIn: () {
+                  final double cur = _ivController.value.getMaxScaleOnAxis();
+                  final double next = (cur * 1.25).clamp(0.25, 8.0);
+                  final Matrix4 m = _ivController.value.clone();
+                  final double factor = next / cur;
+                  _ivController.value = m..scale(factor);
+                },
+                onZoomOut: () {
+                  final double cur = _ivController.value.getMaxScaleOnAxis();
+                  final double next = (cur / 1.25).clamp(0.25, 8.0);
+                  final Matrix4 m = _ivController.value.clone();
+                  final double factor = next / cur;
+                  _ivController.value = m..scale(factor);
+                },
+                onFitToScreen: () {
+                  _ivController.value = Matrix4.identity();
+                },
+              ),
+            ),
+          ),
+        if (showUpload)
+          const Positioned.fill(
+            child: Center(
+              child: SizedBox.shrink(),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ArtboardView extends StatelessWidget {
+  final TransformationController controller;
+  final double boardW;
+  final double boardH;
+  final double canvasW;
+  final double canvasH;
+  final Uint8List? bytes;
+  final double outerPad;
+  const _ArtboardView({
+    super.key,
+    required this.controller,
+    required this.boardW,
+    required this.boardH,
+    required this.canvasW,
+    required this.canvasH,
+    required this.bytes,
+    this.outerPad = 0.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.expand(
+      child: ClipRect(
+        child: InteractiveViewer(
+          transformationController: controller,
+          minScale: 0.25,
+          maxScale: 8.0,
+          scaleEnabled: true,
+          panEnabled: true,
+          child: RepaintBoundary(
+            child: Padding(
+              padding: EdgeInsets.all(outerPad),
+              child: Center(
+                child: SizedBox(
+                  width: boardW,
+                  height: boardH,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: (boardW - canvasW) / 2,
+                        top: (boardH - canvasH) / 2,
+                        width: canvasW,
+                        height: canvasH,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const Positioned.fill(
+                              child: ColoredBox(color: kWhite),
+                            ),
+                            if (bytes != null)
+                              Center(
+                                child: OverflowBox(
+                                  minWidth: 0,
+                                  minHeight: 0,
+                                  maxWidth: double.infinity,
+                                  maxHeight: double.infinity,
+                                  child: Image.memory(
+                                    bytes!,
+                                    fit: BoxFit.none,
+                                    alignment: Alignment.center,
+                                    filterQuality: FilterQuality.none,
+                                  ),
                                 ),
                               ),
-                            ),
-                          // Constant hairline border over image
-                          LayoutBuilder(builder: (context, constraints) {
-                            final double s =
-                                _ivController.value.getMaxScaleOnAxis();
-                            final double dpr =
-                                MediaQuery.of(context).devicePixelRatio;
-                            return IgnorePointer(
-                              child: CustomPaint(
-                                painter:
-                                    _HairlineBorderPainter(scale: s, dpr: dpr),
-                                size: Size(constraints.maxWidth,
-                                    constraints.maxHeight),
-                              ),
-                            );
-                          }),
-                        ],
+                            LayoutBuilder(builder: (context, constraints) {
+                              final double s =
+                                  controller.value.getMaxScaleOnAxis();
+                              final double dpr =
+                                  MediaQuery.of(context).devicePixelRatio;
+                              return IgnorePointer(
+                                child: CustomPaint(
+                                  painter: _HairlineBorderPainter(
+                                      scale: s, dpr: dpr),
+                                  size: Size(constraints.maxWidth,
+                                      constraints.maxHeight),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-          if (bytes != null)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 16.0,
-              child: Center(
-                child: SnackbarImage(
-                  onZoomIn: () {
-                    final double cur = _ivController.value.getMaxScaleOnAxis();
-                    final double next = (cur * 1.25).clamp(0.25, 8.0);
-                    final Matrix4 m = _ivController.value.clone();
-                    final double factor = next / cur;
-                    _ivController.value = m..scale(factor);
-                  },
-                  onZoomOut: () {
-                    final double cur = _ivController.value.getMaxScaleOnAxis();
-                    final double next = (cur / 1.25).clamp(0.25, 8.0);
-                    final Matrix4 m = _ivController.value.clone();
-                    final double factor = next / cur;
-                    _ivController.value = m..scale(factor);
-                  },
-                  onFitToScreen: () {
-                    _ivController.value = Matrix4.identity();
-                  },
-                ),
-              ),
-            ),
-          // If no image, show only the upload prompt (no canvas under it)
-          if (showUpload)
-            const Positioned.fill(
-              child: Center(
-                child: SizedBox.shrink(),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }

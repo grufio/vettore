@@ -69,6 +69,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   double? _canvasPxH;
   String _canvasWUnit = 'mm';
   String _canvasHUnit = 'mm';
+  // Apply 48px padding only on first open
+  bool _initialPaddingPending = true;
   // Original dimensions no longer tracked here; DimensionsRow manages aspect
   // Guard to avoid re-initializing dimensions on stream rebuilds
   // Removed: last image id tracking; canvas decoupled
@@ -474,61 +476,93 @@ extension on _AppProjectDetailPageState {
   }
 
   Widget _buildDetailBody() {
-    // Live Canvas preview: fit computed pixel size into a max box
-    const double maxPreviewW = 480.0;
-    const double maxPreviewH = 360.0;
+    // Working area (entire grey space) with canvas centered
     final double? pxW = _canvasPxW;
     final double? pxH = _canvasPxH;
-    if (pxW == null || pxH == null || pxW <= 0 || pxH <= 0) {
-      // Show default canvas preview when not computed yet: 100×100 @ 72 dpi
-      const double defW = 100.0;
-      const double defH = 100.0;
-      final double scale = (maxPreviewW / defW)
-          .clamp(0.0, double.infinity)
-          .clamp(0.0, (maxPreviewH / defH));
-      final double previewW = (defW * scale).clamp(1.0, maxPreviewW);
-      final double previewH = (defH * scale).clamp(1.0, maxPreviewH);
-      return ColoredBox(
-        color: kGrey10,
-        child: Center(
+    return ColoredBox(
+      color: kGrey10,
+      child: LayoutBuilder(builder: (context, c) {
+        // Apply 48px padding only on first open
+        final double pad = _initialPaddingPending ? 48.0 : 0.0;
+        final double availW = (c.maxWidth - pad * 2).clamp(0.0, c.maxWidth);
+        final double availH = (c.maxHeight - pad * 2).clamp(0.0, c.maxHeight);
+        final double w = (pxW == null || pxW <= 0) ? 100.0 : pxW;
+        final double h = (pxH == null || pxH <= 0) ? 100.0 : pxH;
+        // No scaling: draw at 1:1 pixels. Clip when larger than viewport.
+        final double drawW = w.clamp(1.0, double.infinity);
+        final double drawH = h.clamp(1.0, double.infinity);
+        final double dpr = MediaQuery.of(context).devicePixelRatio;
+        // Clear initial padding after first frame
+        if (_initialPaddingPending) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            setState(() => _initialPaddingPending = false);
+          });
+        }
+        return Padding(
+          padding: EdgeInsets.all(pad),
           child: SizedBox(
-            width: previewW,
-            height: previewH,
-            child: const DecoratedBox(
-              decoration: BoxDecoration(
-                color: kWhite,
-                border: Border.fromBorderSide(
-                    BorderSide(color: kBordersColor, width: 1.0)),
+            width: availW,
+            height: availH,
+            child: Center(
+              child: ClipRect(
+                child: SizedBox(
+                  width: drawW,
+                  height: drawH,
+                  child: Stack(
+                    children: [
+                      const Positioned.fill(child: ColoredBox(color: kWhite)),
+                      // Hairline border that stays 1 device pixel regardless of scale
+                      const Positioned.fill(
+                        child: _ProjectHairlineBorder(),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      );
-    }
-    final double scale = (pxW > 0 && pxH > 0)
-        ? (maxPreviewW / pxW)
-            .clamp(0.0, double.infinity)
-            .clamp(0.0, (maxPreviewH / pxH))
-        : 1.0;
-    final double previewW = (pxW * scale).clamp(1.0, maxPreviewW);
-    final double previewH = (pxH * scale).clamp(1.0, maxPreviewH);
-    return ColoredBox(
-      color: kGrey10,
-      child: Center(
-        child: SizedBox(
-          width: previewW,
-          height: previewH,
-          child: const DecoratedBox(
-            decoration: BoxDecoration(
-              color: kWhite,
-              border: Border.fromBorderSide(
-                  BorderSide(color: kBordersColor, width: 1.0)),
-            ),
-          ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }
 
 // Intentionally no image-dimension helpers in Project Detail; canvas is independent
+
+class _ProjectHairlineBorder extends StatelessWidget {
+  const _ProjectHairlineBorder();
+  @override
+  Widget build(BuildContext context) {
+    final double dpr = MediaQuery.of(context).devicePixelRatio;
+    return CustomPaint(
+      painter: _StaticHairlinePainter(dpr: dpr),
+    );
+  }
+}
+
+class _StaticHairlinePainter extends CustomPainter {
+  final double dpr;
+  const _StaticHairlinePainter({required this.dpr});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double ratio = dpr <= 0 ? 1.0 : dpr;
+    final double inset = 0.5 / ratio;
+    final Rect rect = Rect.fromLTWH(
+      inset,
+      inset,
+      size.width - inset * 2.0,
+      size.height - inset * 2.0,
+    );
+    final Paint p = Paint()
+      ..color = kGrey100
+      ..strokeWidth = 0.0
+      ..isAntiAlias = false
+      ..style = PaintingStyle.stroke;
+    canvas.drawRect(rect, p);
+  }
+
+  @override
+  bool shouldRepaint(covariant _StaticHairlinePainter oldDelegate) => false;
+}
