@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:flutter/material.dart'
     show
         Material,
@@ -59,6 +60,8 @@ class InputValueType extends StatefulWidget {
   final bool enableSelection;
   // Dropdown support (optional). If provided, tapping the field opens a dropdown.
   final List<String>? dropdownItems;
+  // Optional input formatters for the internal TextField
+  final List<TextInputFormatter>? inputFormatters;
   final String? selectedItem;
   final ValueChanged<String>? onItemSelected;
   final InputDropdownController? dropdownController;
@@ -96,6 +99,7 @@ class InputValueType extends StatefulWidget {
     this.dropdownIconAsset,
     this.suffixKey,
     this.readOnlyView = false,
+    this.inputFormatters,
   });
 
   factory InputValueType.text({
@@ -366,6 +370,7 @@ class _InputValueTypeState extends State<InputValueType> {
                             showCursor: !isReadOnly && widget.enableSelection,
                             selectionControls: materialTextSelectionControls,
                             enabled: !isReadOnly,
+                            inputFormatters: widget.inputFormatters,
                           ),
                         ),
                       ),

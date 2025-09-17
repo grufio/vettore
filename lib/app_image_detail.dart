@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, File;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,7 +22,9 @@ import 'package:vettore/providers/canvas_preview_provider.dart';
 import 'package:vettore/services/dimensions_guard.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
-import 'package:flutter/foundation.dart' show compute, debugPrint;
+import 'package:flutter/foundation.dart'
+    show compute, debugPrint, kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/rendering.dart' show MatrixUtils;
 import 'package:file_picker/file_picker.dart';
 import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/services/image_compute.dart' as ic;
@@ -51,7 +53,8 @@ class AppImageDetailPage extends ConsumerStatefulWidget {
   ConsumerState<AppImageDetailPage> createState() => _AppImageDetailPageState();
 }
 
-class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
+class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
+    with AutomaticKeepAliveClientMixin {
   // Header handled by shell; these are no longer needed
   String _detailFilterId = 'project';
   // Photo viewer removed for empty state; controllers retained for later usage
@@ -74,12 +77,18 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
   // Guard to avoid re-initializing dimensions on stream rebuilds
   int? _lastDimsImageId;
   bool _dimsInitialized = false;
-  Uint8List? _lastImageBytes;
+  // Removed fallback image bytes; we render directly from provider for stability
   int? _requestedDimsForImageId;
+  int? _lastProjectId;
+  int? _lastImageId;
   // InteractiveViewer transform controller for pan/zoom
   final TransformationController _ivController = TransformationController();
+  // Viewport key to compute center for zoom focus
+  final GlobalKey _viewportKey = GlobalKey();
+  @override
+  bool get wantKeepAlive => true;
   // Apply 48px padding only on first open of the Image tab
-  bool _initialPaddingPending = true;
+  // Removed first-frame padding; use initial matrix translation instead
 
   void _setHasImage(bool value) {
     if (!mounted) return;
@@ -127,8 +136,12 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
         _saveProjectTitle();
       }
     });
+    // Nudge content by 24px x/y to emulate initial padding without UI jump
+    _ivController.value = Matrix4.identity()..translate(24.0, 24.0);
     _initProject();
   }
+
+  // didChangeDependencies no longer hosts ref.listen; listeners are set in build
 
   @override
   void dispose() {
@@ -146,7 +159,9 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!Platform.isMacOS) {
+    super.build(context);
+    final bool isMac = !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+    if (!isMac) {
       return const CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(middle: Text('Project Detail')),
         child: Center(child: Text('Project Detail')),
@@ -159,41 +174,33 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage> {
         projectIdFromProvider != _currentProjectId) {
       _currentProjectId = projectIdFromProvider;
     }
-    // Image presence is determined via DB stream in the body below
-    // Set up provider listeners at the start of build (required by Riverpod)
-    final int? _imageIdForListen = (_currentProjectId != null)
-        ? ref.watch(imageIdStableProvider(_currentProjectId!))
-        : null;
-    if (_currentProjectId != null) {
+
+    // Guarded listeners (allowed in build)
+    if (_currentProjectId != null && _currentProjectId != _lastProjectId) {
+      _lastProjectId = _currentProjectId;
       ref.listen(projectByIdProvider(_currentProjectId!), (prev, next) {
         final int? nextImageId = next.asData?.value?.imageId;
         if (_lastDimsImageId != nextImageId) {
           _lastDimsImageId = nextImageId;
           _dimsInitialized = false;
         }
-        // Do not clear fields when image becomes null; keep last known size
       });
     }
-    if (_imageIdForListen != null) {
-      ref.listen(imageDimensionsProvider(_imageIdForListen), (prev, next) {
+
+    final int? imgIdForBuild = (_currentProjectId != null)
+        ? ref.watch(imageIdStableProvider(_currentProjectId!))
+        : null;
+    if (imgIdForBuild != null && imgIdForBuild != _lastImageId) {
+      _lastImageId = imgIdForBuild;
+      ref.listen(imageDimensionsProvider(imgIdForBuild), (prev, next) {
         final dims = next.asData?.value;
-        if (dims != null) {
-          debugPrint('[ImageDetail] provider dims=${dims.$1}x${dims.$2}');
-          // Apply only on first init or after image change; do not clobber
-          // user's edited values once initialized.
-          if (!_dimsInitialized) {
-            _applyImageDims(width: dims.$1, height: dims.$2);
-          }
-        }
-      });
-      // Also listen to bytes and cache last non-null to avoid flicker on rebuilds
-      ref.listen(imageBytesProvider(_imageIdForListen), (prev, next) {
-        final b = next.asData?.value;
-        if (b != null && mounted) {
-          setState(() => _lastImageBytes = b);
+        if (dims != null && !_dimsInitialized) {
+          _applyImageDims(width: dims.$1, height: dims.$2);
         }
       });
     }
+
+    // Image presence determined via providers; listeners are registered in didChangeDependencies
 
     return ColoredBox(
       color: kGrey10,
@@ -384,6 +391,8 @@ extension on _AppImageDetailPageState {
           return (v * (dpi / 2.54)).round();
         case 'mm':
           return (v * (dpi / 25.4)).round();
+        case 'pt':
+          return (v * (dpi / 72.0)).round();
         default:
           return v.round();
       }
@@ -391,6 +400,7 @@ extension on _AppImageDetailPageState {
 
     final int targetW = toPx(wVal, _widthUnit);
     final int targetH = toPx(hVal, _heightUnit);
+    if (targetW <= 0 || targetH <= 0) return;
     // Map interpolation string to a suitable name for cv script
     final String interp = kInterpolationToCvName[_interp] ?? 'linear';
     await ref
@@ -411,6 +421,7 @@ extension on _AppImageDetailPageState {
     final int? height = dims.height;
     final imagesDao = ref.read(appDatabaseProvider);
     // Insert image row
+    final String mime = ic.detectMimeType(bytes);
     final imageId = await imagesDao.into(imagesDao.images).insert(
           ImagesCompanion.insert(
             origSrc: Value(bytes),
@@ -419,7 +430,7 @@ extension on _AppImageDetailPageState {
             origHeight: height != null ? Value(height) : const Value.absent(),
             // unique colors unknown here
             thumbnail: const Value.absent(),
-            mimeType: const Value('image'),
+            mimeType: Value(mime),
             convSrc: const Value.absent(),
             convBytes: const Value.absent(),
             convWidth: const Value.absent(),
@@ -457,12 +468,12 @@ extension on _AppImageDetailPageState {
   Future<void> _pickViaDialog() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: const ['png', 'jpg', 'jpeg'],
-      withData: true,
+      allowedExtensions: const ['png', 'jpg', 'jpeg', 'PNG', 'JPG', 'JPEG'],
     );
     final file = result?.files.first;
-    if (file?.bytes != null) {
-      await _handleImageBytes(file!.bytes!);
+    if (file?.path != null) {
+      final bytes = await File(file!.path!).readAsBytes();
+      await _handleImageBytes(bytes);
     }
   }
 
@@ -526,9 +537,8 @@ extension on _AppImageDetailPageState {
     final int? imageId =
         (pid != null) ? ref.watch(imageIdStableProvider(pid)) : null;
     final Uint8List? bytes = (imageId != null)
-        ? (ref.watch(imageBytesProvider(imageId)).asData?.value ??
-            _lastImageBytes)
-        : _lastImageBytes;
+        ? ref.watch(imageBytesProvider(imageId)).asData?.value
+        : null;
 
     debugPrint(
         '[ImageDetail] build pid=$pid imageId=$imageId bytes=${bytes?.length ?? 0}');
@@ -590,8 +600,11 @@ extension on _AppImageDetailPageState {
         : null;
     final double imgW = (dims?.$1 ?? canvasW.toInt()).toDouble();
     final double imgH = (dims?.$2 ?? canvasH.toInt()).toDouble();
-    final double boardW = (imgW > canvasW ? imgW : canvasW) + 200.0;
-    final double boardH = (imgH > canvasH ? imgH : canvasH) + 200.0;
+    final double maxContentW = imgW > canvasW ? imgW : canvasW;
+    final double maxContentH = imgH > canvasH ? imgH : canvasH;
+    final double margin = (0.1 * (maxContentW)).clamp(120.0, 480.0);
+    final double boardW = maxContentW + margin;
+    final double boardH = maxContentH + margin;
 
     if (showUpload) {
       return Center(
@@ -602,14 +615,7 @@ extension on _AppImageDetailPageState {
       );
     }
 
-    // Apply 48px padding only on first open
-    final double pad = _initialPaddingPending ? 48.0 : 0.0;
-    if (_initialPaddingPending) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        setState(() => _initialPaddingPending = false);
-      });
-    }
+    const double pad = 0.0;
     return Stack(
       children: [
         _ArtboardView(
@@ -620,6 +626,7 @@ extension on _AppImageDetailPageState {
           canvasH: canvasH,
           bytes: bytes,
           outerPad: pad,
+          viewportKey: _viewportKey,
         ),
         if (bytes != null)
           Positioned(
@@ -631,16 +638,50 @@ extension on _AppImageDetailPageState {
                 onZoomIn: () {
                   final double cur = _ivController.value.getMaxScaleOnAxis();
                   final double next = (cur * 1.25).clamp(0.25, 8.0);
-                  final Matrix4 m = _ivController.value.clone();
                   final double factor = next / cur;
-                  _ivController.value = m..scale(factor);
+                  final RenderBox? box = _viewportKey.currentContext
+                      ?.findRenderObject() as RenderBox?;
+                  final Size vp = box?.size ?? const Size(0, 0);
+                  if (vp.width == 0 || vp.height == 0) {
+                    final Matrix4 m = _ivController.value.clone();
+                    _ivController.value = m..scale(factor);
+                    return;
+                  }
+                  final Offset viewportCenter =
+                      Offset(vp.width / 2, vp.height / 2);
+                  final Matrix4 inv =
+                      Matrix4.inverted(_ivController.value.clone());
+                  final Offset sceneFocal =
+                      MatrixUtils.transformPoint(inv, viewportCenter);
+                  final Matrix4 m = _ivController.value.clone()
+                    ..translate(sceneFocal.dx, sceneFocal.dy)
+                    ..scale(factor)
+                    ..translate(-sceneFocal.dx, -sceneFocal.dy);
+                  _ivController.value = m;
                 },
                 onZoomOut: () {
                   final double cur = _ivController.value.getMaxScaleOnAxis();
                   final double next = (cur / 1.25).clamp(0.25, 8.0);
-                  final Matrix4 m = _ivController.value.clone();
                   final double factor = next / cur;
-                  _ivController.value = m..scale(factor);
+                  final RenderBox? box = _viewportKey.currentContext
+                      ?.findRenderObject() as RenderBox?;
+                  final Size vp = box?.size ?? const Size(0, 0);
+                  if (vp.width == 0 || vp.height == 0) {
+                    final Matrix4 m = _ivController.value.clone();
+                    _ivController.value = m..scale(factor);
+                    return;
+                  }
+                  final Offset viewportCenter =
+                      Offset(vp.width / 2, vp.height / 2);
+                  final Matrix4 inv =
+                      Matrix4.inverted(_ivController.value.clone());
+                  final Offset sceneFocal =
+                      MatrixUtils.transformPoint(inv, viewportCenter);
+                  final Matrix4 m = _ivController.value.clone()
+                    ..translate(sceneFocal.dx, sceneFocal.dy)
+                    ..scale(factor)
+                    ..translate(-sceneFocal.dx, -sceneFocal.dy);
+                  _ivController.value = m;
                 },
                 onFitToScreen: () {
                   _ivController.value = Matrix4.identity();
@@ -667,6 +708,7 @@ class _ArtboardView extends StatelessWidget {
   final double canvasH;
   final Uint8List? bytes;
   final double outerPad;
+  final Key? viewportKey;
   const _ArtboardView({
     super.key,
     required this.controller,
@@ -676,6 +718,7 @@ class _ArtboardView extends StatelessWidget {
     required this.canvasH,
     required this.bytes,
     this.outerPad = 0.0,
+    this.viewportKey,
   });
 
   @override
@@ -683,15 +726,18 @@ class _ArtboardView extends StatelessWidget {
     return SizedBox.expand(
       child: ClipRect(
         child: InteractiveViewer(
+          key: viewportKey,
           transformationController: controller,
           minScale: 0.25,
           maxScale: 8.0,
           scaleEnabled: true,
           panEnabled: true,
+          constrained: false,
+          boundaryMargin: const EdgeInsets.all(100000),
           child: RepaintBoundary(
-            child: Padding(
-              padding: EdgeInsets.all(outerPad),
-              child: Center(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(outerPad),
                 child: SizedBox(
                   width: boardW,
                   height: boardH,
@@ -720,6 +766,9 @@ class _ArtboardView extends StatelessWidget {
                                     fit: BoxFit.none,
                                     alignment: Alignment.center,
                                     filterQuality: FilterQuality.none,
+                                    cacheWidth: canvasW.ceil(),
+                                    cacheHeight: canvasH.ceil(),
+                                    gaplessPlayback: true,
                                   ),
                                 ),
                               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
 import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 import 'package:vettore/widgets/button_toggle.dart';
@@ -17,6 +18,10 @@ class WidthRow extends StatefulWidget {
   final int? dpiOverride;
   final List<String>? units;
   final String? initialUnit;
+  final List<TextInputFormatter>? inputFormatters;
+  final double? clampPxMin;
+  final double? clampPxMax;
+  final int? clampDpi; // defaults to 96 when provided
 
   const WidthRow({
     super.key,
@@ -30,6 +35,10 @@ class WidthRow extends StatefulWidget {
     this.dpiOverride,
     this.units,
     this.initialUnit,
+    this.inputFormatters,
+    this.clampPxMin,
+    this.clampPxMax,
+    this.clampDpi,
   });
 
   @override
@@ -125,6 +134,7 @@ class _WidthRowState extends State<WidthRow> {
         variant: InputVariant.selector,
         readOnly: readOnly,
         readOnlyView: widget.readOnlyView,
+        inputFormatters: widget.inputFormatters,
         onChanged: (raw) {
           // allow digits and dot for decimal input
           final sanitized = raw.replaceAll(RegExp(r'[^0-9\.]'), '');
@@ -143,6 +153,32 @@ class _WidthRowState extends State<WidthRow> {
               toUnit: 'px',
               dpi: dpi,
             );
+            // Optional soft-clamp in px and reflect back to current unit
+            if (widget.clampPxMin != null || widget.clampPxMax != null) {
+              final int clampDpi = widget.clampDpi ?? 96;
+              double pxVal = convertUnit(
+                value: v,
+                fromUnit: _unit,
+                toUnit: 'px',
+                dpi: clampDpi,
+              );
+              final double minPx = widget.clampPxMin ?? double.negativeInfinity;
+              final double maxPx = widget.clampPxMax ?? double.infinity;
+              final double clampedPx = pxVal.clamp(minPx, maxPx);
+              if (clampedPx != pxVal) {
+                final double back = convertUnit(
+                  value: clampedPx,
+                  fromUnit: 'px',
+                  toUnit: _unit,
+                  dpi: clampDpi,
+                );
+                final String txt = formatFieldUnitValue(back, _unit);
+                widget.widthController.text = txt;
+                widget.widthController.selection =
+                    TextSelection.collapsed(offset: txt.length);
+                _valuePx = clampedPx;
+              }
+            }
           }
         },
         onItemSelected: (nextUnit) {

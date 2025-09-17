@@ -1,8 +1,12 @@
-import 'dart:io' show Platform;
+// Platform check should be web-safe; avoid dart:io on web
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/services.dart'
+    show FilteringTextInputFormatter, TextInputFormatter;
+import 'package:drift/drift.dart' show Value, Variable;
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
@@ -47,7 +51,8 @@ class AppProjectDetailPage extends ConsumerStatefulWidget {
       _AppProjectDetailPageState();
 }
 
-class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
+class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
+    with AutomaticKeepAliveClientMixin {
   // Header handled by shell; these are no longer needed
   String _detailFilterId = 'project';
   // Photo viewer removed for empty state; controllers retained for later usage
@@ -58,7 +63,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   // No interpolation in canvas page
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
-  bool _hasImage = false;
+  String _lastSavedTitle = '';
   late final FocusNode _projectTitleFocusNode;
   StreamSubscription<DbProject?>? _projectSub;
   // Link/unlink width/height
@@ -71,15 +76,14 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
   String _canvasHUnit = 'mm';
   // Apply 48px padding only on first open
   bool _initialPaddingPending = true;
+  @override
+  bool get wantKeepAlive => true;
   // Original dimensions no longer tracked here; DimensionsRow manages aspect
   // Guard to avoid re-initializing dimensions on stream rebuilds
   // Removed: last image id tracking; canvas decoupled
   // Canvas no longer auto-initializes from image
 
-  void _setHasImage(bool value) {
-    if (!mounted) return;
-    setState(() => _hasImage = value);
-  }
+  // _hasImage and visual usage removed; Project Detail is canvas-only
 
   void _recomputeCanvasFromInputs() {
     double? parseValue(String s) => double.tryParse(s.trim());
@@ -92,9 +96,14 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
       });
       return;
     }
-    // Canvas strictly uses px values from fields
-    final double pxW = w.clamp(1.0, 20000.0);
-    final double pxH = h.clamp(1.0, 20000.0);
+    // Convert according to selected units for preview (consistent with onResizeTap)
+    const int previewDpi = 96;
+    final double pxW = convertUnit(
+            value: w, fromUnit: _canvasWUnit, toUnit: 'px', dpi: previewDpi)
+        .clamp(1.0, 20000.0);
+    final double pxH = convertUnit(
+            value: h, fromUnit: _canvasHUnit, toUnit: 'px', dpi: previewDpi)
+        .clamp(1.0, 20000.0);
     setState(() {
       _canvasPxW = pxW;
       _canvasPxH = pxH;
@@ -152,7 +161,9 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!Platform.isMacOS) {
+    super.build(context);
+    final bool isMac = !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+    if (!isMac) {
       return const CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(middle: Text('Project Detail')),
         child: Center(child: Text('Project Detail')),
@@ -271,6 +282,16 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                 units: kUnits,
                                 initialUnit: _canvasWUnit,
                                 onUnitChanged: (u) => _canvasWUnit = u,
+                                inputFormatters: <TextInputFormatter>[
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'[0-9\. ]').pattern == ''
+                                        ? RegExp(r'[0-9\.]')
+                                        : RegExp(r'[0-9\.]'),
+                                  ),
+                                ],
+                                clampPxMin: 1.0,
+                                clampPxMax: 20000.0,
+                                clampDpi: 96,
                               ),
                               HeightRow(
                                 heightController: _inputValueController2,
@@ -278,6 +299,14 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
                                 units: kUnits,
                                 initialUnit: _canvasHUnit,
                                 onUnitChanged: (u) => _canvasHUnit = u,
+                                inputFormatters: <TextInputFormatter>[
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'[0-9\.]'),
+                                  ),
+                                ],
+                                clampPxMin: 1.0,
+                                clampPxMax: 20000.0,
+                                clampDpi: 96,
                               ),
                               SectionInput(
                                 full: OutlinedActionButton(
@@ -304,7 +333,6 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage> {
 
 extension on _AppProjectDetailPageState {
   void _onResizeTap() async {
-    if (_currentProjectId == null) return;
     final double? wVal = double.tryParse(_inputValueController.text.trim());
     final double? hVal = double.tryParse(_inputValueController2.text.trim());
     if (wVal == null || hVal == null) return;
@@ -314,14 +342,16 @@ extension on _AppProjectDetailPageState {
         value: wVal, fromUnit: _canvasWUnit, toUnit: 'px', dpi: previewDpi);
     final double hPx = convertUnit(
         value: hVal, fromUnit: _canvasHUnit, toUnit: 'px', dpi: previewDpi);
+    // Always update preview & spec
     setState(() {
       _canvasPxW = wPx;
       _canvasPxH = hPx;
     });
     ref
         .read(canvasSpecProvider.notifier)
-        .setSpec(CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!));
-    // Persist value + unit to DB (do not convert)
+        .setSpec(CanvasSpec(widthPx: wPx, heightPx: hPx));
+    // Persist value + unit to DB only if a project is loaded
+    if (_currentProjectId == null) return;
     try {
       final db = ref.read(appDatabaseProvider);
       await db.customStatement(
@@ -352,42 +382,8 @@ extension on _AppProjectDetailPageState {
         _currentProjectId = widget.projectId;
         final p = await repo.getById(widget.projectId!);
         _projectController.text = p.title;
-        _hasImage = p.imageId != null;
-        // Load saved canvas spec if present
-        try {
-          final db = ref.read(appDatabaseProvider);
-          final row = await db
-              .customSelect(
-                  'SELECT canvas_width_value, canvas_width_unit, canvas_height_value, canvas_height_unit FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
-              .getSingleOrNull();
-          if (row != null) {
-            final double? cw = row.data['canvas_width_value'] as double?;
-            final String? cuw = row.data['canvas_width_unit'] as String?;
-            final double? ch = row.data['canvas_height_value'] as double?;
-            final String? cuh = row.data['canvas_height_unit'] as String?;
-            _canvasWUnit = cuw ?? 'mm';
-            _canvasHUnit = cuh ?? 'mm';
-            _inputValueController.text = (cw ?? 100).toString();
-            _inputValueController2.text = (ch ?? 100).toString();
-            // Set preview in px for spec
-            const int previewDpi = 96;
-            final double wPx = convertUnit(
-                value: cw ?? 100,
-                fromUnit: _canvasWUnit,
-                toUnit: 'px',
-                dpi: previewDpi);
-            final double hPx = convertUnit(
-                value: ch ?? 100,
-                fromUnit: _canvasHUnit,
-                toUnit: 'px',
-                dpi: previewDpi);
-            _canvasPxW = wPx;
-            _canvasPxH = hPx;
-            ref
-                .read(canvasSpecProvider.notifier)
-                .setSpec(CanvasSpec(widthPx: wPx, heightPx: hPx));
-          }
-        } catch (_) {}
+        // image presence not used on this page
+        await _loadCanvasSpecFromDb(_currentProjectId!);
         // Model/Type initialization removed
         // Do not read image dimensions here; canvas is independent
         _subscribeToProject(_currentProjectId!);
@@ -399,41 +395,8 @@ extension on _AppProjectDetailPageState {
         final p = all.first;
         _currentProjectId = p.id;
         _projectController.text = p.title;
-        _hasImage = p.imageId != null;
-        // Load saved canvas spec if present
-        try {
-          final db = ref.read(appDatabaseProvider);
-          final row = await db
-              .customSelect(
-                  'SELECT canvas_width_value, canvas_width_unit, canvas_height_value, canvas_height_unit FROM projects WHERE id = ${_currentProjectId!} LIMIT 1')
-              .getSingleOrNull();
-          if (row != null) {
-            final double? cw = row.data['canvas_width_value'] as double?;
-            final String? cuw = row.data['canvas_width_unit'] as String?;
-            final double? ch = row.data['canvas_height_value'] as double?;
-            final String? cuh = row.data['canvas_height_unit'] as String?;
-            _canvasWUnit = cuw ?? 'mm';
-            _canvasHUnit = cuh ?? 'mm';
-            _inputValueController.text = (cw ?? 100).toString();
-            _inputValueController2.text = (ch ?? 100).toString();
-            const int previewDpi = 96;
-            final double wPx = convertUnit(
-                value: cw ?? 100,
-                fromUnit: _canvasWUnit,
-                toUnit: 'px',
-                dpi: previewDpi);
-            final double hPx = convertUnit(
-                value: ch ?? 100,
-                fromUnit: _canvasHUnit,
-                toUnit: 'px',
-                dpi: previewDpi);
-            _canvasPxW = wPx;
-            _canvasPxH = hPx;
-            ref
-                .read(canvasSpecProvider.notifier)
-                .setSpec(CanvasSpec(widthPx: wPx, heightPx: hPx));
-          }
-        } catch (_) {}
+        // image presence not used on this page
+        await _loadCanvasSpecFromDb(_currentProjectId!);
         // Model/Type initialization removed
         // Do not read image dimensions here; canvas is independent
         _subscribeToProject(_currentProjectId!);
@@ -446,16 +409,16 @@ extension on _AppProjectDetailPageState {
 
   Future<void> _saveProjectTitle() async {
     if (_currentProjectId == null) return;
+    final text = _projectController.text.trim();
+    if (text == _lastSavedTitle) return;
     final repo = ref.read(projectRepositoryProvider);
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final companion = ProjectsCompanion(
+    await repo.update(ProjectsCompanion(
       id: Value(_currentProjectId!),
-      title: Value(_projectController.text),
-      updatedAt: Value(now),
-    );
-    await repo.update(companion);
-    // Notify shell to update tab label
-    widget.onProjectTitleSaved?.call(_projectController.text);
+      title: Value(text),
+      updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+    ));
+    _lastSavedTitle = text;
+    widget.onProjectTitleSaved?.call(text);
   }
 
   void _subscribeToProject(int projectId) {
@@ -464,15 +427,47 @@ extension on _AppProjectDetailPageState {
         ref.read(projectRepositoryProvider).watchById(projectId).listen((p) {
       if (!mounted) return;
       if (p == null) {
-        _setHasImage(false);
         return;
       }
-      final nextHasImage = p.imageId != null;
-      if (p.imageId != null) {
-        // Do not read image dimensions here; canvas is independent
-      }
-      if (nextHasImage != _hasImage) _setHasImage(nextHasImage);
     });
+  }
+
+  Future<void> _loadCanvasSpecFromDb(int projectId) async {
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final row = await db.customSelect(
+        'SELECT canvas_width_value, canvas_width_unit, canvas_height_value, canvas_height_unit FROM projects WHERE id = ? LIMIT 1',
+        variables: [Variable.withInt(projectId)],
+      ).getSingleOrNull();
+      if (row == null) return;
+      final data = row.data;
+      final num? cwRaw = data['canvas_width_value'] as num?;
+      final num? chRaw = data['canvas_height_value'] as num?;
+      final String? cuw = data['canvas_width_unit'] as String?;
+      final String? cuh = data['canvas_height_unit'] as String?;
+      _canvasWUnit = cuw ?? 'mm';
+      _canvasHUnit = cuh ?? 'mm';
+      _inputValueController.text = (cwRaw ?? 100).toString();
+      _inputValueController2.text = (chRaw ?? 100).toString();
+      const int previewDpi = 96;
+      final double wPx = convertUnit(
+          value: (cwRaw ?? 100).toDouble(),
+          fromUnit: _canvasWUnit,
+          toUnit: 'px',
+          dpi: previewDpi);
+      final double hPx = convertUnit(
+          value: (chRaw ?? 100).toDouble(),
+          fromUnit: _canvasHUnit,
+          toUnit: 'px',
+          dpi: previewDpi);
+      setState(() {
+        _canvasPxW = wPx;
+        _canvasPxH = hPx;
+      });
+      ref
+          .read(canvasSpecProvider.notifier)
+          .setSpec(CanvasSpec(widthPx: wPx, heightPx: hPx));
+    } catch (_) {}
   }
 
   Widget _buildDetailBody() {
@@ -491,7 +486,6 @@ extension on _AppProjectDetailPageState {
         // No scaling: draw at 1:1 pixels. Clip when larger than viewport.
         final double drawW = w.clamp(1.0, double.infinity);
         final double drawH = h.clamp(1.0, double.infinity);
-        final double dpr = MediaQuery.of(context).devicePixelRatio;
         // Clear initial padding after first frame
         if (_initialPaddingPending) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -499,8 +493,10 @@ extension on _AppProjectDetailPageState {
             setState(() => _initialPaddingPending = false);
           });
         }
-        return Padding(
-          padding: EdgeInsets.all(pad),
+        return AnimatedPadding(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.all(_initialPaddingPending ? 48.0 : 24.0),
           child: SizedBox(
             width: availW,
             height: availH,
