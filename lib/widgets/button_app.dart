@@ -111,12 +111,14 @@ class OutlinedActionButton extends StatefulWidget {
   final String label;
   final VoidCallback onTap;
   final double? minWidth;
+  final bool enabled;
 
   const OutlinedActionButton({
     super.key,
     required this.label,
     required this.onTap,
     this.minWidth,
+    this.enabled = true,
   });
 
   @override
@@ -128,19 +130,22 @@ class _OutlinedActionButtonState extends State<OutlinedActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final Color borderColor = _hovered ? kGrey100 : kGrey70;
-    final Color textColor = _hovered ? kGrey100 : kGrey70;
+    final bool isEnabled = widget.enabled;
+    final Color borderColor =
+        isEnabled ? (_hovered ? kGrey100 : kGrey70) : kGrey30;
+    final Color textColor =
+        isEnabled ? (_hovered ? kGrey100 : kGrey70) : kGrey40;
     final TextStyle labelStyle = appTextStyles.bodyMMedium.copyWith(
       color: textColor,
       height: 1.0,
     );
 
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
+      cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTap: isEnabled ? widget.onTap : null,
         child: Container(
           constraints: BoxConstraints(minWidth: widget.minWidth ?? 0),
           height: 24.0,

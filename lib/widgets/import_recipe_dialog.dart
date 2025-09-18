@@ -31,20 +31,36 @@ class _ImportRecipeDialogState extends State<ImportRecipeDialog> {
 
   Future<void> _importImage(Future<Uint8List?> Function() getImage) async {
     setState(() => _state = _ImportState.importing);
-    debugPrint('[ImportDialog] State changed to: importing');
+    assert(() {
+      debugPrint('[ImportDialog] State changed to: importing');
+      return true;
+    }());
     try {
       final imageData = await getImage();
       if (imageData != null) {
-        debugPrint('[ImportDialog] Image data received, processing...');
+        assert(() {
+          debugPrint('[ImportDialog] Image data received, processing...');
+          return true;
+        }());
         await widget.onImageImported(imageData);
         if (mounted) setState(() => _state = _ImportState.done);
-        debugPrint('[ImportDialog] State changed to: done');
+        assert(() {
+          debugPrint('[ImportDialog] State changed to: done');
+          return true;
+        }());
       } else {
-        debugPrint('[ImportDialog] No image data received, returning to idle.');
+        assert(() {
+          debugPrint(
+              '[ImportDialog] No image data received, returning to idle.');
+          return true;
+        }());
         if (mounted) setState(() => _state = _ImportState.idle);
       }
     } catch (e) {
-      debugPrint('[ImportDialog] Error during import: $e');
+      assert(() {
+        debugPrint('[ImportDialog] Error during import: $e');
+        return true;
+      }());
       if (mounted) {
         setState(() {
           _state = _ImportState.error;
@@ -59,7 +75,10 @@ class _ImportRecipeDialogState extends State<ImportRecipeDialog> {
   }
 
   void _onPaste() {
-    debugPrint('[ImportDialog] _onPaste called.');
+    assert(() {
+      debugPrint('[ImportDialog] _onPaste called.');
+      return true;
+    }());
     _importImage(() async {
       final reader = await SystemClipboard.instance?.read();
       if (reader == null) return null;
@@ -75,18 +94,26 @@ class _ImportRecipeDialogState extends State<ImportRecipeDialog> {
       final format = available.whereType<FileFormat>().firstOrNull;
 
       if (format != null) {
-        debugPrint('[ImportDialog] Found image format: ${format.toString()}');
+        assert(() {
+          debugPrint('[ImportDialog] Found image format: ${format.toString()}');
+          return true;
+        }());
         final Completer<Uint8List?> completer = Completer();
         reader.getFile(format, (file) async {
-          debugPrint('[ImportDialog] Reading image from clipboard...');
+          assert(() {
+            debugPrint('[ImportDialog] Reading image from clipboard...');
+            return true;
+          }());
           completer.complete(await file.readAll());
         });
         return completer.future;
       }
 
-      debugPrint(
-        '[ImportDialog] No supported image format found on clipboard.',
-      );
+      assert(() {
+        debugPrint(
+            '[ImportDialog] No supported image format found on clipboard.');
+        return true;
+      }());
       return null;
     });
   }
@@ -165,7 +192,11 @@ class _ImportRecipeDialogState extends State<ImportRecipeDialog> {
             actions: <Type, Action<Intent>>{
               ActivateIntent: CallbackAction<ActivateIntent>(
                 onInvoke: (intent) {
-                  debugPrint('[ImportDialog] ActivateIntent (paste) invoked.');
+                  assert(() {
+                    debugPrint(
+                        '[ImportDialog] ActivateIntent (paste) invoked.');
+                    return true;
+                  }());
                   _onPaste();
                   return null;
                 },

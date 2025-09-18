@@ -3,7 +3,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart'
-    show kIsWeb, defaultTargetPlatform, TargetPlatform, debugPrint;
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, TextInputFormatter;
 import 'package:drift/drift.dart' show Value, Variable;
@@ -53,7 +53,7 @@ class AppProjectDetailPage extends ConsumerStatefulWidget {
 
 class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     with AutomaticKeepAliveClientMixin {
-  static const int kPreviewDpi = 96;
+  static const int kCanvasPreviewPpi = 96;
   // Header handled by shell; these are no longer needed
   String _detailFilterId = 'project';
   // Photo viewer removed for empty state; controllers retained for later usage
@@ -63,6 +63,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
   late final TextEditingController _projectController;
   Timer? _titleDebounceTimer;
   static const Duration _titleDebounceDelay = Duration(milliseconds: 400);
+  Timer? _recomputeDebounceTimer;
+  static const Duration _recomputeDebounceDelay = Duration(milliseconds: 60);
   late final VoidCallback _dimsListener;
   // No interpolation in canvas page
   int? _currentProjectId;
@@ -70,6 +72,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
   String _lastSavedTitle = '';
   late final FocusNode _projectTitleFocusNode;
   StreamSubscription<DbProject?>? _projectSub;
+  // Scoped rebuild: notify preview only when px size changes
+  final ValueNotifier<Size?> _canvasPxNotifier = ValueNotifier<Size?>(null);
   // Link/unlink width/height
   bool _linkWH = false;
   // Canvas uses px only; no units or DPI
@@ -109,28 +113,22 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
       return;
     }
     // Convert according to selected units for preview (consistent with onResizeTap)
-    debugPrint(
-        '[ProjectDetail] recompute: in=(${w.toStringAsFixed(4)} ${_canvasWUnit}/${h.toStringAsFixed(4)} ${_canvasHUnit})'
-        ' enums=(${_canvasWUnitE.asDbString}/${_canvasHUnitE.asDbString})'
-        ' dpi=${_AppProjectDetailPageState.kPreviewDpi}');
     final double pxW = convertUnitTyped(
             value: w,
             from: _canvasWUnitE,
             to: Unit.px,
-            dpi: _AppProjectDetailPageState.kPreviewDpi)
+            dpi: _AppProjectDetailPageState.kCanvasPreviewPpi)
         .clamp(1.0, 20000.0);
     final double pxH = convertUnitTyped(
             value: h,
             from: _canvasHUnitE,
             to: Unit.px,
-            dpi: _AppProjectDetailPageState.kPreviewDpi)
+            dpi: _AppProjectDetailPageState.kCanvasPreviewPpi)
         .clamp(1.0, 20000.0);
-    debugPrint(
-        '[ProjectDetail] recompute: outPx=(${pxW.toStringAsFixed(2)} x ${pxH.toStringAsFixed(2)})');
-    setState(() {
-      _canvasPxW = pxW;
-      _canvasPxH = pxH;
-    });
+
+    _canvasPxW = pxW;
+    _canvasPxH = pxH;
+    _canvasPxNotifier.value = Size(pxW, pxH);
   }
 
   // No image-dimension application in Project Detail; canvas is independent
@@ -161,8 +159,11 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     _projectController.addListener(_onTitleChangedDebounced);
     // Recompute preview and trigger button enable state on any input change
     _dimsListener = () {
-      _recomputeCanvasFromInputs();
-      if (mounted) setState(() {});
+      _recomputeDebounceTimer?.cancel();
+      _recomputeDebounceTimer = Timer(_recomputeDebounceDelay, () {
+        _recomputeCanvasFromInputs();
+        // No full setState here; preview listens via _canvasPxNotifier
+      });
     };
     _inputValueController.addListener(_dimsListener);
     _inputValueController2.addListener(_dimsListener);
@@ -194,6 +195,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     _projectController.dispose();
 
     _titleDebounceTimer?.cancel();
+    _recomputeDebounceTimer?.cancel();
     _projectTitleFocusNode.dispose();
     _projectSub?.cancel();
     super.dispose();
@@ -213,7 +215,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     }
 
     // Ensure current project id provider is set for this view
-    final projectIdFromProvider = ref.watch(currentProjectIdProvider);
+    final projectIdFromProvider =
+        ref.watch(currentProjectIdProvider.select((id) => id));
     if (projectIdFromProvider != null &&
         projectIdFromProvider != _currentProjectId) {
       _currentProjectId = projectIdFromProvider;
@@ -336,8 +339,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                                 ],
                                 clampPxMin: 1.0,
                                 clampPxMax: 20000.0,
-                                clampDpi:
-                                    _AppProjectDetailPageState.kPreviewDpi,
+                                clampDpi: _AppProjectDetailPageState
+                                    .kCanvasPreviewPpi,
                               ),
                               HeightRow(
                                 heightController: _inputValueController2,
@@ -357,19 +360,23 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                                 ],
                                 clampPxMin: 1.0,
                                 clampPxMax: 20000.0,
-                                clampDpi:
-                                    _AppProjectDetailPageState.kPreviewDpi,
+                                clampDpi: _AppProjectDetailPageState
+                                    .kCanvasPreviewPpi,
                               ),
                               SectionInput(
-                                full: Opacity(
-                                  opacity: _isInputsDirty() ? 1.0 : 0.4,
-                                  child: IgnorePointer(
-                                    ignoring: !_isInputsDirty(),
-                                    child: OutlinedActionButton(
+                                full: AnimatedBuilder(
+                                  animation: Listenable.merge([
+                                    _inputValueController,
+                                    _inputValueController2,
+                                  ]),
+                                  builder: (context, _) {
+                                    final enabled = _isInputsDirty();
+                                    return OutlinedActionButton(
                                       label: 'Update Canvas',
                                       onTap: _onResizeTap,
-                                    ),
-                                  ),
+                                      enabled: enabled,
+                                    );
+                                  },
                                 ),
                               ),
                             ],
@@ -413,22 +420,21 @@ extension on _AppProjectDetailPageState {
     if (wVal == null || hVal == null) return;
     // Skip if nothing changed to minimize DB writes and provider chatter
     if (!_isInputsDirty()) return;
-    // Convert to px for preview using kPreviewDpi (3.7795 px/mm baseline)
+    // Convert to px for preview using kCanvasPreviewPpi (3.7795 px/mm baseline)
     final double wPx = convertUnitTyped(
         value: wVal,
         from: _canvasWUnitE,
         to: Unit.px,
-        dpi: _AppProjectDetailPageState.kPreviewDpi);
+        dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);
     final double hPx = convertUnitTyped(
         value: hVal,
         from: _canvasHUnitE,
         to: Unit.px,
-        dpi: _AppProjectDetailPageState.kPreviewDpi);
+        dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);
     // Always update preview & spec
-    setState(() {
-      _canvasPxW = wPx;
-      _canvasPxH = hPx;
-    });
+    _canvasPxW = wPx;
+    _canvasPxH = hPx;
+    _canvasPxNotifier.value = Size(wPx, hPx);
     {
       final current = ref.read(canvasSpecProvider);
       final spec = CanvasSpec(widthPx: wPx, heightPx: hPx);
@@ -571,12 +577,12 @@ extension on _AppProjectDetailPageState {
           value: (cwRaw ?? 100).toDouble(),
           from: _canvasWUnitE,
           to: Unit.px,
-          dpi: _AppProjectDetailPageState.kPreviewDpi);
+          dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);
       final double hPx = convertUnitTyped(
           value: (chRaw ?? 100).toDouble(),
           from: _canvasHUnitE,
           to: Unit.px,
-          dpi: _AppProjectDetailPageState.kPreviewDpi);
+          dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);
       if (!mounted) return;
       setState(() {
         _canvasPxW = wPx;
@@ -597,43 +603,50 @@ extension on _AppProjectDetailPageState {
     final double? pxH = _canvasPxH;
     return ColoredBox(
       color: kGrey10,
-      child: LayoutBuilder(builder: (context, c) {
-        // Apply 48px padding only on first open (handled by AnimatedPadding)
-        final double w = (pxW == null || pxW <= 0) ? 100.0 : pxW;
-        final double h = (pxH == null || pxH <= 0) ? 100.0 : pxH;
-        // No scaling: draw at 1:1 pixels. Clip when larger than viewport.
-        final double drawW = w.clamp(1.0, double.infinity);
-        final double drawH = h.clamp(1.0, double.infinity);
-        // Clear initial padding after first frame
-        if (_initialPaddingPending) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            setState(() => _initialPaddingPending = false);
-          });
-        }
-        return AnimatedPadding(
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.all(_initialPaddingPending ? 48.0 : 24.0),
-          child: Center(
-            child: ClipRect(
-              child: SizedBox(
-                width: drawW,
-                height: drawH,
-                child: Stack(
-                  children: [
-                    const Positioned.fill(child: ColoredBox(color: kWhite)),
-                    // Hairline border that stays 1 device pixel regardless of scale
-                    const Positioned.fill(
-                      child: _ProjectHairlineBorder(),
+      child: ValueListenableBuilder<Size?>(
+        valueListenable: _canvasPxNotifier,
+        builder: (context, size, _) {
+          final double? pxWv = size?.width ?? pxW;
+          final double? pxHv = size?.height ?? pxH;
+          return LayoutBuilder(builder: (context, c) {
+            // Apply 48px padding only on first open (handled by AnimatedPadding)
+            final double w = (pxWv == null || pxWv <= 0) ? 100.0 : pxWv;
+            final double h = (pxHv == null || pxHv <= 0) ? 100.0 : pxHv;
+            // No scaling: draw at 1:1 pixels. Clip when larger than viewport.
+            final double drawW = w.clamp(1.0, double.infinity);
+            final double drawH = h.clamp(1.0, double.infinity);
+            // Clear initial padding after first frame
+            if (_initialPaddingPending) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                setState(() => _initialPaddingPending = false);
+              });
+            }
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.all(_initialPaddingPending ? 48.0 : 24.0),
+              child: Center(
+                child: ClipRect(
+                  child: SizedBox(
+                    width: drawW,
+                    height: drawH,
+                    child: Stack(
+                      children: [
+                        const Positioned.fill(child: ColoredBox(color: kWhite)),
+                        // Hairline border that stays 1 device pixel regardless of scale
+                        const Positioned.fill(
+                          child: _ProjectHairlineBorder(),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
-        );
-      }),
+            );
+          });
+        },
+      ),
     );
   }
 }

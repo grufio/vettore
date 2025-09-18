@@ -55,7 +55,8 @@ class AppImageDetailPage extends ConsumerStatefulWidget {
 
 class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     with AutomaticKeepAliveClientMixin {
-  static Matrix4? _savedTransform;
+  static final Map<int, Matrix4> _savedTransforms = <int, Matrix4>{};
+  bool _transformAppliedForProject = false;
   // Header handled by shell; these are no longer needed
   String _detailFilterId = 'project';
   // Photo viewer removed for empty state; controllers retained for later usage
@@ -105,8 +106,12 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
       newHeight: height,
       initialized: _dimsInitialized,
     );
-    debugPrint(
-        '[ImageDetail] _applyImageDims cur=${curW}x${curH} new=${width}x${height} init=${_dimsInitialized} should=$should');
+    // Guarded for release
+    assert(() {
+      debugPrint(
+          '[ImageDetail] _applyImageDims cur=${curW}x${curH} new=${width}x${height} init=${_dimsInitialized} should=$should');
+      return true;
+    }());
     if (!should) return;
     // Do not auto-convert user units. Only populate when both fields are 'px'.
     if (_widthUnit == 'px' && _heightUnit == 'px') {
@@ -126,10 +131,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     _inputValueController = TextEditingController();
     _inputValueController2 = TextEditingController();
     _projectController = TextEditingController();
-    // Restore last pan/zoom state if available; avoid auto-centering
-    if (_savedTransform != null) {
-      _ivController.value = _savedTransform!.clone();
-    }
+    // Transform will be restored once when project id is known
     _initProject();
   }
 
@@ -138,7 +140,9 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   @override
   void dispose() {
     // Persist current transform to survive tab switches
-    _savedTransform = _ivController.value.clone();
+    if (_currentProjectId != null) {
+      _savedTransforms[_currentProjectId!] = _ivController.value.clone();
+    }
     _inputValueController.dispose();
     _inputValueController2.dispose();
     _projectController.dispose();
@@ -165,6 +169,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     if (projectIdFromProvider != null &&
         projectIdFromProvider != _currentProjectId) {
       _currentProjectId = projectIdFromProvider;
+      _transformAppliedForProject = false;
     }
 
     // Guarded listeners (allowed in build)
@@ -190,6 +195,15 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
           _applyImageDims(width: dims.$1, height: dims.$2);
         }
       });
+    }
+
+    // Restore per-project transform once when project id is ready
+    if (!_transformAppliedForProject && _currentProjectId != null) {
+      final Matrix4? saved = _savedTransforms[_currentProjectId!];
+      if (saved != null) {
+        _ivController.value = saved.clone();
+      }
+      _transformAppliedForProject = true;
     }
 
     // Image presence determined via providers; listeners are registered in didChangeDependencies
@@ -286,10 +300,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                 }),
                                 onUnitChanged: (u) => _widthUnit = u,
                                 dpiOverride: (imageId != null)
-                                    ? (ref
-                                            .watch(imageDpiProvider(imageId))
-                                            .asData
-                                            ?.value ??
+                                    ? (ref.watch(imageDpiProvider(imageId)
+                                            .select((a) => a.asData?.value)) ??
                                         72)
                                     : 72,
                               ),
@@ -297,10 +309,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                 heightController: _inputValueController2,
                                 enabled: hasImage,
                                 dpiOverride: (imageId != null)
-                                    ? (ref
-                                            .watch(imageDpiProvider(imageId))
-                                            .asData
-                                            ?.value ??
+                                    ? (ref.watch(imageDpiProvider(imageId)
+                                            .select((a) => a.asData?.value)) ??
                                         72)
                                     : 72,
                                 onUnitChanged: (u) => _heightUnit = u,
@@ -317,10 +327,11 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                     ? ref.watch(imageIdStableProvider(
                                         _currentProjectId!))
                                     : null;
-                                final dpiAsync = (imgId != null)
-                                    ? ref.watch(imageDpiProvider(imgId))
-                                    : const AsyncValue<int?>.data(null);
-                                final currentDpi = dpiAsync.asData?.value ?? 72;
+                                final int? dpiVal = (imgId != null)
+                                    ? ref.watch(imageDpiProvider(imgId)
+                                        .select((a) => a.asData?.value))
+                                    : null;
+                                final currentDpi = dpiVal ?? 72;
                                 return ResolutionSelector(
                                   value: currentDpi,
                                   enabled: hasImage,
@@ -402,8 +413,11 @@ extension on _AppImageDetailPageState {
 
   Future<void> _handleImageBytes(Uint8List bytes) async {
     if (_currentProjectId == null) return;
-    debugPrint(
-        '[ImageDetail] _handleImageBytes len=${bytes.length} pid=$_currentProjectId');
+    assert(() {
+      debugPrint(
+          '[ImageDetail] _handleImageBytes len=${bytes.length} pid=$_currentProjectId');
+      return true;
+    }());
     // Decode to get dimensions in isolate
     final dims = await compute(ic.decodeDimensions, bytes);
     // Detect DPI from metadata (must exist per spec)
@@ -448,7 +462,11 @@ extension on _AppImageDetailPageState {
       ),
     );
     // Do not modify project canvas from Image upload path (strict decoupling)
-    debugPrint('[ImageDetail] image stored id=$imageId; updating controllers');
+    assert(() {
+      debugPrint(
+          '[ImageDetail] image stored id=$imageId; updating controllers');
+      return true;
+    }());
     // Ensure the new image dimensions overwrite any previous values in fields
     _lastDimsImageId = imageId;
     _dimsInitialized = false;
@@ -515,11 +533,16 @@ extension on _AppImageDetailPageState {
     final int? imageId =
         (pid != null) ? ref.watch(imageIdStableProvider(pid)) : null;
     final Uint8List? bytes = (imageId != null)
-        ? ref.watch(imageBytesProvider(imageId)).asData?.value
+        ? ref.watch(
+            imageBytesProvider(imageId).select((a) => a.asData?.value),
+          )
         : null;
 
-    debugPrint(
-        '[ImageDetail] build pid=$pid imageId=$imageId bytes=${bytes?.length ?? 0}');
+    assert(() {
+      debugPrint(
+          '[ImageDetail] build pid=$pid imageId=$imageId bytes=${bytes?.length ?? 0}');
+      return true;
+    }());
 
     final bool showUpload = (imageId == null);
 
@@ -552,8 +575,10 @@ extension on _AppImageDetailPageState {
         ),
       );
     }
-    final canvasAsync = ref.watch(canvasPreviewPxProvider(pid));
-    final Size canvasPx = canvasAsync.asData?.value ?? const Size(100.0, 100.0);
+    final Size canvasPx = ref.watch(
+          canvasPreviewPxProvider(pid).select((a) => a.asData?.value),
+        ) ??
+        const Size(100.0, 100.0);
     if (canvasPx.width <= 0 || canvasPx.height <= 0) {
       const double placeholderW = 100.0;
       const double placeholderH = 100.0;
@@ -574,7 +599,9 @@ extension on _AppImageDetailPageState {
     final double canvasW = canvasPx.width;
     final double canvasH = canvasPx.height;
     final dims = (imageId != null)
-        ? ref.watch(imageDimensionsProvider(imageId)).asData?.value
+        ? ref.watch(
+            imageDimensionsProvider(imageId).select((a) => a.asData?.value),
+          )
         : null;
     final double imgW = (dims?.$1 ?? canvasW.toInt()).toDouble();
     final double imgH = (dims?.$2 ?? canvasH.toInt()).toDouble();
@@ -704,79 +731,110 @@ class _ArtboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox.expand(
-      child: ClipRect(
-        child: InteractiveViewer(
-          key: viewportKey,
-          transformationController: controller,
-          minScale: 0.25,
-          maxScale: 8.0,
-          scaleEnabled: true,
-          panEnabled: true,
-          constrained: false,
-          boundaryMargin: const EdgeInsets.all(100000),
-          child: RepaintBoundary(
-            child: Center(
-              child: Padding(
-                padding: EdgeInsets.all(outerPad),
-                child: SizedBox(
-                  width: boardW,
-                  height: boardH,
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: (boardW - canvasW) / 2,
-                        top: (boardH - canvasH) / 2,
-                        width: canvasW,
-                        height: canvasH,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            const Positioned.fill(
-                              child: ColoredBox(color: kWhite),
-                            ),
-                            if (bytes != null)
-                              Center(
-                                child: OverflowBox(
-                                  minWidth: 0,
-                                  minHeight: 0,
-                                  maxWidth: double.infinity,
-                                  maxHeight: double.infinity,
-                                  child: Image.memory(
-                                    bytes!,
-                                    fit: BoxFit.none,
-                                    alignment: Alignment.center,
-                                    filterQuality: FilterQuality.none,
-                                    cacheWidth: canvasW.ceil(),
-                                    cacheHeight: canvasH.ceil(),
-                                    gaplessPlayback: true,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final double maxSide = constraints.maxWidth > constraints.maxHeight
+            ? constraints.maxWidth
+            : constraints.maxHeight;
+        final EdgeInsets margin = EdgeInsets.all(maxSide * 2);
+        return ClipRect(
+          child: InteractiveViewer(
+            key: viewportKey,
+            transformationController: controller,
+            minScale: 0.25,
+            maxScale: 8.0,
+            scaleEnabled: true,
+            panEnabled: true,
+            constrained: false,
+            boundaryMargin: margin,
+            child: RepaintBoundary(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(outerPad),
+                  child: SizedBox(
+                    width: boardW,
+                    height: boardH,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: (boardW - canvasW) / 2,
+                          top: (boardH - canvasH) / 2,
+                          width: canvasW,
+                          height: canvasH,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const Positioned.fill(
+                                child: ColoredBox(color: kWhite),
+                              ),
+                              if (bytes != null)
+                                Center(
+                                  child: OverflowBox(
+                                    minWidth: 0,
+                                    minHeight: 0,
+                                    maxWidth: double.infinity,
+                                    maxHeight: double.infinity,
+                                    child: Builder(builder: (context) {
+                                      final RenderBox? vb = (viewportKey
+                                              is GlobalKey)
+                                          ? (viewportKey as GlobalKey)
+                                              .currentContext
+                                              ?.findRenderObject() as RenderBox?
+                                          : null;
+                                      final Size vp = vb?.size ?? Size.zero;
+                                      final double s =
+                                          controller.value.getMaxScaleOnAxis();
+                                      final double safeScale =
+                                          (s <= 0) ? 1.0 : s;
+                                      final double dpr = MediaQuery.of(context)
+                                          .devicePixelRatio;
+                                      final int targetW =
+                                          (vp.width * dpr / safeScale)
+                                              .clamp(64.0, 8192.0)
+                                              .toInt();
+                                      final int targetH =
+                                          (vp.height * dpr / safeScale)
+                                              .clamp(64.0, 8192.0)
+                                              .toInt();
+                                      return Image.memory(
+                                        bytes!,
+                                        fit: BoxFit.none,
+                                        alignment: Alignment.center,
+                                        filterQuality: FilterQuality.none,
+                                        cacheWidth:
+                                            targetW > 0 ? targetW : null,
+                                        cacheHeight:
+                                            targetH > 0 ? targetH : null,
+                                        gaplessPlayback: true,
+                                      );
+                                    }),
                                   ),
                                 ),
-                              ),
-                            LayoutBuilder(builder: (context, constraints) {
-                              final double s =
-                                  controller.value.getMaxScaleOnAxis();
-                              final double dpr =
-                                  MediaQuery.of(context).devicePixelRatio;
-                              return IgnorePointer(
-                                child: CustomPaint(
-                                  painter: _HairlineBorderPainter(
-                                      scale: s, dpr: dpr),
-                                  size: Size(constraints.maxWidth,
-                                      constraints.maxHeight),
-                                ),
-                              );
-                            }),
-                          ],
+                              LayoutBuilder(builder: (context, constraints) {
+                                final double s =
+                                    controller.value.getMaxScaleOnAxis();
+                                final double dpr =
+                                    MediaQuery.of(context).devicePixelRatio;
+                                return IgnorePointer(
+                                  child: CustomPaint(
+                                    painter: _HairlineBorderPainter(
+                                        scale: s, dpr: dpr),
+                                    size: Size(constraints.maxWidth,
+                                        constraints.maxHeight),
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }
