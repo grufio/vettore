@@ -1,5 +1,92 @@
 import 'dart:math' as math;
 
+// Strongly-typed units to avoid typos and magic strings
+enum Unit { px, inch, point, centimeter, millimeter }
+
+extension UnitString on Unit {
+  String get asDbString {
+    switch (this) {
+      case Unit.px:
+        return 'px';
+      case Unit.inch:
+        return 'in';
+      case Unit.point:
+        return 'pt';
+      case Unit.centimeter:
+        return 'cm';
+      case Unit.millimeter:
+        return 'mm';
+    }
+  }
+}
+
+Unit parseUnit(String unit) {
+  switch (unit.trim().toLowerCase()) {
+    case 'px':
+      return Unit.px;
+    case 'in':
+      return Unit.inch;
+    case 'pt':
+      return Unit.point;
+    case 'cm':
+      return Unit.centimeter;
+    case 'mm':
+      return Unit.millimeter;
+    default:
+      throw ArgumentError('Unknown unit: $unit');
+  }
+}
+
+double convertUnitTyped({
+  required double value,
+  required Unit from,
+  required Unit to,
+  required int dpi,
+}) {
+  if (dpi <= 0) {
+    throw ArgumentError('dpi must be > 0');
+  }
+
+  double toInches(double v, Unit u) {
+    switch (u) {
+      case Unit.px:
+        return v / dpi;
+      case Unit.inch:
+        return v;
+      case Unit.point:
+        return v / 72.0;
+      case Unit.centimeter:
+        return v / 2.54;
+      case Unit.millimeter:
+        return v / 25.4;
+    }
+  }
+
+  double fromInches(double inches, Unit u) {
+    switch (u) {
+      case Unit.px:
+        return inches * dpi;
+      case Unit.inch:
+        return inches;
+      case Unit.point:
+        return inches * 72.0;
+      case Unit.centimeter:
+        return inches * 2.54;
+      case Unit.millimeter:
+        return inches * 25.4;
+    }
+  }
+
+  double _round(double v, int dec) {
+    final double p = math.pow(10, dec).toDouble();
+    return (v * p).round() / p;
+  }
+
+  final double inches = toInches(value, from);
+  final double out = fromInches(inches, to);
+  return to == Unit.px ? out : _round(out, 4);
+}
+
 double convertUnit({
   required double value,
   required String fromUnit,

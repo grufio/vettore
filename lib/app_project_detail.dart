@@ -53,6 +53,7 @@ class AppProjectDetailPage extends ConsumerStatefulWidget {
 
 class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     with AutomaticKeepAliveClientMixin {
+  static const int kPreviewDpi = 96;
   // Header handled by shell; these are no longer needed
   String _detailFilterId = 'project';
   // Photo viewer removed for empty state; controllers retained for later usage
@@ -60,6 +61,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
   late final TextEditingController _inputValueController2;
   late final TextEditingController _singleInputController;
   late final TextEditingController _projectController;
+  Timer? _titleDebounceTimer;
+  static const Duration _titleDebounceDelay = Duration(milliseconds: 400);
   // No interpolation in canvas page
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
@@ -74,6 +77,14 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
   double? _canvasPxH;
   String _canvasWUnit = 'mm';
   String _canvasHUnit = 'mm';
+  // Enum-typed units (authoritative for logic/DB)
+  Unit _canvasWUnitE = Unit.millimeter;
+  Unit _canvasHUnitE = Unit.millimeter;
+  // Persisted spec (value + unit) to detect dirty state
+  double? _persistWVal;
+  double? _persistHVal;
+  Unit _persistWUnitE = Unit.millimeter;
+  Unit _persistHUnitE = Unit.millimeter;
   // Apply 48px padding only on first open
   bool _initialPaddingPending = true;
   @override
@@ -97,12 +108,17 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
       return;
     }
     // Convert according to selected units for preview (consistent with onResizeTap)
-    const int previewDpi = 96;
-    final double pxW = convertUnit(
-            value: w, fromUnit: _canvasWUnit, toUnit: 'px', dpi: previewDpi)
+    final double pxW = convertUnitTyped(
+            value: w,
+            from: _canvasWUnitE,
+            to: Unit.px,
+            dpi: _AppProjectDetailPageState.kPreviewDpi)
         .clamp(1.0, 20000.0);
-    final double pxH = convertUnit(
-            value: h, fromUnit: _canvasHUnit, toUnit: 'px', dpi: previewDpi)
+    final double pxH = convertUnitTyped(
+            value: h,
+            from: _canvasHUnitE,
+            to: Unit.px,
+            dpi: _AppProjectDetailPageState.kPreviewDpi)
         .clamp(1.0, 20000.0);
     setState(() {
       _canvasPxW = pxW;
@@ -122,6 +138,11 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     // Default Canvas: 100 x 100 @ 72dpi
     _inputValueController.text = '100';
     _inputValueController2.text = '100';
+    // Initialize persisted spec defaults (until DB load)
+    _persistWVal = 100;
+    _persistHVal = 100;
+    _persistWUnitE = _canvasWUnitE;
+    _persistHUnitE = _canvasHUnitE;
     // Default interpolation shown in the field
     _singleInputController.text = '';
     _projectTitleFocusNode = FocusNode();
@@ -130,15 +151,19 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
         _saveProjectTitle();
       }
     });
+    _projectController.addListener(_onTitleChangedDebounced);
     // Initialize canvas preview to the default 100×100 @ 72 dpi
     _recomputeCanvasFromInputs();
     // Seed global canvas spec with default
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (_canvasPxW != null && _canvasPxH != null) {
-        ref
-            .read(canvasSpecProvider.notifier)
-            .setSpec(CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!));
+        final current = ref.read(canvasSpecProvider);
+        final spec = CanvasSpec(widthPx: _canvasPxW!, heightPx: _canvasPxH!);
+        if (current.widthPx != spec.widthPx ||
+            current.heightPx != spec.heightPx) {
+          ref.read(canvasSpecProvider.notifier).setSpec(spec);
+        }
       }
     });
     _initProject();
@@ -152,6 +177,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     _singleInputController.dispose();
     _projectController.dispose();
 
+    _titleDebounceTimer?.cancel();
     _projectTitleFocusNode.dispose();
     _projectSub?.cancel();
     super.dispose();
@@ -281,7 +307,10 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                                 }),
                                 units: kUnits,
                                 initialUnit: _canvasWUnit,
-                                onUnitChanged: (u) => _canvasWUnit = u,
+                                onUnitChanged: (u) {
+                                  _canvasWUnit = u;
+                                  _canvasWUnitE = parseUnit(u);
+                                },
                                 inputFormatters: <TextInputFormatter>[
                                   FilteringTextInputFormatter.allow(
                                     RegExp(r'[0-9\. ]').pattern == ''
@@ -291,14 +320,18 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                                 ],
                                 clampPxMin: 1.0,
                                 clampPxMax: 20000.0,
-                                clampDpi: 96,
+                                clampDpi:
+                                    _AppProjectDetailPageState.kPreviewDpi,
                               ),
                               HeightRow(
                                 heightController: _inputValueController2,
                                 enabled: true,
                                 units: kUnits,
                                 initialUnit: _canvasHUnit,
-                                onUnitChanged: (u) => _canvasHUnit = u,
+                                onUnitChanged: (u) {
+                                  _canvasHUnit = u;
+                                  _canvasHUnitE = parseUnit(u);
+                                },
                                 inputFormatters: <TextInputFormatter>[
                                   FilteringTextInputFormatter.allow(
                                     RegExp(r'[0-9\.]'),
@@ -306,12 +339,19 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                                 ],
                                 clampPxMin: 1.0,
                                 clampPxMax: 20000.0,
-                                clampDpi: 96,
+                                clampDpi:
+                                    _AppProjectDetailPageState.kPreviewDpi,
                               ),
                               SectionInput(
-                                full: OutlinedActionButton(
-                                  label: 'Update Canvas',
-                                  onTap: _onResizeTap,
+                                full: Opacity(
+                                  opacity: _isInputsDirty() ? 1.0 : 0.4,
+                                  child: IgnorePointer(
+                                    ignoring: !_isInputsDirty(),
+                                    child: OutlinedActionButton(
+                                      label: 'Update Canvas',
+                                      onTap: _onResizeTap,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -332,41 +372,80 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
 }
 
 extension on _AppProjectDetailPageState {
+  bool _isInputsDirty() {
+    final double? wVal = double.tryParse(_inputValueController.text.trim());
+    final double? hVal = double.tryParse(_inputValueController2.text.trim());
+    if (wVal == null || hVal == null) return false;
+    bool unitChanged =
+        (_canvasWUnitE != _persistWUnitE) || (_canvasHUnitE != _persistHUnitE);
+    bool valueChanged = false;
+    if (_persistWVal == null || _persistHVal == null) {
+      valueChanged = true;
+    } else {
+      const double eps = 1e-9;
+      valueChanged = (wVal - _persistWVal!).abs() > eps ||
+          (hVal - _persistHVal!).abs() > eps;
+    }
+    return unitChanged || valueChanged;
+  }
+
   void _onResizeTap() async {
     final double? wVal = double.tryParse(_inputValueController.text.trim());
     final double? hVal = double.tryParse(_inputValueController2.text.trim());
     if (wVal == null || hVal == null) return;
-    // Convert to px for preview using 96 dpi (3.7795 px/mm baseline)
-    const int previewDpi = 96;
-    final double wPx = convertUnit(
-        value: wVal, fromUnit: _canvasWUnit, toUnit: 'px', dpi: previewDpi);
-    final double hPx = convertUnit(
-        value: hVal, fromUnit: _canvasHUnit, toUnit: 'px', dpi: previewDpi);
+    // Skip if nothing changed to minimize DB writes and provider chatter
+    if (!_isInputsDirty()) return;
+    // Convert to px for preview using kPreviewDpi (3.7795 px/mm baseline)
+    final double wPx = convertUnitTyped(
+        value: wVal,
+        from: _canvasWUnitE,
+        to: Unit.px,
+        dpi: _AppProjectDetailPageState.kPreviewDpi);
+    final double hPx = convertUnitTyped(
+        value: hVal,
+        from: _canvasHUnitE,
+        to: Unit.px,
+        dpi: _AppProjectDetailPageState.kPreviewDpi);
     // Always update preview & spec
     setState(() {
       _canvasPxW = wPx;
       _canvasPxH = hPx;
     });
-    ref
-        .read(canvasSpecProvider.notifier)
-        .setSpec(CanvasSpec(widthPx: wPx, heightPx: hPx));
+    {
+      final current = ref.read(canvasSpecProvider);
+      final spec = CanvasSpec(widthPx: wPx, heightPx: hPx);
+      if (current.widthPx != spec.widthPx ||
+          current.heightPx != spec.heightPx) {
+        ref.read(canvasSpecProvider.notifier).setSpec(spec);
+      }
+    }
     // Persist value + unit to DB only if a project is loaded
     if (_currentProjectId == null) return;
     try {
       final db = ref.read(appDatabaseProvider);
-      await db.customStatement(
-          'UPDATE projects SET canvas_width_value = ?, canvas_width_unit = ?, canvas_height_value = ?, canvas_height_unit = ?, updated_at = ? WHERE id = ?',
-          [
-            wVal,
-            _canvasWUnit,
-            hVal,
-            _canvasHUnit,
-            DateTime.now().millisecondsSinceEpoch,
-            _currentProjectId!
-          ]);
+      await db.customUpdate(
+        'UPDATE projects SET '
+        'canvas_width_value = ?, canvas_width_unit = ?, '
+        'canvas_height_value = ?, canvas_height_unit = ?, '
+        'updated_at = ? WHERE id = ?',
+        variables: [
+          Variable.withReal(wVal),
+          Variable.withString(_canvasWUnitE.asDbString),
+          Variable.withReal(hVal),
+          Variable.withString(_canvasHUnitE.asDbString),
+          Variable.withInt(DateTime.now().millisecondsSinceEpoch),
+          Variable.withInt(_currentProjectId!),
+        ],
+        updates: {db.projects},
+      );
     } catch (_) {
       // ignore persistence errors in UI
     }
+    // Update persisted spec to the latest inputs
+    _persistWVal = wVal;
+    _persistHVal = hVal;
+    _persistWUnitE = _canvasWUnitE;
+    _persistHUnitE = _canvasHUnitE;
     // Do not resize image here; canvas is independent
   }
 
@@ -421,6 +500,21 @@ extension on _AppProjectDetailPageState {
     widget.onProjectTitleSaved?.call(text);
   }
 
+  void _onTitleChangedDebounced() {
+    final String text = _projectController.text.trim();
+    // Skip scheduling if same as last saved and not focused to avoid churn
+    if (text == _lastSavedTitle) {
+      _titleDebounceTimer?.cancel();
+      return;
+    }
+    _titleDebounceTimer?.cancel();
+    _titleDebounceTimer =
+        Timer(_AppProjectDetailPageState._titleDebounceDelay, () {
+      if (!mounted) return;
+      _saveProjectTitle();
+    });
+  }
+
   void _subscribeToProject(int projectId) {
     _projectSub?.cancel();
     _projectSub =
@@ -447,26 +541,35 @@ extension on _AppProjectDetailPageState {
       final String? cuh = data['canvas_height_unit'] as String?;
       _canvasWUnit = cuw ?? 'mm';
       _canvasHUnit = cuh ?? 'mm';
+      _canvasWUnitE = parseUnit(_canvasWUnit);
+      _canvasHUnitE = parseUnit(_canvasHUnit);
+      _persistWUnitE = _canvasWUnitE;
+      _persistHUnitE = _canvasHUnitE;
       _inputValueController.text = (cwRaw ?? 100).toString();
       _inputValueController2.text = (chRaw ?? 100).toString();
-      const int previewDpi = 96;
-      final double wPx = convertUnit(
+      _persistWVal = (cwRaw ?? 100).toDouble();
+      _persistHVal = (chRaw ?? 100).toDouble();
+      final double wPx = convertUnitTyped(
           value: (cwRaw ?? 100).toDouble(),
-          fromUnit: _canvasWUnit,
-          toUnit: 'px',
-          dpi: previewDpi);
-      final double hPx = convertUnit(
+          from: _canvasWUnitE,
+          to: Unit.px,
+          dpi: _AppProjectDetailPageState.kPreviewDpi);
+      final double hPx = convertUnitTyped(
           value: (chRaw ?? 100).toDouble(),
-          fromUnit: _canvasHUnit,
-          toUnit: 'px',
-          dpi: previewDpi);
+          from: _canvasHUnitE,
+          to: Unit.px,
+          dpi: _AppProjectDetailPageState.kPreviewDpi);
+      if (!mounted) return;
       setState(() {
         _canvasPxW = wPx;
         _canvasPxH = hPx;
       });
-      ref
-          .read(canvasSpecProvider.notifier)
-          .setSpec(CanvasSpec(widthPx: wPx, heightPx: hPx));
+      final current = ref.read(canvasSpecProvider);
+      final spec = CanvasSpec(widthPx: wPx, heightPx: hPx);
+      if (current.widthPx != spec.widthPx ||
+          current.heightPx != spec.heightPx) {
+        ref.read(canvasSpecProvider.notifier).setSpec(spec);
+      }
     } catch (_) {}
   }
 
@@ -477,10 +580,7 @@ extension on _AppProjectDetailPageState {
     return ColoredBox(
       color: kGrey10,
       child: LayoutBuilder(builder: (context, c) {
-        // Apply 48px padding only on first open
-        final double pad = _initialPaddingPending ? 48.0 : 0.0;
-        final double availW = (c.maxWidth - pad * 2).clamp(0.0, c.maxWidth);
-        final double availH = (c.maxHeight - pad * 2).clamp(0.0, c.maxHeight);
+        // Apply 48px padding only on first open (handled by AnimatedPadding)
         final double w = (pxW == null || pxW <= 0) ? 100.0 : pxW;
         final double h = (pxH == null || pxH <= 0) ? 100.0 : pxH;
         // No scaling: draw at 1:1 pixels. Clip when larger than viewport.
@@ -497,23 +597,19 @@ extension on _AppProjectDetailPageState {
           duration: const Duration(milliseconds: 120),
           curve: Curves.easeOut,
           padding: EdgeInsets.all(_initialPaddingPending ? 48.0 : 24.0),
-          child: SizedBox(
-            width: availW,
-            height: availH,
-            child: Center(
-              child: ClipRect(
-                child: SizedBox(
-                  width: drawW,
-                  height: drawH,
-                  child: Stack(
-                    children: [
-                      const Positioned.fill(child: ColoredBox(color: kWhite)),
-                      // Hairline border that stays 1 device pixel regardless of scale
-                      const Positioned.fill(
-                        child: _ProjectHairlineBorder(),
-                      ),
-                    ],
-                  ),
+          child: Center(
+            child: ClipRect(
+              child: SizedBox(
+                width: drawW,
+                height: drawH,
+                child: Stack(
+                  children: [
+                    const Positioned.fill(child: ColoredBox(color: kWhite)),
+                    // Hairline border that stays 1 device pixel regardless of scale
+                    const Positioned.fill(
+                      child: _ProjectHairlineBorder(),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -560,5 +656,5 @@ class _StaticHairlinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _StaticHairlinePainter oldDelegate) => false;
+  bool shouldRepaint(covariant _StaticHairlinePainter old) => old.dpr != dpr;
 }

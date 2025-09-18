@@ -1,4 +1,4 @@
-import 'dart:io' show Platform, File;
+import 'dart:io' show File;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,12 +55,12 @@ class AppImageDetailPage extends ConsumerStatefulWidget {
 
 class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     with AutomaticKeepAliveClientMixin {
+  static Matrix4? _savedTransform;
   // Header handled by shell; these are no longer needed
   String _detailFilterId = 'project';
   // Photo viewer removed for empty state; controllers retained for later usage
   late final TextEditingController _inputValueController;
   late final TextEditingController _inputValueController2;
-  late final TextEditingController _singleInputController;
   late final TextEditingController _projectController;
   String _interp = 'nearest';
   int? _currentProjectId;
@@ -126,18 +126,11 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     super.initState();
     _inputValueController = TextEditingController();
     _inputValueController2 = TextEditingController();
-    _singleInputController = TextEditingController();
     _projectController = TextEditingController();
-    // Default interpolation shown in the field
-    _singleInputController.text = _interp;
-    _projectTitleFocusNode = FocusNode();
-    _projectTitleFocusNode.addListener(() {
-      if (!_projectTitleFocusNode.hasFocus) {
-        _saveProjectTitle();
-      }
-    });
-    // Nudge content by 24px x/y to emulate initial padding without UI jump
-    _ivController.value = Matrix4.identity()..translate(24.0, 24.0);
+    // Restore last pan/zoom state if available; avoid auto-centering
+    if (_savedTransform != null) {
+      _ivController.value = _savedTransform!.clone();
+    }
     _initProject();
   }
 
@@ -145,9 +138,10 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
 
   @override
   void dispose() {
+    // Persist current transform to survive tab switches
+    _savedTransform = _ivController.value.clone();
     _inputValueController.dispose();
     _inputValueController2.dispose();
-    _singleInputController.dispose();
     _projectController.dispose();
     _projectTitleFocusNode.dispose();
     _projectSub?.cancel();
@@ -317,7 +311,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                 value: _interp,
                                 onChanged: (v) => setState(() {
                                   _interp = v;
-                                  _singleInputController.text = v;
                                 }),
                                 enabled: hasImage,
                               ),
@@ -500,19 +493,6 @@ extension on _AppImageDetailPageState {
     } catch (_) {
       // Ignore load errors for now; keep empty controller
     }
-  }
-
-  Future<void> _saveProjectTitle() async {
-    if (_currentProjectId == null) return;
-    final repo = ref.read(projectRepositoryProvider);
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final companion = ProjectsCompanion(
-      id: Value(_currentProjectId!),
-      title: Value(_projectController.text),
-      updatedAt: Value(now),
-    );
-    await repo.update(companion);
-    widget.onProjectTitleSaved?.call(_projectController.text);
   }
 
   void _subscribeToProject(int projectId) {
@@ -710,7 +690,6 @@ class _ArtboardView extends StatelessWidget {
   final double outerPad;
   final Key? viewportKey;
   const _ArtboardView({
-    super.key,
     required this.controller,
     required this.boardW,
     required this.boardH,
