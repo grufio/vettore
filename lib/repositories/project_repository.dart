@@ -41,6 +41,10 @@ class ProjectRepository {
       canvasWidthUnit: const Value('mm'),
       canvasHeightValue: const Value(100.0),
       canvasHeightUnit: const Value('mm'),
+      gridCellWidthValue: const Value(10.0),
+      gridCellWidthUnit: const Value('mm'),
+      gridCellHeightValue: const Value(10.0),
+      gridCellHeightUnit: const Value('mm'),
     );
     return _db.into(_db.projects).insert(data);
   }

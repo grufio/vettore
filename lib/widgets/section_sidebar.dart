@@ -7,11 +7,17 @@ import 'package:vettore/theme/app_theme_typography.dart';
 class SectionSidebar extends StatelessWidget {
   final String title;
   final List<Widget> children;
+  final bool showTitleToggle;
+  final bool titleToggleOn;
+  final ValueChanged<bool>? onTitleToggle;
 
   const SectionSidebar({
     super.key,
     required this.title,
     this.children = const [],
+    this.showTitleToggle = false,
+    this.titleToggleOn = true,
+    this.onTitleToggle,
   });
 
   @override
@@ -28,10 +34,20 @@ class SectionSidebar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            title,
-            style: appTextStyles.bodyMMedium.copyWith(
-                fontWeight: FontWeight.bold, color: kGrey100, height: 1.0),
+          Row(
+            children: [
+              Text(
+                title,
+                style: appTextStyles.bodyMMedium.copyWith(
+                    fontWeight: FontWeight.bold, color: kGrey100, height: 1.0),
+              ),
+              const Spacer(),
+              if (showTitleToggle)
+                _TitleToggle(
+                  on: titleToggleOn,
+                  onChanged: onTitleToggle,
+                ),
+            ],
           ),
           if (children.isNotEmpty) const SizedBox(height: 12.0),
           for (int i = 0; i < children.length; i++) ...[
@@ -164,5 +180,48 @@ class _ReservedActionIconState extends State<_ReservedActionIcon> {
     if (!hasAsset) return box;
     if (widget.onTap == null || widget.disabled) return box;
     return GestureDetector(onTap: widget.onTap, child: box);
+  }
+}
+
+class _TitleToggle extends StatefulWidget {
+  final bool on;
+  final ValueChanged<bool>? onChanged;
+  const _TitleToggle({required this.on, this.onChanged});
+
+  @override
+  State<_TitleToggle> createState() => _TitleToggleState();
+}
+
+class _TitleToggleState extends State<_TitleToggle> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    final String asset = widget.on
+        ? 'assets/icons/32/view.svg'
+        : 'assets/icons/32/view--off.svg';
+    final Widget box = MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: _hover ? kGrey10 : kTransparent,
+          borderRadius: BorderRadius.circular(4.0),
+        ),
+        alignment: Alignment.center,
+        child: SvgPicture.asset(
+          asset,
+          width: 16,
+          height: 16,
+          colorFilter: const ColorFilter.mode(kGrey70, BlendMode.srcIn),
+        ),
+      ),
+    );
+    return GestureDetector(
+      onTap: () => widget.onChanged?.call(!widget.on),
+      child: box,
+    );
   }
 }

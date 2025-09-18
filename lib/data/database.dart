@@ -166,6 +166,16 @@ class Projects extends Table {
       real().named('canvas_height_value').withDefault(const Constant(100.0))();
   TextColumn get canvasHeightUnit =>
       text().named('canvas_height_unit').withDefault(const Constant('mm'))();
+  // Grid cell size (value + unit)
+  RealColumn get gridCellWidthValue =>
+      real().named('grid_cell_width_value').withDefault(const Constant(10.0))();
+  TextColumn get gridCellWidthUnit =>
+      text().named('grid_cell_width_unit').withDefault(const Constant('mm'))();
+  RealColumn get gridCellHeightValue => real()
+      .named('grid_cell_height_value')
+      .withDefault(const Constant(10.0))();
+  TextColumn get gridCellHeightUnit =>
+      text().named('grid_cell_height_unit').withDefault(const Constant('mm'))();
 }
 
 //-
@@ -190,7 +200,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration {
@@ -517,6 +527,25 @@ class AppDatabase extends _$AppDatabase {
               "UPDATE projects SET canvas_height_value = COALESCE(canvas_height_value, 100.0)");
           await m.database.customStatement(
               "UPDATE projects SET canvas_height_unit = COALESCE(canvas_height_unit, 'mm')");
+        }
+        if (from < 26) {
+          // Add grid cell size columns with defaults and backfill
+          await m.database.customStatement(
+              "ALTER TABLE projects ADD COLUMN grid_cell_width_value REAL DEFAULT 10.0");
+          await m.database.customStatement(
+              "ALTER TABLE projects ADD COLUMN grid_cell_width_unit TEXT DEFAULT 'mm'");
+          await m.database.customStatement(
+              "ALTER TABLE projects ADD COLUMN grid_cell_height_value REAL DEFAULT 10.0");
+          await m.database.customStatement(
+              "ALTER TABLE projects ADD COLUMN grid_cell_height_unit TEXT DEFAULT 'mm'");
+          await m.database.customStatement(
+              "UPDATE projects SET grid_cell_width_value = COALESCE(grid_cell_width_value, 10.0)");
+          await m.database.customStatement(
+              "UPDATE projects SET grid_cell_width_unit = COALESCE(grid_cell_width_unit, 'mm')");
+          await m.database.customStatement(
+              "UPDATE projects SET grid_cell_height_value = COALESCE(grid_cell_height_value, 10.0)");
+          await m.database.customStatement(
+              "UPDATE projects SET grid_cell_height_unit = COALESCE(grid_cell_height_unit, 'mm')");
         }
       },
     );

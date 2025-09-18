@@ -15,6 +15,7 @@ import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
 // import 'package:vettore/widgets/image_upload_area.dart';
 import 'package:vettore/widgets/input_value_type/text_default.dart';
+import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/data/database.dart';
 import 'dart:async';
@@ -91,6 +92,16 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
   Unit _persistHUnitE = Unit.millimeter;
   // Apply 48px padding only on first open
   bool _initialPaddingPending = true;
+  // Grid controls (cell size)
+  late final TextEditingController _gridWController;
+  late final TextEditingController _gridHController;
+  String _gridWUnit = 'mm';
+  String _gridHUnit = 'mm';
+  Unit _gridWUnitE = Unit.millimeter;
+  Unit _gridHUnitE = Unit.millimeter;
+  double? _gridCellPxW;
+  double? _gridCellPxH;
+  bool _showGrid = true;
   @override
   bool get wantKeepAlive => true;
   // Original dimensions no longer tracked here; DimensionsRow manages aspect
@@ -130,6 +141,21 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     _canvasPxNotifier.value = Size(pxW, pxH);
   }
 
+  void _recomputeGridFromInputs() {
+    double? parseValue(String s) => double.tryParse(s.trim());
+    final double? gw = parseValue(_gridWController.text);
+    final double? gh = parseValue(_gridHController.text);
+    if (gw == null || gw <= 0 || gh == null || gh <= 0) {
+      _gridCellPxW = null;
+      _gridCellPxH = null;
+      return;
+    }
+    _gridCellPxW = convertUnitTyped(
+        value: gw, from: _gridWUnitE, to: Unit.px, dpi: kCanvasPreviewPpi);
+    _gridCellPxH = convertUnitTyped(
+        value: gh, from: _gridHUnitE, to: Unit.px, dpi: kCanvasPreviewPpi);
+  }
+
   // No image-dimension application in Project Detail; canvas is independent
 
   @override
@@ -139,6 +165,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     _inputValueController2 = TextEditingController();
     _singleInputController = TextEditingController();
     _projectController = TextEditingController();
+    _gridWController = TextEditingController(text: '');
+    _gridHController = TextEditingController(text: '');
     // Default Canvas: 100 x 100 @ 72dpi
     _inputValueController.text = '100';
     _inputValueController2.text = '100';
@@ -161,11 +189,14 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
       _recomputeDebounceTimer?.cancel();
       _recomputeDebounceTimer = Timer(_recomputeDebounceDelay, () {
         _recomputeCanvasFromInputs();
+        _recomputeGridFromInputs();
         // No full setState here; preview listens via _canvasPxNotifier
       });
     };
     _inputValueController.addListener(_dimsListener);
     _inputValueController2.addListener(_dimsListener);
+    _gridWController.addListener(_dimsListener);
+    _gridHController.addListener(_dimsListener);
     // Initialize canvas preview to the default 100×100 @ 72 dpi
     _recomputeCanvasFromInputs();
     // Seed global canvas spec with default
@@ -192,6 +223,10 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     _inputValueController2.dispose();
     _singleInputController.dispose();
     _projectController.dispose();
+    _gridWController.removeListener(_dimsListener);
+    _gridHController.removeListener(_dimsListener);
+    _gridWController.dispose();
+    _gridHController.dispose();
 
     _titleDebounceTimer?.cancel();
     _recomputeDebounceTimer?.cancel();
@@ -381,6 +416,103 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                             ],
                           );
                         }),
+                        SectionSidebar(
+                          title: 'Grid',
+                          showTitleToggle: true,
+                          titleToggleOn: _showGrid,
+                          onTitleToggle: (v) => setState(() => _showGrid = v),
+                          children: [
+                            SectionInput(
+                              full: InputValueType(
+                                key: const ValueKey('grid_cell_width'),
+                                controller: _gridWController,
+                                placeholder: 'Cell width',
+                                prefixIconAsset: 'assets/icons/16/width.svg',
+                                prefixIconFit: BoxFit.none,
+                                prefixIconAlignment: Alignment.centerLeft,
+                                dropdownItems: kUnits,
+                                selectedItem: _gridWUnit,
+                                suffixText: _gridWUnit,
+                                variant: InputVariant.selector,
+                                readOnly: false,
+                                readOnlyView: false,
+                                onChanged: (raw) {
+                                  final sanitized =
+                                      raw.replaceAll(RegExp(r'[^0-9\.]'), '');
+                                  if (sanitized != raw) {
+                                    _gridWController.text = sanitized;
+                                    _gridWController.selection =
+                                        TextSelection.collapsed(
+                                            offset: sanitized.length);
+                                  }
+                                },
+                                onItemSelected: (u) {
+                                  setState(() {
+                                    _gridWUnit = u;
+                                    _gridWUnitE = parseUnit(u);
+                                  });
+                                  _recomputeGridFromInputs();
+                                },
+                              ),
+                            ),
+                            SectionInput(
+                              full: InputValueType(
+                                key: const ValueKey('grid_cell_height'),
+                                controller: _gridHController,
+                                placeholder: 'Cell height',
+                                prefixIconAsset: 'assets/icons/16/height.svg',
+                                prefixIconFit: BoxFit.none,
+                                prefixIconAlignment: Alignment.centerLeft,
+                                dropdownItems: kUnits,
+                                selectedItem: _gridHUnit,
+                                suffixText: _gridHUnit,
+                                variant: InputVariant.selector,
+                                readOnly: false,
+                                readOnlyView: false,
+                                onChanged: (raw) {
+                                  final sanitized =
+                                      raw.replaceAll(RegExp(r'[^0-9\.]'), '');
+                                  if (sanitized != raw) {
+                                    _gridHController.text = sanitized;
+                                    _gridHController.selection =
+                                        TextSelection.collapsed(
+                                            offset: sanitized.length);
+                                  }
+                                },
+                                onItemSelected: (u) {
+                                  setState(() {
+                                    _gridHUnit = u;
+                                    _gridHUnitE = parseUnit(u);
+                                  });
+                                  _recomputeGridFromInputs();
+                                },
+                              ),
+                            ),
+                            SectionInput(
+                              full: AnimatedBuilder(
+                                animation: Listenable.merge([
+                                  _gridWController,
+                                  _gridHController,
+                                ]),
+                                builder: (context, _) {
+                                  final gw = double.tryParse(
+                                      _gridWController.text.trim());
+                                  final gh = double.tryParse(
+                                      _gridHController.text.trim());
+                                  final bool e = (gw != null &&
+                                      gw > 0 &&
+                                      gh != null &&
+                                      gh > 0);
+                                  return OutlinedActionButton(
+                                    label: 'Update Grid',
+                                    enabled: e,
+                                    onTap: _onUpdateGridTap,
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                         const Expanded(child: SizedBox.shrink()),
                       ],
                     ),
@@ -553,7 +685,9 @@ extension on _AppProjectDetailPageState {
     try {
       final db = ref.read(appDatabaseProvider);
       final row = await db.customSelect(
-        'SELECT canvas_width_value, canvas_width_unit, canvas_height_value, canvas_height_unit FROM projects WHERE id = ? LIMIT 1',
+        'SELECT canvas_width_value, canvas_width_unit, canvas_height_value, canvas_height_unit, '
+        'grid_cell_width_value, grid_cell_width_unit, grid_cell_height_value, grid_cell_height_unit '
+        'FROM projects WHERE id = ? LIMIT 1',
         variables: [Variable.withInt(projectId)],
       ).getSingleOrNull();
       if (row == null) return;
@@ -562,6 +696,10 @@ extension on _AppProjectDetailPageState {
       final num? chRaw = data['canvas_height_value'] as num?;
       final String? cuw = data['canvas_width_unit'] as String?;
       final String? cuh = data['canvas_height_unit'] as String?;
+      final num? gcwRaw = data['grid_cell_width_value'] as num?;
+      final num? gchRaw = data['grid_cell_height_value'] as num?;
+      final String? gcwu = data['grid_cell_width_unit'] as String?;
+      final String? gchu = data['grid_cell_height_unit'] as String?;
       _canvasWUnit = cuw ?? 'mm';
       _canvasHUnit = cuh ?? 'mm';
       _canvasWUnitE = parseUnit(_canvasWUnit);
@@ -572,6 +710,14 @@ extension on _AppProjectDetailPageState {
       _inputValueController2.text = (chRaw ?? 100).toString();
       _persistWVal = (cwRaw ?? 100).toDouble();
       _persistHVal = (chRaw ?? 100).toDouble();
+      // Seed grid controllers/units
+      _gridWUnit = gcwu ?? 'mm';
+      _gridHUnit = gchu ?? 'mm';
+      _gridWUnitE = parseUnit(_gridWUnit);
+      _gridHUnitE = parseUnit(_gridHUnit);
+      _gridWController.text = (gcwRaw ?? 10).toString();
+      _gridHController.text = (gchRaw ?? 10).toString();
+      _recomputeGridFromInputs();
       final double wPx = convertUnitTyped(
           value: (cwRaw ?? 100).toDouble(),
           from: _canvasWUnitE,
@@ -630,11 +776,21 @@ extension on _AppProjectDetailPageState {
                   child: SizedBox(
                     width: drawW,
                     height: drawH,
-                    child: const Stack(
+                    child: Stack(
                       children: [
-                        Positioned.fill(child: ColoredBox(color: kWhite)),
+                        const Positioned.fill(child: ColoredBox(color: kWhite)),
+                        if (_gridCellPxW != null && _gridCellPxH != null)
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _GridPainter(
+                                cellW: _gridCellPxW!,
+                                cellH: _gridCellPxH!,
+                                color: kGrey20,
+                              ),
+                            ),
+                          ),
                         // Hairline border that stays 1 device pixel regardless of scale
-                        Positioned.fill(
+                        const Positioned.fill(
                           child: _ProjectHairlineBorder(),
                         ),
                       ],
@@ -647,6 +803,37 @@ extension on _AppProjectDetailPageState {
         },
       ),
     );
+  }
+}
+
+extension on _AppProjectDetailPageState {
+  Future<void> _onUpdateGridTap() async {
+    final double? gwVal = double.tryParse(_gridWController.text.trim());
+    final double? ghVal = double.tryParse(_gridHController.text.trim());
+    if (gwVal == null || ghVal == null || gwVal <= 0 || ghVal <= 0) return;
+    _recomputeGridFromInputs();
+    setState(() {});
+    if (_currentProjectId == null) return;
+    try {
+      final db = ref.read(appDatabaseProvider);
+      await db.customUpdate(
+        'UPDATE projects SET '
+        'grid_cell_width_value = ?, grid_cell_width_unit = ?, '
+        'grid_cell_height_value = ?, grid_cell_height_unit = ?, '
+        'updated_at = ? WHERE id = ?',
+        variables: [
+          Variable.withReal(gwVal),
+          Variable.withString(_gridWUnitE.asDbString),
+          Variable.withReal(ghVal),
+          Variable.withString(_gridHUnitE.asDbString),
+          Variable.withInt(DateTime.now().millisecondsSinceEpoch),
+          Variable.withInt(_currentProjectId!),
+        ],
+        updates: {db.projects},
+      );
+    } catch (_) {
+      // ignore persistence errors in UI
+    }
   }
 }
 
@@ -687,4 +874,36 @@ class _StaticHairlinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _StaticHairlinePainter old) => old.dpr != dpr;
+}
+
+class _GridPainter extends CustomPainter {
+  final double cellW;
+  final double cellH;
+  final Color color;
+  const _GridPainter(
+      {required this.cellW, required this.cellH, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (cellW <= 0 || cellH <= 0) return;
+    final Paint p = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    // Vertical lines
+    for (double x = 0; x <= size.width; x += cellW) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), p);
+    }
+    // Horizontal lines
+    for (double y = 0; y <= size.height; y += cellH) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GridPainter oldDelegate) {
+    return oldDelegate.cellW != cellW ||
+        oldDelegate.cellH != cellH ||
+        oldDelegate.color != color;
+  }
 }

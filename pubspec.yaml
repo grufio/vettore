@@ -96,9 +96,6 @@ flutter:
     - assets/images/test/
     - assets/icons/16/
     - assets/icons/32/
-    - path: assets/icons/
-      transformers:
-        - package: vector_graphics_compiler
     - lib/input/norma_pro_color_codes.csv
     - scripts/quantize.py
     - scripts/resize.py

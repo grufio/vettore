@@ -3365,6 +3365,38 @@ class $ProjectsTable extends Projects
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('mm'));
+  static const VerificationMeta _gridCellWidthValueMeta =
+      const VerificationMeta('gridCellWidthValue');
+  @override
+  late final GeneratedColumn<double> gridCellWidthValue =
+      GeneratedColumn<double>('grid_cell_width_value', aliasedName, false,
+          type: DriftSqlType.double,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(10.0));
+  static const VerificationMeta _gridCellWidthUnitMeta =
+      const VerificationMeta('gridCellWidthUnit');
+  @override
+  late final GeneratedColumn<String> gridCellWidthUnit =
+      GeneratedColumn<String>('grid_cell_width_unit', aliasedName, false,
+          type: DriftSqlType.string,
+          requiredDuringInsert: false,
+          defaultValue: const Constant('mm'));
+  static const VerificationMeta _gridCellHeightValueMeta =
+      const VerificationMeta('gridCellHeightValue');
+  @override
+  late final GeneratedColumn<double> gridCellHeightValue =
+      GeneratedColumn<double>('grid_cell_height_value', aliasedName, false,
+          type: DriftSqlType.double,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(10.0));
+  static const VerificationMeta _gridCellHeightUnitMeta =
+      const VerificationMeta('gridCellHeightUnit');
+  @override
+  late final GeneratedColumn<String> gridCellHeightUnit =
+      GeneratedColumn<String>('grid_cell_height_unit', aliasedName, false,
+          type: DriftSqlType.string,
+          requiredDuringInsert: false,
+          defaultValue: const Constant('mm'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -3381,7 +3413,11 @@ class $ProjectsTable extends Projects
         canvasWidthValue,
         canvasWidthUnit,
         canvasHeightValue,
-        canvasHeightUnit
+        canvasHeightUnit,
+        gridCellWidthValue,
+        gridCellWidthUnit,
+        gridCellHeightValue,
+        gridCellHeightUnit
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3470,6 +3506,30 @@ class $ProjectsTable extends Projects
           canvasHeightUnit.isAcceptableOrUnknown(
               data['canvas_height_unit']!, _canvasHeightUnitMeta));
     }
+    if (data.containsKey('grid_cell_width_value')) {
+      context.handle(
+          _gridCellWidthValueMeta,
+          gridCellWidthValue.isAcceptableOrUnknown(
+              data['grid_cell_width_value']!, _gridCellWidthValueMeta));
+    }
+    if (data.containsKey('grid_cell_width_unit')) {
+      context.handle(
+          _gridCellWidthUnitMeta,
+          gridCellWidthUnit.isAcceptableOrUnknown(
+              data['grid_cell_width_unit']!, _gridCellWidthUnitMeta));
+    }
+    if (data.containsKey('grid_cell_height_value')) {
+      context.handle(
+          _gridCellHeightValueMeta,
+          gridCellHeightValue.isAcceptableOrUnknown(
+              data['grid_cell_height_value']!, _gridCellHeightValueMeta));
+    }
+    if (data.containsKey('grid_cell_height_unit')) {
+      context.handle(
+          _gridCellHeightUnitMeta,
+          gridCellHeightUnit.isAcceptableOrUnknown(
+              data['grid_cell_height_unit']!, _gridCellHeightUnitMeta));
+    }
     return context;
   }
 
@@ -3509,6 +3569,15 @@ class $ProjectsTable extends Projects
           DriftSqlType.double, data['${effectivePrefix}canvas_height_value'])!,
       canvasHeightUnit: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}canvas_height_unit'])!,
+      gridCellWidthValue: attachedDatabase.typeMapping.read(DriftSqlType.double,
+          data['${effectivePrefix}grid_cell_width_value'])!,
+      gridCellWidthUnit: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}grid_cell_width_unit'])!,
+      gridCellHeightValue: attachedDatabase.typeMapping.read(
+          DriftSqlType.double,
+          data['${effectivePrefix}grid_cell_height_value'])!,
+      gridCellHeightUnit: attachedDatabase.typeMapping.read(DriftSqlType.string,
+          data['${effectivePrefix}grid_cell_height_unit'])!,
     );
   }
 
@@ -3534,6 +3603,10 @@ class DbProject extends DataClass implements Insertable<DbProject> {
   final String canvasWidthUnit;
   final double canvasHeightValue;
   final String canvasHeightUnit;
+  final double gridCellWidthValue;
+  final String gridCellWidthUnit;
+  final double gridCellHeightValue;
+  final String gridCellHeightUnit;
   const DbProject(
       {required this.id,
       required this.title,
@@ -3549,7 +3622,11 @@ class DbProject extends DataClass implements Insertable<DbProject> {
       required this.canvasWidthValue,
       required this.canvasWidthUnit,
       required this.canvasHeightValue,
-      required this.canvasHeightUnit});
+      required this.canvasHeightUnit,
+      required this.gridCellWidthValue,
+      required this.gridCellWidthUnit,
+      required this.gridCellHeightValue,
+      required this.gridCellHeightUnit});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -3576,6 +3653,10 @@ class DbProject extends DataClass implements Insertable<DbProject> {
     map['canvas_width_unit'] = Variable<String>(canvasWidthUnit);
     map['canvas_height_value'] = Variable<double>(canvasHeightValue);
     map['canvas_height_unit'] = Variable<String>(canvasHeightUnit);
+    map['grid_cell_width_value'] = Variable<double>(gridCellWidthValue);
+    map['grid_cell_width_unit'] = Variable<String>(gridCellWidthUnit);
+    map['grid_cell_height_value'] = Variable<double>(gridCellHeightValue);
+    map['grid_cell_height_unit'] = Variable<String>(gridCellHeightUnit);
     return map;
   }
 
@@ -3602,6 +3683,10 @@ class DbProject extends DataClass implements Insertable<DbProject> {
       canvasWidthUnit: Value(canvasWidthUnit),
       canvasHeightValue: Value(canvasHeightValue),
       canvasHeightUnit: Value(canvasHeightUnit),
+      gridCellWidthValue: Value(gridCellWidthValue),
+      gridCellWidthUnit: Value(gridCellWidthUnit),
+      gridCellHeightValue: Value(gridCellHeightValue),
+      gridCellHeightUnit: Value(gridCellHeightUnit),
     );
   }
 
@@ -3624,6 +3709,13 @@ class DbProject extends DataClass implements Insertable<DbProject> {
       canvasWidthUnit: serializer.fromJson<String>(json['canvasWidthUnit']),
       canvasHeightValue: serializer.fromJson<double>(json['canvasHeightValue']),
       canvasHeightUnit: serializer.fromJson<String>(json['canvasHeightUnit']),
+      gridCellWidthValue:
+          serializer.fromJson<double>(json['gridCellWidthValue']),
+      gridCellWidthUnit: serializer.fromJson<String>(json['gridCellWidthUnit']),
+      gridCellHeightValue:
+          serializer.fromJson<double>(json['gridCellHeightValue']),
+      gridCellHeightUnit:
+          serializer.fromJson<String>(json['gridCellHeightUnit']),
     );
   }
   @override
@@ -3645,6 +3737,10 @@ class DbProject extends DataClass implements Insertable<DbProject> {
       'canvasWidthUnit': serializer.toJson<String>(canvasWidthUnit),
       'canvasHeightValue': serializer.toJson<double>(canvasHeightValue),
       'canvasHeightUnit': serializer.toJson<String>(canvasHeightUnit),
+      'gridCellWidthValue': serializer.toJson<double>(gridCellWidthValue),
+      'gridCellWidthUnit': serializer.toJson<String>(gridCellWidthUnit),
+      'gridCellHeightValue': serializer.toJson<double>(gridCellHeightValue),
+      'gridCellHeightUnit': serializer.toJson<String>(gridCellHeightUnit),
     };
   }
 
@@ -3663,7 +3759,11 @@ class DbProject extends DataClass implements Insertable<DbProject> {
           double? canvasWidthValue,
           String? canvasWidthUnit,
           double? canvasHeightValue,
-          String? canvasHeightUnit}) =>
+          String? canvasHeightUnit,
+          double? gridCellWidthValue,
+          String? gridCellWidthUnit,
+          double? gridCellHeightValue,
+          String? gridCellHeightUnit}) =>
       DbProject(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -3680,6 +3780,10 @@ class DbProject extends DataClass implements Insertable<DbProject> {
         canvasWidthUnit: canvasWidthUnit ?? this.canvasWidthUnit,
         canvasHeightValue: canvasHeightValue ?? this.canvasHeightValue,
         canvasHeightUnit: canvasHeightUnit ?? this.canvasHeightUnit,
+        gridCellWidthValue: gridCellWidthValue ?? this.gridCellWidthValue,
+        gridCellWidthUnit: gridCellWidthUnit ?? this.gridCellWidthUnit,
+        gridCellHeightValue: gridCellHeightValue ?? this.gridCellHeightValue,
+        gridCellHeightUnit: gridCellHeightUnit ?? this.gridCellHeightUnit,
       );
   DbProject copyWithCompanion(ProjectsCompanion data) {
     return DbProject(
@@ -3710,6 +3814,18 @@ class DbProject extends DataClass implements Insertable<DbProject> {
       canvasHeightUnit: data.canvasHeightUnit.present
           ? data.canvasHeightUnit.value
           : this.canvasHeightUnit,
+      gridCellWidthValue: data.gridCellWidthValue.present
+          ? data.gridCellWidthValue.value
+          : this.gridCellWidthValue,
+      gridCellWidthUnit: data.gridCellWidthUnit.present
+          ? data.gridCellWidthUnit.value
+          : this.gridCellWidthUnit,
+      gridCellHeightValue: data.gridCellHeightValue.present
+          ? data.gridCellHeightValue.value
+          : this.gridCellHeightValue,
+      gridCellHeightUnit: data.gridCellHeightUnit.present
+          ? data.gridCellHeightUnit.value
+          : this.gridCellHeightUnit,
     );
   }
 
@@ -3730,7 +3846,11 @@ class DbProject extends DataClass implements Insertable<DbProject> {
           ..write('canvasWidthValue: $canvasWidthValue, ')
           ..write('canvasWidthUnit: $canvasWidthUnit, ')
           ..write('canvasHeightValue: $canvasHeightValue, ')
-          ..write('canvasHeightUnit: $canvasHeightUnit')
+          ..write('canvasHeightUnit: $canvasHeightUnit, ')
+          ..write('gridCellWidthValue: $gridCellWidthValue, ')
+          ..write('gridCellWidthUnit: $gridCellWidthUnit, ')
+          ..write('gridCellHeightValue: $gridCellHeightValue, ')
+          ..write('gridCellHeightUnit: $gridCellHeightUnit')
           ..write(')'))
         .toString();
   }
@@ -3751,7 +3871,11 @@ class DbProject extends DataClass implements Insertable<DbProject> {
       canvasWidthValue,
       canvasWidthUnit,
       canvasHeightValue,
-      canvasHeightUnit);
+      canvasHeightUnit,
+      gridCellWidthValue,
+      gridCellWidthUnit,
+      gridCellHeightValue,
+      gridCellHeightUnit);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3770,7 +3894,11 @@ class DbProject extends DataClass implements Insertable<DbProject> {
           other.canvasWidthValue == this.canvasWidthValue &&
           other.canvasWidthUnit == this.canvasWidthUnit &&
           other.canvasHeightValue == this.canvasHeightValue &&
-          other.canvasHeightUnit == this.canvasHeightUnit);
+          other.canvasHeightUnit == this.canvasHeightUnit &&
+          other.gridCellWidthValue == this.gridCellWidthValue &&
+          other.gridCellWidthUnit == this.gridCellWidthUnit &&
+          other.gridCellHeightValue == this.gridCellHeightValue &&
+          other.gridCellHeightUnit == this.gridCellHeightUnit);
 }
 
 class ProjectsCompanion extends UpdateCompanion<DbProject> {
@@ -3789,6 +3917,10 @@ class ProjectsCompanion extends UpdateCompanion<DbProject> {
   final Value<String> canvasWidthUnit;
   final Value<double> canvasHeightValue;
   final Value<String> canvasHeightUnit;
+  final Value<double> gridCellWidthValue;
+  final Value<String> gridCellWidthUnit;
+  final Value<double> gridCellHeightValue;
+  final Value<String> gridCellHeightUnit;
   const ProjectsCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -3805,6 +3937,10 @@ class ProjectsCompanion extends UpdateCompanion<DbProject> {
     this.canvasWidthUnit = const Value.absent(),
     this.canvasHeightValue = const Value.absent(),
     this.canvasHeightUnit = const Value.absent(),
+    this.gridCellWidthValue = const Value.absent(),
+    this.gridCellWidthUnit = const Value.absent(),
+    this.gridCellHeightValue = const Value.absent(),
+    this.gridCellHeightUnit = const Value.absent(),
   });
   ProjectsCompanion.insert({
     this.id = const Value.absent(),
@@ -3822,6 +3958,10 @@ class ProjectsCompanion extends UpdateCompanion<DbProject> {
     this.canvasWidthUnit = const Value.absent(),
     this.canvasHeightValue = const Value.absent(),
     this.canvasHeightUnit = const Value.absent(),
+    this.gridCellWidthValue = const Value.absent(),
+    this.gridCellWidthUnit = const Value.absent(),
+    this.gridCellHeightValue = const Value.absent(),
+    this.gridCellHeightUnit = const Value.absent(),
   })  : title = Value(title),
         createdAt = Value(createdAt),
         updatedAt = Value(updatedAt);
@@ -3841,6 +3981,10 @@ class ProjectsCompanion extends UpdateCompanion<DbProject> {
     Expression<String>? canvasWidthUnit,
     Expression<double>? canvasHeightValue,
     Expression<String>? canvasHeightUnit,
+    Expression<double>? gridCellWidthValue,
+    Expression<String>? gridCellWidthUnit,
+    Expression<double>? gridCellHeightValue,
+    Expression<String>? gridCellHeightUnit,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3858,6 +4002,13 @@ class ProjectsCompanion extends UpdateCompanion<DbProject> {
       if (canvasWidthUnit != null) 'canvas_width_unit': canvasWidthUnit,
       if (canvasHeightValue != null) 'canvas_height_value': canvasHeightValue,
       if (canvasHeightUnit != null) 'canvas_height_unit': canvasHeightUnit,
+      if (gridCellWidthValue != null)
+        'grid_cell_width_value': gridCellWidthValue,
+      if (gridCellWidthUnit != null) 'grid_cell_width_unit': gridCellWidthUnit,
+      if (gridCellHeightValue != null)
+        'grid_cell_height_value': gridCellHeightValue,
+      if (gridCellHeightUnit != null)
+        'grid_cell_height_unit': gridCellHeightUnit,
     });
   }
 
@@ -3876,7 +4027,11 @@ class ProjectsCompanion extends UpdateCompanion<DbProject> {
       Value<double>? canvasWidthValue,
       Value<String>? canvasWidthUnit,
       Value<double>? canvasHeightValue,
-      Value<String>? canvasHeightUnit}) {
+      Value<String>? canvasHeightUnit,
+      Value<double>? gridCellWidthValue,
+      Value<String>? gridCellWidthUnit,
+      Value<double>? gridCellHeightValue,
+      Value<String>? gridCellHeightUnit}) {
     return ProjectsCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -3893,6 +4048,10 @@ class ProjectsCompanion extends UpdateCompanion<DbProject> {
       canvasWidthUnit: canvasWidthUnit ?? this.canvasWidthUnit,
       canvasHeightValue: canvasHeightValue ?? this.canvasHeightValue,
       canvasHeightUnit: canvasHeightUnit ?? this.canvasHeightUnit,
+      gridCellWidthValue: gridCellWidthValue ?? this.gridCellWidthValue,
+      gridCellWidthUnit: gridCellWidthUnit ?? this.gridCellWidthUnit,
+      gridCellHeightValue: gridCellHeightValue ?? this.gridCellHeightValue,
+      gridCellHeightUnit: gridCellHeightUnit ?? this.gridCellHeightUnit,
     );
   }
 
@@ -3944,6 +4103,19 @@ class ProjectsCompanion extends UpdateCompanion<DbProject> {
     if (canvasHeightUnit.present) {
       map['canvas_height_unit'] = Variable<String>(canvasHeightUnit.value);
     }
+    if (gridCellWidthValue.present) {
+      map['grid_cell_width_value'] = Variable<double>(gridCellWidthValue.value);
+    }
+    if (gridCellWidthUnit.present) {
+      map['grid_cell_width_unit'] = Variable<String>(gridCellWidthUnit.value);
+    }
+    if (gridCellHeightValue.present) {
+      map['grid_cell_height_value'] =
+          Variable<double>(gridCellHeightValue.value);
+    }
+    if (gridCellHeightUnit.present) {
+      map['grid_cell_height_unit'] = Variable<String>(gridCellHeightUnit.value);
+    }
     return map;
   }
 
@@ -3964,7 +4136,11 @@ class ProjectsCompanion extends UpdateCompanion<DbProject> {
           ..write('canvasWidthValue: $canvasWidthValue, ')
           ..write('canvasWidthUnit: $canvasWidthUnit, ')
           ..write('canvasHeightValue: $canvasHeightValue, ')
-          ..write('canvasHeightUnit: $canvasHeightUnit')
+          ..write('canvasHeightUnit: $canvasHeightUnit, ')
+          ..write('gridCellWidthValue: $gridCellWidthValue, ')
+          ..write('gridCellWidthUnit: $gridCellWidthUnit, ')
+          ..write('gridCellHeightValue: $gridCellHeightValue, ')
+          ..write('gridCellHeightUnit: $gridCellHeightUnit')
           ..write(')'))
         .toString();
   }
@@ -7032,6 +7208,10 @@ typedef $$ProjectsTableCreateCompanionBuilder = ProjectsCompanion Function({
   Value<String> canvasWidthUnit,
   Value<double> canvasHeightValue,
   Value<String> canvasHeightUnit,
+  Value<double> gridCellWidthValue,
+  Value<String> gridCellWidthUnit,
+  Value<double> gridCellHeightValue,
+  Value<String> gridCellHeightUnit,
 });
 typedef $$ProjectsTableUpdateCompanionBuilder = ProjectsCompanion Function({
   Value<int> id,
@@ -7049,6 +7229,10 @@ typedef $$ProjectsTableUpdateCompanionBuilder = ProjectsCompanion Function({
   Value<String> canvasWidthUnit,
   Value<double> canvasHeightValue,
   Value<String> canvasHeightUnit,
+  Value<double> gridCellWidthValue,
+  Value<String> gridCellWidthUnit,
+  Value<double> gridCellHeightValue,
+  Value<String> gridCellHeightUnit,
 });
 
 final class $$ProjectsTableReferences
@@ -7135,6 +7319,22 @@ class $$ProjectsTableFilterComposer
 
   ColumnFilters<String> get canvasHeightUnit => $composableBuilder(
       column: $table.canvasHeightUnit,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get gridCellWidthValue => $composableBuilder(
+      column: $table.gridCellWidthValue,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get gridCellWidthUnit => $composableBuilder(
+      column: $table.gridCellWidthUnit,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get gridCellHeightValue => $composableBuilder(
+      column: $table.gridCellHeightValue,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get gridCellHeightUnit => $composableBuilder(
+      column: $table.gridCellHeightUnit,
       builder: (column) => ColumnFilters(column));
 
   $$ImagesTableFilterComposer get imageId {
@@ -7232,6 +7432,22 @@ class $$ProjectsTableOrderingComposer
       column: $table.canvasHeightUnit,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<double> get gridCellWidthValue => $composableBuilder(
+      column: $table.gridCellWidthValue,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get gridCellWidthUnit => $composableBuilder(
+      column: $table.gridCellWidthUnit,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get gridCellHeightValue => $composableBuilder(
+      column: $table.gridCellHeightValue,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get gridCellHeightUnit => $composableBuilder(
+      column: $table.gridCellHeightUnit,
+      builder: (column) => ColumnOrderings(column));
+
   $$ImagesTableOrderingComposer get imageId {
     final $$ImagesTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -7321,6 +7537,18 @@ class $$ProjectsTableAnnotationComposer
   GeneratedColumn<String> get canvasHeightUnit => $composableBuilder(
       column: $table.canvasHeightUnit, builder: (column) => column);
 
+  GeneratedColumn<double> get gridCellWidthValue => $composableBuilder(
+      column: $table.gridCellWidthValue, builder: (column) => column);
+
+  GeneratedColumn<String> get gridCellWidthUnit => $composableBuilder(
+      column: $table.gridCellWidthUnit, builder: (column) => column);
+
+  GeneratedColumn<double> get gridCellHeightValue => $composableBuilder(
+      column: $table.gridCellHeightValue, builder: (column) => column);
+
+  GeneratedColumn<String> get gridCellHeightUnit => $composableBuilder(
+      column: $table.gridCellHeightUnit, builder: (column) => column);
+
   $$ImagesTableAnnotationComposer get imageId {
     final $$ImagesTableAnnotationComposer composer = $composerBuilder(
         composer: this,
@@ -7400,6 +7628,10 @@ class $$ProjectsTableTableManager extends RootTableManager<
             Value<String> canvasWidthUnit = const Value.absent(),
             Value<double> canvasHeightValue = const Value.absent(),
             Value<String> canvasHeightUnit = const Value.absent(),
+            Value<double> gridCellWidthValue = const Value.absent(),
+            Value<String> gridCellWidthUnit = const Value.absent(),
+            Value<double> gridCellHeightValue = const Value.absent(),
+            Value<String> gridCellHeightUnit = const Value.absent(),
           }) =>
               ProjectsCompanion(
             id: id,
@@ -7417,6 +7649,10 @@ class $$ProjectsTableTableManager extends RootTableManager<
             canvasWidthUnit: canvasWidthUnit,
             canvasHeightValue: canvasHeightValue,
             canvasHeightUnit: canvasHeightUnit,
+            gridCellWidthValue: gridCellWidthValue,
+            gridCellWidthUnit: gridCellWidthUnit,
+            gridCellHeightValue: gridCellHeightValue,
+            gridCellHeightUnit: gridCellHeightUnit,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -7434,6 +7670,10 @@ class $$ProjectsTableTableManager extends RootTableManager<
             Value<String> canvasWidthUnit = const Value.absent(),
             Value<double> canvasHeightValue = const Value.absent(),
             Value<String> canvasHeightUnit = const Value.absent(),
+            Value<double> gridCellWidthValue = const Value.absent(),
+            Value<String> gridCellWidthUnit = const Value.absent(),
+            Value<double> gridCellHeightValue = const Value.absent(),
+            Value<String> gridCellHeightUnit = const Value.absent(),
           }) =>
               ProjectsCompanion.insert(
             id: id,
@@ -7451,6 +7691,10 @@ class $$ProjectsTableTableManager extends RootTableManager<
             canvasWidthUnit: canvasWidthUnit,
             canvasHeightValue: canvasHeightValue,
             canvasHeightUnit: canvasHeightUnit,
+            gridCellWidthValue: gridCellWidthValue,
+            gridCellWidthUnit: gridCellWidthUnit,
+            gridCellHeightValue: gridCellHeightValue,
+            gridCellHeightUnit: gridCellHeightUnit,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) =>
