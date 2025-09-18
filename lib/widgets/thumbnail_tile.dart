@@ -111,9 +111,9 @@ class _Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> lines = (lines.length >= 3)
-        ? lines.sublist(0, 3)
-        : [...lines, ...List.filled(3 - lines.length, '')];
+    final List<String> normalizedLines = (this.lines.length >= 3)
+        ? this.lines.sublist(0, 3)
+        : [...this.lines, ...List.filled(3 - this.lines.length, '')];
 
     return Container(
       height: height,
@@ -150,7 +150,7 @@ class _Footer extends StatelessWidget {
                       height: 18.0,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        lines[0],
+                        normalizedLines[0],
                         style: appTextStyles.bodyM.copyWith(
                           color: kGrey100,
                           fontWeight: FontWeight.bold,
@@ -163,7 +163,7 @@ class _Footer extends StatelessWidget {
                       height: 18.0,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        lines[1],
+                        normalizedLines[1],
                         style: appTextStyles.bodyM.copyWith(color: kGrey100),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -173,7 +173,7 @@ class _Footer extends StatelessWidget {
                       height: 18.0,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        lines[2],
+                        normalizedLines[2],
                         style: appTextStyles.bodyM.copyWith(color: kGrey100),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
