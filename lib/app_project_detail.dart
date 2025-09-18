@@ -3,7 +3,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart'
-    show kIsWeb, defaultTargetPlatform, TargetPlatform;
+    show kIsWeb, defaultTargetPlatform, TargetPlatform, debugPrint;
 import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, TextInputFormatter;
 import 'package:drift/drift.dart' show Value, Variable;
@@ -109,6 +109,10 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
       return;
     }
     // Convert according to selected units for preview (consistent with onResizeTap)
+    debugPrint(
+        '[ProjectDetail] recompute: in=(${w.toStringAsFixed(4)} ${_canvasWUnit}/${h.toStringAsFixed(4)} ${_canvasHUnit})'
+        ' enums=(${_canvasWUnitE.asDbString}/${_canvasHUnitE.asDbString})'
+        ' dpi=${_AppProjectDetailPageState.kPreviewDpi}');
     final double pxW = convertUnitTyped(
             value: w,
             from: _canvasWUnitE,
@@ -121,6 +125,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
             to: Unit.px,
             dpi: _AppProjectDetailPageState.kPreviewDpi)
         .clamp(1.0, 20000.0);
+    debugPrint(
+        '[ProjectDetail] recompute: outPx=(${pxW.toStringAsFixed(2)} x ${pxH.toStringAsFixed(2)})');
     setState(() {
       _canvasPxW = pxW;
       _canvasPxH = pxH;

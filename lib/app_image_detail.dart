@@ -594,86 +594,89 @@ extension on _AppImageDetailPageState {
     }
 
     const double pad = 0.0;
-    return Stack(
-      children: [
-        _ArtboardView(
-          controller: _ivController,
-          boardW: boardW,
-          boardH: boardH,
-          canvasW: canvasW,
-          canvasH: canvasH,
-          bytes: bytes,
-          outerPad: pad,
-          viewportKey: _viewportKey,
-        ),
-        if (bytes != null)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 16.0,
-            child: Center(
-              child: SnackbarImage(
-                onZoomIn: () {
-                  final double cur = _ivController.value.getMaxScaleOnAxis();
-                  final double next = (cur * 1.25).clamp(0.25, 8.0);
-                  final double factor = next / cur;
-                  final RenderBox? box = _viewportKey.currentContext
-                      ?.findRenderObject() as RenderBox?;
-                  final Size vp = box?.size ?? const Size(0, 0);
-                  if (vp.width == 0 || vp.height == 0) {
-                    final Matrix4 m = _ivController.value.clone();
-                    _ivController.value = m..scale(factor);
-                    return;
-                  }
-                  final Offset viewportCenter =
-                      Offset(vp.width / 2, vp.height / 2);
-                  final Matrix4 inv =
-                      Matrix4.inverted(_ivController.value.clone());
-                  final Offset sceneFocal =
-                      MatrixUtils.transformPoint(inv, viewportCenter);
-                  final Matrix4 m = _ivController.value.clone()
-                    ..translate(sceneFocal.dx, sceneFocal.dy)
-                    ..scale(factor)
-                    ..translate(-sceneFocal.dx, -sceneFocal.dy);
-                  _ivController.value = m;
-                },
-                onZoomOut: () {
-                  final double cur = _ivController.value.getMaxScaleOnAxis();
-                  final double next = (cur / 1.25).clamp(0.25, 8.0);
-                  final double factor = next / cur;
-                  final RenderBox? box = _viewportKey.currentContext
-                      ?.findRenderObject() as RenderBox?;
-                  final Size vp = box?.size ?? const Size(0, 0);
-                  if (vp.width == 0 || vp.height == 0) {
-                    final Matrix4 m = _ivController.value.clone();
-                    _ivController.value = m..scale(factor);
-                    return;
-                  }
-                  final Offset viewportCenter =
-                      Offset(vp.width / 2, vp.height / 2);
-                  final Matrix4 inv =
-                      Matrix4.inverted(_ivController.value.clone());
-                  final Offset sceneFocal =
-                      MatrixUtils.transformPoint(inv, viewportCenter);
-                  final Matrix4 m = _ivController.value.clone()
-                    ..translate(sceneFocal.dx, sceneFocal.dy)
-                    ..scale(factor)
-                    ..translate(-sceneFocal.dx, -sceneFocal.dy);
-                  _ivController.value = m;
-                },
-                onFitToScreen: () {
-                  _ivController.value = Matrix4.identity();
-                },
+    return ColoredBox(
+      color: kGrey70,
+      child: Stack(
+        children: [
+          _ArtboardView(
+            controller: _ivController,
+            boardW: boardW,
+            boardH: boardH,
+            canvasW: canvasW,
+            canvasH: canvasH,
+            bytes: bytes,
+            outerPad: pad,
+            viewportKey: _viewportKey,
+          ),
+          if (bytes != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 16.0,
+              child: Center(
+                child: SnackbarImage(
+                  onZoomIn: () {
+                    final double cur = _ivController.value.getMaxScaleOnAxis();
+                    final double next = (cur * 1.25).clamp(0.25, 8.0);
+                    final double factor = next / cur;
+                    final RenderBox? box = _viewportKey.currentContext
+                        ?.findRenderObject() as RenderBox?;
+                    final Size vp = box?.size ?? const Size(0, 0);
+                    if (vp.width == 0 || vp.height == 0) {
+                      final Matrix4 m = _ivController.value.clone();
+                      _ivController.value = m..scale(factor);
+                      return;
+                    }
+                    final Offset viewportCenter =
+                        Offset(vp.width / 2, vp.height / 2);
+                    final Matrix4 inv =
+                        Matrix4.inverted(_ivController.value.clone());
+                    final Offset sceneFocal =
+                        MatrixUtils.transformPoint(inv, viewportCenter);
+                    final Matrix4 m = _ivController.value.clone()
+                      ..translate(sceneFocal.dx, sceneFocal.dy)
+                      ..scale(factor)
+                      ..translate(-sceneFocal.dx, -sceneFocal.dy);
+                    _ivController.value = m;
+                  },
+                  onZoomOut: () {
+                    final double cur = _ivController.value.getMaxScaleOnAxis();
+                    final double next = (cur / 1.25).clamp(0.25, 8.0);
+                    final double factor = next / cur;
+                    final RenderBox? box = _viewportKey.currentContext
+                        ?.findRenderObject() as RenderBox?;
+                    final Size vp = box?.size ?? const Size(0, 0);
+                    if (vp.width == 0 || vp.height == 0) {
+                      final Matrix4 m = _ivController.value.clone();
+                      _ivController.value = m..scale(factor);
+                      return;
+                    }
+                    final Offset viewportCenter =
+                        Offset(vp.width / 2, vp.height / 2);
+                    final Matrix4 inv =
+                        Matrix4.inverted(_ivController.value.clone());
+                    final Offset sceneFocal =
+                        MatrixUtils.transformPoint(inv, viewportCenter);
+                    final Matrix4 m = _ivController.value.clone()
+                      ..translate(sceneFocal.dx, sceneFocal.dy)
+                      ..scale(factor)
+                      ..translate(-sceneFocal.dx, -sceneFocal.dy);
+                    _ivController.value = m;
+                  },
+                  onFitToScreen: () {
+                    _ivController.value = Matrix4.identity();
+                  },
+                ),
               ),
             ),
-          ),
-        if (showUpload)
-          const Positioned.fill(
-            child: Center(
-              child: SizedBox.shrink(),
+          if (showUpload)
+            const Positioned.fill(
+              child: Center(
+                child: SizedBox.shrink(),
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
