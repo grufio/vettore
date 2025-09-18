@@ -8,7 +8,6 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/section_sidebar.dart';
-import 'package:vettore/widgets/section_input.dart';
 import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/providers/application_providers.dart';
@@ -24,7 +23,6 @@ import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 import 'package:flutter/foundation.dart'
     show compute, debugPrint, kIsWeb, defaultTargetPlatform, TargetPlatform;
-import 'package:flutter/rendering.dart' show MatrixUtils;
 import 'package:file_picker/file_picker.dart';
 import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/services/image_compute.dart' as ic;
@@ -109,7 +107,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     // Guarded for release
     assert(() {
       debugPrint(
-          '[ImageDetail] _applyImageDims cur=${curW}x${curH} new=${width}x${height} init=${_dimsInitialized} should=$should');
+          '[ImageDetail] _applyImageDims cur=${curW}x$curH new=${width}x$height init=$_dimsInitialized should=$should');
       return true;
     }());
     if (!should) return;

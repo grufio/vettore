@@ -386,7 +386,7 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 21) {
           // Add image layer transform columns to images if missing
-          Future<void> _addIfMissing(String name, String sql) async {
+          Future<void> addIfMissing(String name, String sql) async {
             final exists = await m.database
                 .customSelect(
                     "SELECT 1 FROM pragma_table_info('images') WHERE name = '$name' LIMIT 1")
@@ -396,22 +396,22 @@ class AppDatabase extends _$AppDatabase {
             }
           }
 
-          await _addIfMissing('layer_offset_x',
+          await addIfMissing('layer_offset_x',
               "ALTER TABLE images ADD COLUMN layer_offset_x REAL");
-          await _addIfMissing('layer_offset_y',
+          await addIfMissing('layer_offset_y',
               "ALTER TABLE images ADD COLUMN layer_offset_y REAL");
-          await _addIfMissing(
+          await addIfMissing(
               'layer_scale', "ALTER TABLE images ADD COLUMN layer_scale REAL");
-          await _addIfMissing('layer_rotation_deg',
+          await addIfMissing('layer_rotation_deg',
               "ALTER TABLE images ADD COLUMN layer_rotation_deg REAL");
-          await _addIfMissing('layer_opacity',
+          await addIfMissing('layer_opacity',
               "ALTER TABLE images ADD COLUMN layer_opacity REAL");
-          await _addIfMissing('layer_visible',
+          await addIfMissing('layer_visible',
               "ALTER TABLE images ADD COLUMN layer_visible INTEGER");
         }
         if (from < 22) {
           // Add DPI columns to images if missing
-          Future<void> _addIfMissingImg(String name, String sql) async {
+          Future<void> addIfMissingImg(String name, String sql) async {
             final exists = await m.database
                 .customSelect(
                     "SELECT 1 FROM pragma_table_info('images') WHERE name = '$name' LIMIT 1")
@@ -421,9 +421,9 @@ class AppDatabase extends _$AppDatabase {
             }
           }
 
-          await _addIfMissingImg(
+          await addIfMissingImg(
               'orig_dpi', "ALTER TABLE images ADD COLUMN orig_dpi INTEGER");
-          await _addIfMissingImg(
+          await addIfMissingImg(
               'dpi', "ALTER TABLE images ADD COLUMN dpi INTEGER");
         }
         if (from < 23) {

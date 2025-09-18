@@ -37,16 +37,16 @@ class ThumbnailTile extends StatelessWidget {
   Widget build(BuildContext context) {
     // Keep inner clip radius aligned to the inner edge of the stroke so
     // the thumbnail edge and the border edge visually match for any border width.
-    final double _outerRadius = borderRadius.topLeft.x;
-    final double _innerRadius =
-        (_outerRadius - borderWidth).clamp(0.0, _outerRadius);
+    final double outerRadius = borderRadius.topLeft.x;
+    final double innerRadius =
+        (outerRadius - borderWidth).clamp(0.0, outerRadius);
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: borderColor, width: borderWidth),
         borderRadius: borderRadius,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.all(Radius.circular(_innerRadius)),
+        borderRadius: BorderRadius.all(Radius.circular(innerRadius)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -111,7 +111,7 @@ class _Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> _lines = (lines.length >= 3)
+    final List<String> lines = (lines.length >= 3)
         ? lines.sublist(0, 3)
         : [...lines, ...List.filled(3 - lines.length, '')];
 
@@ -150,7 +150,7 @@ class _Footer extends StatelessWidget {
                       height: 18.0,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        _lines[0],
+                        lines[0],
                         style: appTextStyles.bodyM.copyWith(
                           color: kGrey100,
                           fontWeight: FontWeight.bold,
@@ -163,7 +163,7 @@ class _Footer extends StatelessWidget {
                       height: 18.0,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        _lines[1],
+                        lines[1],
                         style: appTextStyles.bodyM.copyWith(color: kGrey100),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -173,7 +173,7 @@ class _Footer extends StatelessWidget {
                       height: 18.0,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        _lines[2],
+                        lines[2],
                         style: appTextStyles.bodyM.copyWith(color: kGrey100),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

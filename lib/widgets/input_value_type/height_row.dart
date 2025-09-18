@@ -41,7 +41,7 @@ class HeightRow extends StatefulWidget {
 class _HeightRowState extends State<HeightRow> {
   static const List<String> _defaultUnits = kUnits;
   String _unit = 'px';
-  bool _syncing = false;
+  final bool _syncing = false;
   double? _valuePx; // preserve precise px value
 
   @override

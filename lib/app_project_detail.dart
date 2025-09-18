@@ -11,7 +11,6 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/section_sidebar.dart';
-import 'package:vettore/widgets/section_input.dart';
 import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
 // import 'package:vettore/widgets/image_upload_area.dart';
@@ -631,11 +630,11 @@ extension on _AppProjectDetailPageState {
                   child: SizedBox(
                     width: drawW,
                     height: drawH,
-                    child: Stack(
+                    child: const Stack(
                       children: [
-                        const Positioned.fill(child: ColoredBox(color: kWhite)),
+                        Positioned.fill(child: ColoredBox(color: kWhite)),
                         // Hairline border that stays 1 device pixel regardless of scale
-                        const Positioned.fill(
+                        Positioned.fill(
                           child: _ProjectHairlineBorder(),
                         ),
                       ],

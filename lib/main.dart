@@ -217,9 +217,9 @@ class _AppShellState extends State<_AppShell> {
                         // Fetch actual project title for the new tab label
                         final container = ProviderScope.containerOf(context);
                         final repo = container.read(projectRepositoryProvider);
-                        final DbProject? p = await repo.getById(projectId);
+                        final DbProject p = await repo.getById(projectId);
                         final String tabLabel =
-                            (p != null && p.title.isNotEmpty)
+                            (p.title.isNotEmpty)
                                 ? p.title
                                 : 'Untitled';
                         setState(() {

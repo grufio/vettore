@@ -77,14 +77,14 @@ double convertUnitTyped({
     }
   }
 
-  double _round(double v, int dec) {
+  double round(double v, int dec) {
     final double p = math.pow(10, dec).toDouble();
     return (v * p).round() / p;
   }
 
   final double inches = toInches(value, from);
   final double out = fromInches(inches, to);
-  return to == Unit.px ? out : _round(out, 4);
+  return to == Unit.px ? out : round(out, 4);
 }
 
 double convertUnit({
@@ -145,7 +145,7 @@ double convertUnit({
     }
   }
 
-  double _round(double v, int dec) {
+  double round(double v, int dec) {
     final double p = math.pow(10, dec).toDouble();
     return (v * p).round() / p;
   }
@@ -153,7 +153,7 @@ double convertUnit({
   final double inches = toInches(value, from);
   final double out = fromInches(inches, to);
   // For non-px targets, round to 4 decimals at conversion time
-  return to == 'px' ? out : _round(out, 4);
+  return to == 'px' ? out : round(out, 4);
 }
 
 String formatUnitValue(double value, String unit) {

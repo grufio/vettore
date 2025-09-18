@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
@@ -7,7 +6,6 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' hide Column;
-import 'package:drift/drift.dart' as drift show Variable;
 import 'package:image/image.dart' as img;
 import 'package:flutter/foundation.dart' show compute;
 import 'package:vettore/services/image_compute.dart' as ic;
@@ -17,7 +15,6 @@ import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/services/logger.dart';
 import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/services/coupling_guard.dart';
 
 // Image bytes provider: render converted (working) bytes when present, else original
 // Minimal one-time logging to verify source selection
@@ -565,10 +562,10 @@ class ProjectLogic {
 
     await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
         .write(ImagesCompanion(
-      convSrc: Value.absent(),
-      convBytes: Value.absent(),
-      convWidth: Value.absent(),
-      convHeight: Value.absent(),
+      convSrc: const Value.absent(),
+      convBytes: const Value.absent(),
+      convWidth: const Value.absent(),
+      convHeight: const Value.absent(),
       convUniqueColors: Value(uniqueColorCount),
     ));
     final now = DateTime.now().millisecondsSinceEpoch;

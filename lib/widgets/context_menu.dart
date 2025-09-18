@@ -127,13 +127,13 @@ class _ContextMenuPanelState extends State<_ContextMenuPanel> {
           return KeyEventResult.ignored;
         },
         child: ConstrainedBox(
-          constraints: BoxConstraints.tightFor(width: kDropdownPanelWidth),
+          constraints: const BoxConstraints.tightFor(width: kDropdownPanelWidth),
           child: Container(
             padding: ContextMenu.panelPadding,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: kGrey100,
-              borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-              boxShadow: const [
+              borderRadius: BorderRadius.all(Radius.circular(8.0)),
+              boxShadow: [
                 BoxShadow(
                   color: Color(0x22000000),
                   blurRadius: 8,

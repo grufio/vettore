@@ -13,8 +13,7 @@ class CouplingGuard {
   static void checkImageAccess(String label) {
     if (_inCanvasSizing) {
       // ignore: avoid_print
-      print('[CouplingGuard] WARNING: Image access during canvas sizing at ' +
-          label);
+      print('[CouplingGuard] WARNING: Image access during canvas sizing at $label');
     }
   }
 }

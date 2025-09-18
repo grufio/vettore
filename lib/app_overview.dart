@@ -105,8 +105,9 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   }
 
   void _onCloseTab(int index) {
-    if (index <= 0 || index >= _tabs.length)
+    if (index <= 0 || index >= _tabs.length) {
       return; // do not close home; guard bounds
+    }
     setState(() {
       _tabs.removeAt(index);
       if (_activeIndex >= _tabs.length) {
@@ -488,8 +489,8 @@ class _HomeGalleryContainer extends ConsumerWidget {
                   final String line2 = (dpi == null || dpi == 0)
                       ? baseSize
                       : (baseSize.isEmpty
-                          ? '${dpi} dpi'
-                          : '$baseSize, ${dpi} dpi');
+                          ? '$dpi dpi'
+                          : '$baseSize, $dpi dpi');
                   return _ProjectThumbnail(
                     bytes: bytes,
                     title: p.title,

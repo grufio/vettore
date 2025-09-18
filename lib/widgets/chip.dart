@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/theme/app_theme_typography.dart';
 
 /// Active filter chip
 /// Specs:

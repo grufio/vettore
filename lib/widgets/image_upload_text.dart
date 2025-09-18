@@ -64,9 +64,9 @@ class _ImageUploadTextState extends State<ImageUploadText> {
                   ),
                   const SizedBox(height: _lineHeightPx),
                 ],
-                Text(
+                const Text(
                   'No image available.',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: _fontSize,
                     fontWeight: FontWeight.bold,
                     color: kGrey100,
@@ -74,9 +74,9 @@ class _ImageUploadTextState extends State<ImageUploadText> {
                   ),
                 ),
                 // No extra gap between title and next line
-                Text(
+                const Text(
                   'Drag an image into this area or',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: _fontSize,
                     fontWeight: FontWeight.w400,
                     color: kGrey90,

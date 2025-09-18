@@ -146,6 +146,7 @@ class _InputValueTypeState extends State<InputValueType> {
   // Dropdown is driven by RawAutocomplete; no direct guard needed.
   // Deprecated overlay/highlight state removed with RawAutocomplete
   bool _forceOpen = false;
+  bool _hoverField = false;
   // Legacy selection toggle no longer needed
   // Persist selected item (for checkmark) across openings, even if parent doesn't manage it
   String? _selectedItem;
@@ -289,98 +290,105 @@ class _InputValueTypeState extends State<InputValueType> {
 
     return CompositedTransformTarget(
       link: _layerLink,
-      child: Container(
-        key: _targetKey,
-        height: 24.0,
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        decoration: BoxDecoration(
-          color: widget.readOnlyView ? kWhite : kGrey10,
-          borderRadius: BorderRadius.circular(4.0),
-          border: widget.readOnlyView
-              ? Border.all(color: kBordersColor, width: 1.0)
-              : Border.all(
-                  color: _focusNode.hasFocus ? kInputFocus : kTransparent,
-                  width: 1.0,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hoverField = true),
+        onExit: (_) => setState(() => _hoverField = false),
+        child: Container(
+          key: _targetKey,
+          height: 24.0,
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          decoration: BoxDecoration(
+            color: widget.readOnlyView ? kWhite : kGrey10,
+            borderRadius: BorderRadius.circular(4.0),
+            border: widget.readOnlyView
+                ? Border.all(color: kBordersColor, width: 1.0)
+                : Border.all(
+                    color: _focusNode.hasFocus
+                        ? kInputFocus
+                        : (_hoverField ? kBordersColor : kTransparent),
+                    width: 1.0,
+                  ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Always show a prefix icon; default substitutes the label
+              ...[
+                PrefixIcon(
+                  asset: widget.prefixIconAsset ?? 'assets/icons/16/help.svg',
+                  size: widget.prefixIconWidth ?? 16.0,
+                  fit: widget.prefixIconFit ?? BoxFit.none,
+                  alignment: widget.prefixIconAlignment ?? Alignment.centerLeft,
+                  color: kGrey70,
                 ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Always show a prefix icon; default substitutes the label
-            ...[
-              PrefixIcon(
-                asset: widget.prefixIconAsset ?? 'assets/icons/16/help.svg',
-                size: widget.prefixIconWidth ?? 16.0,
-                fit: widget.prefixIconFit ?? BoxFit.none,
-                alignment: widget.prefixIconAlignment ?? Alignment.centerLeft,
-                color: kGrey70,
-              ),
-              const SizedBox(width: 8.0),
-            ],
-            Expanded(
-              child: MouseRegion(
-                cursor: isReadOnly
-                    ? SystemMouseCursors.basic
-                    : SystemMouseCursors.text,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: () {
-                    if (!isReadOnly) {
-                      _focusNode.requestFocus();
-                    }
-                  },
-                  child: Stack(
-                    alignment: Alignment.centerLeft,
-                    children: [
-                      if (_controller.text.isEmpty &&
-                          widget.placeholder != null)
-                        IgnorePointer(
-                          child: Text(
-                            widget.placeholder!,
-                            style: placeholderStyle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      IgnorePointer(
-                        ignoring: isReadOnly,
-                        child: Material(
-                          type: MaterialType.transparency,
-                          child: TextField(
-                            controller: _controller,
-                            focusNode: _focusNode,
-                            style: textStyle,
-                            cursorColor: isReadOnly ? kTransparent : kGrey100,
-                            decoration: const InputDecoration(
-                              isCollapsed: true,
-                              isDense: true,
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
+                const SizedBox(width: 8.0),
+              ],
+              Expanded(
+                child: MouseRegion(
+                  cursor: isReadOnly
+                      ? SystemMouseCursors.basic
+                      : SystemMouseCursors.text,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () {
+                      if (!isReadOnly) {
+                        _focusNode.requestFocus();
+                      }
+                    },
+                    child: Stack(
+                      alignment: Alignment.centerLeft,
+                      children: [
+                        if (_controller.text.isEmpty &&
+                            widget.placeholder != null)
+                          IgnorePointer(
+                            child: Text(
+                              widget.placeholder!,
+                              style: placeholderStyle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            textAlign: widget.textAlign,
-                            autofocus: isReadOnly ? false : widget.autofocus,
-                            onChanged: isReadOnly ? null : widget.onChanged,
-                            onSubmitted: isReadOnly ? null : widget.onSubmitted,
-                            maxLength: widget.maxLength,
-                            textCapitalization: widget.textCapitalization ??
-                                TextCapitalization.none,
-                            readOnly: isReadOnly,
-                            enableInteractiveSelection:
-                                !isReadOnly && widget.enableSelection,
-                            showCursor: !isReadOnly && widget.enableSelection,
-                            selectionControls: materialTextSelectionControls,
-                            enabled: !isReadOnly,
-                            inputFormatters: widget.inputFormatters,
+                          ),
+                        IgnorePointer(
+                          ignoring: isReadOnly,
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: TextField(
+                              controller: _controller,
+                              focusNode: _focusNode,
+                              style: textStyle,
+                              cursorColor: isReadOnly ? kTransparent : kGrey100,
+                              decoration: const InputDecoration(
+                                isCollapsed: true,
+                                isDense: true,
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              textAlign: widget.textAlign,
+                              autofocus: isReadOnly ? false : widget.autofocus,
+                              onChanged: isReadOnly ? null : widget.onChanged,
+                              onSubmitted:
+                                  isReadOnly ? null : widget.onSubmitted,
+                              maxLength: widget.maxLength,
+                              textCapitalization: widget.textCapitalization ??
+                                  TextCapitalization.none,
+                              readOnly: isReadOnly,
+                              enableInteractiveSelection:
+                                  !isReadOnly && widget.enableSelection,
+                              showCursor: !isReadOnly && widget.enableSelection,
+                              selectionControls: materialTextSelectionControls,
+                              enabled: !isReadOnly,
+                              inputFormatters: widget.inputFormatters,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            _buildSuffix(isReadOnly),
-          ],
+              _buildSuffix(isReadOnly),
+            ],
+          ),
         ),
       ),
     );
@@ -462,11 +470,10 @@ class _InputValueTypeState extends State<InputValueType> {
     final items = widget.dropdownItems ?? const <String>[];
     // For valueDropdown, prefer the currently displayed suffix; otherwise use
     // explicit selectedItem, internal selection, or fall back to field text.
-    final String? selectionBasis =
+    final String selectionBasis =
         (widget.selectedItem ?? _selectedItem ?? _controller.text);
     // Determine initial highlighted index
-    final int initialIndex =
-        selectionBasis != null ? items.indexOf(selectionBasis) : -1;
+    final int initialIndex = items.indexOf(selectionBasis);
     _highlightedIndex.value = initialIndex >= 0 ? initialIndex : 0;
     // Recreate list scroll controller with initial offset to avoid jump animation
     _listScrollController?.dispose();

@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 
 /// Wraps a child and aligns it to device pixels to avoid half-pixel blurring.

@@ -19,7 +19,7 @@ class InputRowFull extends StatelessWidget {
     this.placeholder,
     this.suffixText,
     this.prefixIconAsset = 'assets/icons/32/document--blank.svg',
-    this.actionIconAsset = null,
+    this.actionIconAsset,
     this.onActionTap,
     this.onSubmitted,
   });

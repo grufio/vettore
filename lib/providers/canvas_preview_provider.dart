@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/services/canvas_image_helpers.dart';
 

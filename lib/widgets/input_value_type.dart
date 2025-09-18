@@ -442,7 +442,7 @@ class _InputValueTypeState extends State<InputValueType> {
     _removeDropdown();
     final items = widget.dropdownItems ?? const <String>[];
     // Determine selection basis for initial highlight
-    final String? selectionBasis =
+    final String selectionBasis =
         (widget.selectedItem ?? _selectedItem ?? _controller.text);
     // Determine initial highlighted index
     final int initialIndex =
