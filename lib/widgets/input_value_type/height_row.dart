@@ -61,6 +61,17 @@ class _HeightRowState extends State<HeightRow> {
   }
 
   @override
+  void didUpdateWidget(covariant HeightRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialUnit != widget.initialUnit &&
+        widget.initialUnit != null) {
+      setState(() {
+        _unit = widget.initialUnit!;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     int dpi = widget.dpiOverride ?? 72;
     final bool readOnly = !widget.enabled;

@@ -77,6 +77,18 @@ class _WidthRowState extends State<WidthRow> {
   }
 
   @override
+  void didUpdateWidget(covariant WidthRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If parent updates the initial unit (e.g., after DB load), reflect it
+    if (oldWidget.initialUnit != widget.initialUnit &&
+        widget.initialUnit != null) {
+      setState(() {
+        _unit = widget.initialUnit!;
+      });
+    }
+  }
+
+  @override
   void dispose() {
     widget.widthController.removeListener(_onWidthChanged);
     widget.heightController.removeListener(_onHeightChanged);
