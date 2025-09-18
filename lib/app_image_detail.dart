@@ -66,7 +66,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
   bool _hasImage = false;
-  late final FocusNode _projectTitleFocusNode;
   StreamSubscription<DbProject?>? _projectSub;
   // Link/unlink width/height
   bool _linkWH = false;
@@ -143,7 +142,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     _inputValueController.dispose();
     _inputValueController2.dispose();
     _projectController.dispose();
-    _projectTitleFocusNode.dispose();
     _projectSub?.cancel();
     _ivController.dispose();
     super.dispose();

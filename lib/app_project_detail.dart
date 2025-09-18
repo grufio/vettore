@@ -63,6 +63,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
   late final TextEditingController _projectController;
   Timer? _titleDebounceTimer;
   static const Duration _titleDebounceDelay = Duration(milliseconds: 400);
+  late final VoidCallback _dimsListener;
   // No interpolation in canvas page
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
@@ -152,6 +153,13 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
       }
     });
     _projectController.addListener(_onTitleChangedDebounced);
+    // Recompute preview and trigger button enable state on any input change
+    _dimsListener = () {
+      _recomputeCanvasFromInputs();
+      if (mounted) setState(() {});
+    };
+    _inputValueController.addListener(_dimsListener);
+    _inputValueController2.addListener(_dimsListener);
     // Initialize canvas preview to the default 100×100 @ 72 dpi
     _recomputeCanvasFromInputs();
     // Seed global canvas spec with default
@@ -172,6 +180,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
 
   @override
   void dispose() {
+    _inputValueController.removeListener(_dimsListener);
+    _inputValueController2.removeListener(_dimsListener);
     _inputValueController.dispose();
     _inputValueController2.dispose();
     _singleInputController.dispose();
@@ -308,15 +318,15 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                                 units: kUnits,
                                 initialUnit: _canvasWUnit,
                                 onUnitChanged: (u) {
-                                  _canvasWUnit = u;
-                                  _canvasWUnitE = parseUnit(u);
+                                  setState(() {
+                                    _canvasWUnit = u;
+                                    _canvasWUnitE = parseUnit(u);
+                                  });
+                                  _recomputeCanvasFromInputs();
                                 },
                                 inputFormatters: <TextInputFormatter>[
                                   FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9\. ]').pattern == ''
-                                        ? RegExp(r'[0-9\.]')
-                                        : RegExp(r'[0-9\.]'),
-                                  ),
+                                      RegExp(r'[0-9\.]')),
                                 ],
                                 clampPxMin: 1.0,
                                 clampPxMax: 20000.0,
@@ -329,13 +339,15 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                                 units: kUnits,
                                 initialUnit: _canvasHUnit,
                                 onUnitChanged: (u) {
-                                  _canvasHUnit = u;
-                                  _canvasHUnitE = parseUnit(u);
+                                  setState(() {
+                                    _canvasHUnit = u;
+                                    _canvasHUnitE = parseUnit(u);
+                                  });
+                                  _recomputeCanvasFromInputs();
                                 },
                                 inputFormatters: <TextInputFormatter>[
                                   FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9\.]'),
-                                  ),
+                                      RegExp(r'[0-9\.]')),
                                 ],
                                 clampPxMin: 1.0,
                                 clampPxMax: 20000.0,
