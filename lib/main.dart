@@ -1,20 +1,20 @@
 import 'package:flutter/widgets.dart';
 import 'package:macos_ui/macos_ui.dart';
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'dart:io' show Platform;
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 
-import 'app_overview.dart';
-import 'app_project_detail.dart';
-import 'app_image_detail.dart';
-import 'widgets/app_header_bar.dart';
-import 'models/grufio_tab_data.dart';
-import 'theme/app_theme_colors.dart';
+import 'package:vettore/app_overview.dart';
+import 'package:vettore/app_project_detail.dart';
+import 'package:vettore/app_image_detail.dart';
+import 'package:vettore/widgets/app_header_bar.dart';
+import 'package:vettore/models/grufio_tab_data.dart';
+import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/data/database.dart';
 import 'package:drift/drift.dart' show Value;
-import 'features/projects/widgets/vendor_colors_overview_page.dart';
+import 'package:vettore/features/projects/widgets/vendor_colors_overview_page.dart';
 import 'package:vettore/providers/navigation_providers.dart';
 import 'package:vettore/services/lego_colors_importer.dart';
 import 'package:vettore/services/settings_service.dart';
@@ -25,7 +25,6 @@ Future<void> main() async {
   // Configure native window BEFORE first frame on macOS
   if (Platform.isMacOS) {
     await windowManager.ensureInitialized();
-    await WindowManipulator.initialize();
   }
 
   // Initialize database and settings service before building UI
@@ -71,13 +70,13 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class _AppShell extends StatefulWidget {
+class _AppShell extends ConsumerStatefulWidget {
   const _AppShell();
   @override
-  State<_AppShell> createState() => _AppShellState();
+  ConsumerState<_AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<_AppShell> {
+class _AppShellState extends ConsumerState<_AppShell> {
   int _activeIndex = 0;
   final List<GrufioTabData> _tabs = [
     const GrufioTabData(
@@ -98,9 +97,8 @@ class _AppShellState extends State<_AppShell> {
         final t = _tabs[i];
         if (t.projectId != null) {
           _currentProjectId = t.projectId;
-          final container = ProviderScope.containerOf(context);
-          container.read(currentProjectIdProvider.notifier).state = t.projectId;
-          container.read(currentPageProvider.notifier).state = PageId.project;
+          ref.read(currentProjectIdProvider.notifier).state = t.projectId;
+          ref.read(currentPageProvider.notifier).state = PageId.project;
         }
       }
     });
@@ -118,8 +116,7 @@ class _AppShellState extends State<_AppShell> {
   Future<void> _handleAddTab() async {
     if (_adding) return;
     setState(() => _adding = true);
-    final container = ProviderScope.containerOf(context);
-    final repo = container.read(projectRepositoryProvider);
+    final repo = ref.read(projectRepositoryProvider);
     final now = DateTime.now().millisecondsSinceEpoch;
     final id = await repo.insert(ProjectsCompanion.insert(
       title: 'Untitled',
@@ -150,9 +147,8 @@ class _AppShellState extends State<_AppShell> {
       _activeIndex = _tabs.length - 1;
     });
     // Ensure detail shows Project page for the new tab
-    final container2 = ProviderScope.containerOf(context);
-    container2.read(currentProjectIdProvider.notifier).state = id;
-    container2.read(currentPageProvider.notifier).state = PageId.project;
+    ref.read(currentProjectIdProvider.notifier).state = id;
+    ref.read(currentPageProvider.notifier).state = PageId.project;
     setState(() => _adding = false);
   }
 
@@ -162,8 +158,7 @@ class _AppShellState extends State<_AppShell> {
     if (!_legoImported) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
-          final container = ProviderScope.containerOf(context);
-          final db = container.read(appDatabaseProvider);
+          final db = ref.read(appDatabaseProvider);
           await LegoColorsImporter(db)
               .importFromAssetsCsv('assets/csv/lego_colors.csv');
         } catch (_) {
@@ -176,8 +171,7 @@ class _AppShellState extends State<_AppShell> {
     if (!_vendorCleanupDone) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
-          final container = ProviderScope.containerOf(context);
-          final db = container.read(appDatabaseProvider);
+          final db = ref.read(appDatabaseProvider);
           // Delete empty LEGO vendors (no linked vendor_colors)
           await db.customStatement(
               "DELETE FROM vendors WHERE vendor_category='bricks' AND (vendor_brand LIKE 'Lego%' OR vendor_name LIKE 'Lego%') AND id NOT IN (SELECT DISTINCT vendor_id FROM vendor_colors WHERE vendor_id IS NOT NULL)");
@@ -215,13 +209,10 @@ class _AppShellState extends State<_AppShell> {
                         });
                       } else {
                         // Fetch actual project title for the new tab label
-                        final container = ProviderScope.containerOf(context);
-                        final repo = container.read(projectRepositoryProvider);
+                        final repo = ref.read(projectRepositoryProvider);
                         final DbProject p = await repo.getById(projectId);
                         final String tabLabel =
-                            (p.title.isNotEmpty)
-                                ? p.title
-                                : 'Untitled';
+                            (p.title.isNotEmpty) ? p.title : 'Untitled';
                         setState(() {
                           _currentProjectId = projectId;
                           _tabs.add(GrufioTabData(

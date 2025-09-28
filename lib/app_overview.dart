@@ -61,7 +61,7 @@ class GrufioTabsApp extends StatelessWidget {
   }
 }
 
-class AppOverviewPage extends StatefulWidget {
+class AppOverviewPage extends ConsumerStatefulWidget {
   final bool showHeader;
   final ValueChanged<int>? onOpenProject;
   final VoidCallback? onAddProject;
@@ -73,10 +73,10 @@ class AppOverviewPage extends StatefulWidget {
       this.onAddProject,
       this.onOpenVendor});
   @override
-  State<AppOverviewPage> createState() => _AppOverviewPageState();
+  ConsumerState<AppOverviewPage> createState() => _AppOverviewPageState();
 }
 
-class _AppOverviewPageState extends State<AppOverviewPage> {
+class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
   int _activeIndex = 0;
   bool _showDetail = false;
   String _activeFilterId = 'completed';
@@ -119,8 +119,7 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
   void _onAddTab() {
     // Create an Untitled project, then insert a tab labeled with its title
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final container = ProviderScope.containerOf(context);
-      final repo = container.read(projectRepositoryProvider);
+      final repo = ref.read(projectRepositoryProvider);
       final now = DateTime.now().millisecondsSinceEpoch;
       int id;
       try {
@@ -161,8 +160,8 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
           _showDetail = true;
         });
         // Set providers for new project and default page
-        container.read(currentProjectIdProvider.notifier).state = id;
-        container.read(currentPageProvider.notifier).state = PageId.project;
+        ref.read(currentProjectIdProvider.notifier).state = id;
+        ref.read(currentPageProvider.notifier).state = PageId.project;
       }
     });
   }
@@ -336,15 +335,12 @@ class _AppOverviewPageState extends State<AppOverviewPage> {
                                         return _HomeGalleryContainer(
                                           onOpenProject: widget.onOpenProject ??
                                               (projId) {
-                                                final container =
-                                                    ProviderScope.containerOf(
-                                                        context);
-                                                container
+                                                ref
                                                     .read(
                                                         currentProjectIdProvider
                                                             .notifier)
                                                     .state = projId;
-                                                container
+                                                ref
                                                     .read(currentPageProvider
                                                         .notifier)
                                                     .state = PageId.project;
@@ -488,9 +484,7 @@ class _HomeGalleryContainer extends ConsumerWidget {
                   final int? dpi = dpiAsync.asData?.value;
                   final String line2 = (dpi == null || dpi == 0)
                       ? baseSize
-                      : (baseSize.isEmpty
-                          ? '$dpi dpi'
-                          : '$baseSize, $dpi dpi');
+                      : (baseSize.isEmpty ? '$dpi dpi' : '$baseSize, $dpi dpi');
                   return _ProjectThumbnail(
                     bytes: bytes,
                     title: p.title,

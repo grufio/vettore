@@ -104,6 +104,12 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
   bool _showGrid = true;
   @override
   bool get wantKeepAlive => true;
+  // Safely call setState from helpers/extensions
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    setState(fn);
+  }
+
   // Original dimensions no longer tracked here; DimensionsRow manages aspect
   // Guard to avoid re-initializing dimensions on stream rebuilds
   // Removed: last image id tracking; canvas decoupled
@@ -532,7 +538,7 @@ extension on _AppProjectDetailPageState {
     final double? wVal = double.tryParse(_inputValueController.text.trim());
     final double? hVal = double.tryParse(_inputValueController2.text.trim());
     if (wVal == null || hVal == null) return false;
-    bool unitChanged =
+    final bool unitChanged =
         (_canvasWUnitE != _persistWUnitE) || (_canvasHUnitE != _persistHUnitE);
     bool valueChanged = false;
     if (_persistWVal == null || _persistHVal == null) {
@@ -621,7 +627,7 @@ extension on _AppProjectDetailPageState {
         // Model/Type initialization removed
         // Do not read image dimensions here; canvas is independent
         _subscribeToProject(_currentProjectId!);
-        if (mounted) setState(() {});
+        _safeSetState(() {});
         return;
       }
       final all = await repo.getAll();
@@ -634,7 +640,7 @@ extension on _AppProjectDetailPageState {
         // Model/Type initialization removed
         // Do not read image dimensions here; canvas is independent
         _subscribeToProject(_currentProjectId!);
-        if (mounted) setState(() {});
+        _safeSetState(() {});
       }
     } catch (_) {
       // Ignore load errors for now; keep empty controller
@@ -729,7 +735,7 @@ extension on _AppProjectDetailPageState {
           to: Unit.px,
           dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);
       if (!mounted) return;
-      setState(() {
+      _safeSetState(() {
         _canvasPxW = wPx;
         _canvasPxH = hPx;
       });
@@ -763,8 +769,7 @@ extension on _AppProjectDetailPageState {
             // Clear initial padding after first frame
             if (_initialPaddingPending) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!mounted) return;
-                setState(() => _initialPaddingPending = false);
+                _safeSetState(() => _initialPaddingPending = false);
               });
             }
             return AnimatedPadding(
@@ -812,7 +817,7 @@ extension on _AppProjectDetailPageState {
     final double? ghVal = double.tryParse(_gridHController.text.trim());
     if (gwVal == null || ghVal == null || gwVal <= 0 || ghVal <= 0) return;
     _recomputeGridFromInputs();
-    setState(() {});
+    _safeSetState(() {});
     if (_currentProjectId == null) return;
     try {
       final db = ref.read(appDatabaseProvider);
