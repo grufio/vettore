@@ -31,6 +31,7 @@ import 'package:vettore/providers/navigation_providers.dart';
 // PhotoView removed in favor of InteractiveViewer for infinite pasteboard
 
 import 'package:vettore/widgets/snackbar_image.dart';
+import 'package:vettore/providers/image_spec_providers.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -74,11 +75,12 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   // Original dimensions no longer tracked here; DimensionsRow manages aspect
   // Guard to avoid re-initializing dimensions on stream rebuilds
   int? _lastDimsImageId;
-  bool _dimsInitialized = false;
+  // Removed one-time init gate; we now apply dims whenever they change
   // Removed fallback image bytes; we render directly from provider for stability
   int? _requestedDimsForImageId;
   int? _lastProjectId;
   int? _lastImageId;
+  (int?, int?)? _lastAppliedDims;
   // InteractiveViewer transform controller for pan/zoom
   final TransformationController _ivController = TransformationController();
   // Viewport key to compute center for zoom focus
@@ -97,20 +99,14 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   void _applyImageDims({int? width, int? height}) {
     final int? curW = int.tryParse(_inputValueController.text);
     final int? curH = int.tryParse(_inputValueController2.text);
-    final bool should = DimensionsGuard.shouldApply(
-      currentWidth: curW,
-      currentHeight: curH,
-      newWidth: width,
-      newHeight: height,
-      initialized: _dimsInitialized,
-    );
-    // Guarded for release
+    final bool changed =
+        (width != null && width != curW) || (height != null && height != curH);
     assert(() {
       debugPrint(
-          '[ImageDetail] _applyImageDims cur=${curW}x$curH new=${width}x$height init=$_dimsInitialized should=$should');
+          '[ImageDetail] _applyImageDims cur=${curW}x$curH new=${width}x$height changed=$changed');
       return true;
     }());
-    if (!should) return;
+    if (!changed) return;
     // Do not auto-convert user units. Only populate when both fields are 'px'.
     if (_widthUnit == 'px' && _heightUnit == 'px') {
       DimensionsGuard.writeControllers(
@@ -120,7 +116,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
         height: height,
       );
     }
-    _dimsInitialized = true;
+    // mark that we have applied dims at least once
   }
 
   @override
@@ -177,7 +173,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
         final int? nextImageId = next.asData?.value?.imageId;
         if (_lastDimsImageId != nextImageId) {
           _lastDimsImageId = nextImageId;
-          _dimsInitialized = false;
+          _lastAppliedDims = null;
         }
       });
     }
@@ -187,12 +183,31 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
         : null;
     if (imgIdForBuild != null && imgIdForBuild != _lastImageId) {
       _lastImageId = imgIdForBuild;
+      // Listen for future changes
       ref.listen(imageDimensionsProvider(imgIdForBuild), (prev, next) {
         final dims = next.asData?.value;
-        if (dims != null && !_dimsInitialized) {
-          _applyImageDims(width: dims.$1, height: dims.$2);
+        if (dims != null) {
+          final last = _lastAppliedDims;
+          final changed =
+              last == null || last.$1 != dims.$1 || last.$2 != dims.$2;
+          if (changed) {
+            _applyImageDims(width: dims.$1, height: dims.$2);
+            _lastAppliedDims = dims;
+          }
         }
       });
+      // Seed immediately with current value if already available
+      final seedDims =
+          ref.read(imageDimensionsProvider(imgIdForBuild)).asData?.value;
+      if (seedDims != null) {
+        final last = _lastAppliedDims;
+        final changed =
+            last == null || last.$1 != seedDims.$1 || last.$2 != seedDims.$2;
+        if (changed) {
+          _applyImageDims(width: seedDims.$1, height: seedDims.$2);
+          _lastAppliedDims = seedDims;
+        }
+      }
     }
 
     // Restore per-project transform once when project id is ready
@@ -296,7 +311,20 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                 onLinkChanged: (v) => setState(() {
                                   _linkWH = v;
                                 }),
-                                onUnitChanged: (u) => _widthUnit = u,
+                                onUnitChanged: (u) {
+                                  _widthUnit = u;
+                                  if (_currentProjectId != null) {
+                                    ref
+                                        .read(imageWidthUnitProvider
+                                            .call(_currentProjectId!)
+                                            .notifier)
+                                        .state = u;
+                                  }
+                                },
+                                initialUnit: (_currentProjectId != null)
+                                    ? ref.watch(imageWidthUnitProvider
+                                        .call(_currentProjectId!))
+                                    : _widthUnit,
                                 dpiOverride: (imageId != null)
                                     ? (ref.watch(imageDpiProvider(imageId)
                                             .select((a) => a.asData?.value)) ??
@@ -311,7 +339,20 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                             .select((a) => a.asData?.value)) ??
                                         72)
                                     : 72,
-                                onUnitChanged: (u) => _heightUnit = u,
+                                onUnitChanged: (u) {
+                                  _heightUnit = u;
+                                  if (_currentProjectId != null) {
+                                    ref
+                                        .read(imageHeightUnitProvider
+                                            .call(_currentProjectId!)
+                                            .notifier)
+                                        .state = u;
+                                  }
+                                },
+                                initialUnit: (_currentProjectId != null)
+                                    ? ref.watch(imageHeightUnitProvider
+                                        .call(_currentProjectId!))
+                                    : _heightUnit,
                               ),
                               InterpolationSelector(
                                 value: _interp,
@@ -467,8 +508,9 @@ extension on _AppImageDetailPageState {
     }());
     // Ensure the new image dimensions overwrite any previous values in fields
     _lastDimsImageId = imageId;
-    _dimsInitialized = false;
+    _lastAppliedDims = null;
     _applyImageDims(width: width, height: height);
+    _lastAppliedDims = (width, height);
     _setHasImage(true);
   }
 
@@ -551,8 +593,9 @@ extension on _AppImageDetailPageState {
       _requestedDimsForImageId = imageId;
       ref.read(imageDimensionsProvider(imageId).future).then((dims) {
         if (!mounted) return;
-        _dimsInitialized = false;
+        _lastAppliedDims = null;
         _applyImageDims(width: dims.$1, height: dims.$2);
+        _lastAppliedDims = dims;
       });
     }
 
@@ -785,23 +828,25 @@ class _ArtboardView extends StatelessWidget {
                                           (s <= 0) ? 1.0 : s;
                                       final double dpr = MediaQuery.of(context)
                                           .devicePixelRatio;
-                                      final int targetW =
-                                          (vp.width * dpr / safeScale)
+                                      final bool hasVp =
+                                          vp.width > 0 && vp.height > 0;
+                                      final int? targetW = hasVp
+                                          ? (vp.width * dpr / safeScale)
                                               .clamp(64.0, 8192.0)
-                                              .toInt();
-                                      final int targetH =
-                                          (vp.height * dpr / safeScale)
+                                              .toInt()
+                                          : null;
+                                      final int? targetH = hasVp
+                                          ? (vp.height * dpr / safeScale)
                                               .clamp(64.0, 8192.0)
-                                              .toInt();
+                                              .toInt()
+                                          : null;
                                       return Image.memory(
                                         bytes!,
                                         fit: BoxFit.none,
                                         alignment: Alignment.center,
                                         filterQuality: FilterQuality.none,
-                                        cacheWidth:
-                                            targetW > 0 ? targetW : null,
-                                        cacheHeight:
-                                            targetH > 0 ? targetH : null,
+                                        cacheWidth: targetW,
+                                        cacheHeight: targetH,
                                         gaplessPlayback: true,
                                       );
                                     }),

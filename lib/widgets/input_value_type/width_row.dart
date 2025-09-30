@@ -129,7 +129,7 @@ class _WidthRowState extends State<WidthRow> {
   Widget build(BuildContext context) {
     // Source DPI from current image if available via a provider higher up.
     // Fallback to 72 when not available in this context.
-    int dpi = widget.dpiOverride ?? 72;
+    final int dpi = widget.dpiOverride ?? 72;
     final bool readOnly = !widget.enabled;
     final List<String> units = widget.units ?? _defaultUnits;
     return SectionInput(
@@ -168,7 +168,7 @@ class _WidthRowState extends State<WidthRow> {
             // Optional soft-clamp in px and reflect back to current unit
             if (widget.clampPxMin != null || widget.clampPxMax != null) {
               final int clampDpi = widget.clampDpi ?? 96;
-              double pxVal = convertUnit(
+              final double pxVal = convertUnit(
                 value: v,
                 fromUnit: _unit,
                 toUnit: 'px',

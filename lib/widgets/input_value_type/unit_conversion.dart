@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+// no math rounding at conversion-time; rounding only at display formatting
 
 // Strongly-typed units to avoid typos and magic strings
 enum Unit { px, inch, point, centimeter, millimeter }
@@ -46,7 +46,18 @@ double convertUnitTyped({
   if (dpi <= 0) {
     throw ArgumentError('dpi must be > 0');
   }
+  // Exact metric-to-metric conversions (avoid inch detour)
+  if (from == to) return value;
+  final bool fromMetric = from == Unit.millimeter || from == Unit.centimeter;
+  final bool toMetric = to == Unit.millimeter || to == Unit.centimeter;
+  if (fromMetric && toMetric) {
+    // Convert via millimeters as base
+    final double inMm =
+        (from == Unit.millimeter) ? value : value * 10.0; // cm -> mm
+    return (to == Unit.millimeter) ? inMm : (inMm / 10.0); // mm -> cm
+  }
 
+  // General path via inches (no rounding here)
   double toInches(double v, Unit u) {
     switch (u) {
       case Unit.px:
@@ -77,14 +88,8 @@ double convertUnitTyped({
     }
   }
 
-  double round(double v, int dec) {
-    final double p = math.pow(10, dec).toDouble();
-    return (v * p).round() / p;
-  }
-
   final double inches = toInches(value, from);
-  final double out = fromInches(inches, to);
-  return to == Unit.px ? out : round(out, 4);
+  return fromInches(inches, to);
 }
 
 double convertUnit({
@@ -109,6 +114,15 @@ double convertUnit({
     throw ArgumentError('Unknown unit: $toUnit');
   }
 
+  // Exact metric-to-metric conversions (avoid inch detour)
+  if (from == to) return value;
+  final bool fromMetric = from == 'mm' || from == 'cm';
+  final bool toMetric = to == 'mm' || to == 'cm';
+  if (fromMetric && toMetric) {
+    final double inMm = (from == 'mm') ? value : value * 10.0; // cm -> mm
+    return (to == 'mm') ? inMm : (inMm / 10.0); // mm -> cm
+  }
+
   double toInches(double v, String unit) {
     switch (unit) {
       case 'px':
@@ -122,7 +136,6 @@ double convertUnit({
       case 'mm':
         return v / 25.4;
       default:
-        // Should never happen due to validation above
         throw ArgumentError('Unknown unit: $unit');
     }
   }
@@ -140,20 +153,12 @@ double convertUnit({
       case 'mm':
         return inches * 25.4;
       default:
-        // Should never happen due to validation above
         throw ArgumentError('Unknown unit: $unit');
     }
   }
 
-  double round(double v, int dec) {
-    final double p = math.pow(10, dec).toDouble();
-    return (v * p).round() / p;
-  }
-
   final double inches = toInches(value, from);
-  final double out = fromInches(inches, to);
-  // For non-px targets, round to 4 decimals at conversion time
-  return to == 'px' ? out : round(out, 4);
+  return fromInches(inches, to);
 }
 
 String formatUnitValue(double value, String unit) {

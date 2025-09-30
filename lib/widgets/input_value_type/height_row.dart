@@ -73,7 +73,7 @@ class _HeightRowState extends State<HeightRow> {
 
   @override
   Widget build(BuildContext context) {
-    int dpi = widget.dpiOverride ?? 72;
+    final int dpi = widget.dpiOverride ?? 72;
     final bool readOnly = !widget.enabled;
     final List<String> units = widget.units ?? _defaultUnits;
     return SectionInput(

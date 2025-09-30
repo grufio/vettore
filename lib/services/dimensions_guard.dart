@@ -12,8 +12,12 @@ class DimensionsGuard {
     required int? newHeight,
     required bool initialized,
   }) {
-    // Only apply once per image (initialization). Do not overwrite user edits.
-    return !initialized;
+    // Apply when not initialized, when current fields are empty,
+    // or when the new dimensions differ from what's currently shown.
+    if (!initialized) return true;
+    if (currentWidth == null || currentHeight == null) return true;
+    if (newWidth == null || newHeight == null) return false;
+    return currentWidth != newWidth || currentHeight != newHeight;
   }
 
   /// Writes dimensions into the provided controllers if non-null.
