@@ -90,8 +90,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
   double? _persistHVal;
   Unit _persistWUnitE = Unit.millimeter;
   Unit _persistHUnitE = Unit.millimeter;
-  // Apply 48px padding only on first open
-  bool _initialPaddingPending = true;
+  // Removed entrance animation; fixed padding used
   // Grid controls (cell size)
   late final TextEditingController _gridWController;
   late final TextEditingController _gridHController;
@@ -684,6 +683,34 @@ extension on _AppProjectDetailPageState {
       if (p == null) {
         return;
       }
+      // If project canvas spec changed elsewhere, sync inputs and preview
+      final double newWVal = p.canvasWidthValue;
+      final double newHVal = p.canvasHeightValue;
+      final String newWUnit = p.canvasWidthUnit;
+      final String newHUnit = p.canvasHeightUnit;
+
+      final bool specChanged = (_persistWVal != newWVal) ||
+          (_persistHVal != newHVal) ||
+          (_canvasWUnit != newWUnit) ||
+          (_canvasHUnit != newHUnit);
+
+      if (specChanged) {
+        _canvasWUnit = newWUnit;
+        _canvasHUnit = newHUnit;
+        _canvasWUnitE = parseUnit(_canvasWUnit);
+        _canvasHUnitE = parseUnit(_canvasHUnit);
+        _persistWUnitE = _canvasWUnitE;
+        _persistHUnitE = _canvasHUnitE;
+        _persistWVal = newWVal;
+        _persistHVal = newHVal;
+        _inputValueController.text = newWVal.toString();
+        _inputValueController2.text = newHVal.toString();
+        // Recompute preview pixels and update notifier
+        _recomputeCanvasFromInputs();
+        if (_canvasPxW != null && _canvasPxH != null) {
+          _canvasPxNotifier.value = Size(_canvasPxW!, _canvasPxH!);
+        }
+      }
     });
   }
 
@@ -739,6 +766,7 @@ extension on _AppProjectDetailPageState {
         _canvasPxW = wPx;
         _canvasPxH = hPx;
       });
+      _canvasPxNotifier.value = Size(wPx, hPx);
       final current = ref.read(canvasSpecProvider);
       final spec = CanvasSpec(widthPx: wPx, heightPx: hPx);
       if (current.widthPx != spec.widthPx ||
@@ -760,49 +788,25 @@ extension on _AppProjectDetailPageState {
           final double? pxWv = size?.width ?? pxW;
           final double? pxHv = size?.height ?? pxH;
           return LayoutBuilder(builder: (context, c) {
-            // Apply 48px padding only on first open (handled by AnimatedPadding)
+            // Fixed padding; no entrance animation
             final double w = (pxWv == null || pxWv <= 0) ? 100.0 : pxWv;
             final double h = (pxHv == null || pxHv <= 0) ? 100.0 : pxHv;
             // No scaling: draw at 1:1 pixels. Clip when larger than viewport.
             final double drawW = w.clamp(1.0, double.infinity);
             final double drawH = h.clamp(1.0, double.infinity);
-            // Clear initial padding after first frame
-            if (_initialPaddingPending) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _safeSetState(() => _initialPaddingPending = false);
-              });
-            }
-            return AnimatedPadding(
-              duration: const Duration(milliseconds: 120),
-              curve: Curves.easeOut,
-              padding: EdgeInsets.all(_initialPaddingPending ? 48.0 : 24.0),
-              child: Center(
-                child: ClipRect(
-                  child: SizedBox(
-                    width: drawW,
-                    height: drawH,
-                    child: Stack(
-                      children: [
-                        const Positioned.fill(child: ColoredBox(color: kWhite)),
-                        if (_gridCellPxW != null && _gridCellPxH != null)
-                          Positioned.fill(
-                            child: CustomPaint(
-                              painter: _GridPainter(
-                                cellW: _gridCellPxW!,
-                                cellH: _gridCellPxH!,
-                                color: kGrey20,
-                              ),
-                            ),
-                          ),
-                        // Hairline border that stays 1 device pixel regardless of scale
-                        const Positioned.fill(
-                          child: _ProjectHairlineBorder(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            // Mirror Image tab artboard behavior: fixed canvas inside unconstrained board
+            final double maxContentW = drawW;
+            final double maxContentH = drawH;
+            final double margin = (0.1 * (maxContentW)).clamp(120.0, 480.0);
+            final double boardW = maxContentW + margin;
+            final double boardH = maxContentH + margin;
+            return _ProjectArtboardView(
+              boardW: boardW,
+              boardH: boardH,
+              canvasW: drawW,
+              canvasH: drawH,
+              gridCellW: _gridCellPxW,
+              gridCellH: _gridCellPxH,
             );
           });
         },
@@ -910,5 +914,93 @@ class _GridPainter extends CustomPainter {
     return oldDelegate.cellW != cellW ||
         oldDelegate.cellH != cellH ||
         oldDelegate.color != color;
+  }
+}
+
+class _ProjectArtboardView extends StatelessWidget {
+  final double boardW;
+  final double boardH;
+  final double canvasW;
+  final double canvasH;
+  final double? gridCellW;
+  final double? gridCellH;
+  const _ProjectArtboardView({
+    required this.boardW,
+    required this.boardH,
+    required this.canvasW,
+    required this.canvasH,
+    this.gridCellW,
+    this.gridCellH,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: kGrey70,
+      child: Stack(
+        children: [
+          SizedBox.expand(
+            child: LayoutBuilder(builder: (context, constraints) {
+              final double maxSide =
+                  constraints.maxWidth > constraints.maxHeight
+                      ? constraints.maxWidth
+                      : constraints.maxHeight;
+              final EdgeInsets margin = EdgeInsets.all(maxSide * 2);
+              return ClipRect(
+                child: InteractiveViewer(
+                  transformationController: TransformationController(),
+                  minScale: 0.25,
+                  maxScale: 8.0,
+                  scaleEnabled: true,
+                  panEnabled: true,
+                  constrained: false,
+                  boundaryMargin: margin,
+                  child: RepaintBoundary(
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.zero,
+                        child: SizedBox(
+                          width: boardW,
+                          height: boardH,
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                left: (boardW - canvasW) / 2,
+                                top: (boardH - canvasH) / 2,
+                                width: canvasW,
+                                height: canvasH,
+                                child: Stack(
+                                  children: [
+                                    const Positioned.fill(
+                                        child: ColoredBox(color: kWhite)),
+                                    if (gridCellW != null && gridCellH != null)
+                                      Positioned.fill(
+                                        child: CustomPaint(
+                                          painter: _GridPainter(
+                                            cellW: gridCellW!,
+                                            cellH: gridCellH!,
+                                            color: kGrey20,
+                                          ),
+                                        ),
+                                      ),
+                                    const Positioned.fill(
+                                      child: _ProjectHairlineBorder(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
   }
 }
