@@ -71,7 +71,7 @@ class _DimensionRowState extends State<DimensionRow> {
   void initState() {
     super.initState();
     _linked = widget.initialLinked;
-    _unit = widget.valueController?.unit ?? widget.initialUnit ?? _unit;
+    _unit = widget.initialUnit ?? widget.valueController?.unit ?? _unit;
     // Linking/aspect disabled; no seeding
     widget.primaryController.addListener(_onPrimaryChanged);
     widget.partnerController?.addListener(_onPartnerChanged);

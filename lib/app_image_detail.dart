@@ -18,7 +18,7 @@ import 'dart:async';
 // Replaced specific rows with unified DimensionRow
 import 'package:vettore/widgets/input_value_type/dimension_row.dart';
 import 'package:vettore/providers/canvas_preview_provider.dart';
-import 'package:vettore/services/dimensions_guard.dart';
+// dimensions_guard not used here any more
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 import 'package:flutter/foundation.dart'
@@ -33,6 +33,7 @@ import 'package:vettore/providers/navigation_providers.dart';
 import 'package:vettore/widgets/snackbar_image.dart';
 import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
 import 'package:vettore/providers/image_spec_providers.dart';
+import 'package:vettore/widgets/input_value_type/number_utils.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -111,14 +112,12 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
       return true;
     }());
     if (!changed) return;
-    // Do not auto-convert user units. Only populate when both fields are 'px'.
-    if (_widthUnit == 'px' && _heightUnit == 'px') {
-      DimensionsGuard.writeControllers(
-        widthController: _inputValueController,
-        heightController: _inputValueController2,
-        width: width,
-        height: height,
-      );
+    // Update controllers in px; DimensionRow listener will format fields
+    if (width != null && _widthVC != null) {
+      _widthVC!.setValuePx(width.toDouble());
+    }
+    if (height != null && _heightVC != null) {
+      _heightVC!.setValuePx(height.toDouble());
     }
     // mark that we have applied dims at least once
   }
@@ -132,8 +131,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     // Transform will be restored once when project id is known
     _initProject();
     // Initialize controllers with default units and typical DPI
-    _widthVC = UnitValueController(unit: _widthUnit, dpi: 72);
-    _heightVC = UnitValueController(unit: _heightUnit, dpi: 72);
+    _widthVC = UnitValueController(unit: _widthUnit, dpi: 96);
+    _heightVC = UnitValueController(unit: _heightUnit, dpi: 96);
     _widthVC!.linkWith(_heightVC!);
   }
 
@@ -308,6 +307,23 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                   imageIdStableProvider(_currentProjectId!))
                               : null;
                           final bool hasImage = imageId != null;
+                          // Ensure unit controllers reflect persisted selection (per project)
+                          if (_currentProjectId != null) {
+                            final String wPref = ref.watch(
+                                imageWidthUnitProvider(_currentProjectId!));
+                            final String hPref = ref.watch(
+                                imageHeightUnitProvider(_currentProjectId!));
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (!mounted) return;
+                              if (_widthVC != null && _widthVC!.unit != wPref) {
+                                _widthVC!.setUnit(wPref);
+                              }
+                              if (_heightVC != null &&
+                                  _heightVC!.unit != hPref) {
+                                _heightVC!.setUnit(hPref);
+                              }
+                            });
+                          }
                           return SectionSidebar(
                             title: 'Title',
                             children: [
@@ -336,11 +352,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                     ? ref.watch(imageWidthUnitProvider
                                         .call(_currentProjectId!))
                                     : _widthUnit,
-                                dpiOverride: (imageId != null)
-                                    ? (ref.watch(imageDpiProvider(imageId)
-                                            .select((a) => a.asData?.value)) ??
-                                        72)
-                                    : 72,
+                                dpiOverride: 96,
                               ),
                               DimensionRow(
                                 primaryController: _inputValueController2,
@@ -363,11 +375,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                     ? ref.watch(imageHeightUnitProvider
                                         .call(_currentProjectId!))
                                     : _heightUnit,
-                                dpiOverride: (imageId != null)
-                                    ? (ref.watch(imageDpiProvider(imageId)
-                                            .select((a) => a.asData?.value)) ??
-                                        72)
-                                    : 72,
+                                dpiOverride: 96,
                               ),
                               InterpolationSelector(
                                 value: _interp,
@@ -397,9 +405,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                       [newDpi, imgId],
                                     );
                                     ref.invalidate(imageDpiProvider(imgId));
-                                    // keep controllers dpi in sync
-                                    _widthVC?.setDpi(newDpi);
-                                    _heightVC?.setDpi(newDpi);
                                   },
                                 );
                               }),
@@ -429,6 +434,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
 extension on _AppImageDetailPageState {
   void _onResizeTap() async {
     if (_currentProjectId == null) return;
+    // Always read what the user typed
     final double? wVal = double.tryParse(_inputValueController.text.trim());
     final double? hVal = double.tryParse(_inputValueController2.text.trim());
     if (wVal == null || hVal == null) return;
@@ -439,8 +445,8 @@ extension on _AppImageDetailPageState {
     final int dpi = (imageId != null)
         ? (ref.read(imageDpiProvider(imageId)).asData?.value ?? 72)
         : 72;
-
-    int toPx(num v, String unit) {
+    // Convert using controller units and image DPI
+    int toPxLocal(num v, String unit) {
       switch (unit) {
         case 'px':
           return v.round();
@@ -457,9 +463,19 @@ extension on _AppImageDetailPageState {
       }
     }
 
-    final int targetW = toPx(wVal, _widthUnit);
-    final int targetH = toPx(hVal, _heightUnit);
+    final String wUnit = _widthVC?.unit ?? _widthUnit;
+    final String hUnit = _heightVC?.unit ?? _heightUnit;
+    final int targetW = (_widthVC != null)
+        ? toPx(wVal, _widthVC!.unit, _widthVC!.dpi).round()
+        : toPxLocal(wVal, wUnit);
+    final int targetH = (_heightVC != null)
+        ? toPx(hVal, _heightVC!.unit, _heightVC!.dpi).round()
+        : toPxLocal(hVal, hUnit);
     if (targetW <= 0 || targetH <= 0) return;
+    // Preserve the user's typed unit values in the controllers to avoid
+    // mm→px→mm drift (e.g., 100.00 → 100.01). Controllers keep fractional px.
+    _widthVC?.setValueFromUnit(wVal);
+    _heightVC?.setValueFromUnit(hVal);
     // Map interpolation string to a suitable name for cv script
     final String interp = kInterpolationToCvName[_interp] ?? 'linear';
     await ref
@@ -827,24 +843,26 @@ class _ArtboardView extends StatelessWidget {
                               ),
                               if (bytes != null)
                                 Center(
-                                  child: OverflowBox(
-                                    minWidth: 0,
-                                    minHeight: 0,
-                                    maxWidth: double.infinity,
-                                    maxHeight: double.infinity,
-                                    child: Builder(builder: (context) {
-                                      // No viewport-dependent calculations here to avoid first-frame scaling
-                                      return Image.memory(
-                                        bytes!,
-                                        fit: BoxFit.none,
-                                        alignment: Alignment.center,
-                                        filterQuality: FilterQuality.none,
-                                        // Render at intrinsic resolution to avoid first-frame reflow
-                                        cacheWidth: null,
-                                        cacheHeight: null,
-                                        gaplessPlayback: true,
-                                      );
-                                    }),
+                                  child: ClipRect(
+                                    child: OverflowBox(
+                                      minWidth: 0,
+                                      minHeight: 0,
+                                      maxWidth: double.infinity,
+                                      maxHeight: double.infinity,
+                                      child: Builder(builder: (context) {
+                                        // No viewport-dependent calculations here to avoid first-frame scaling
+                                        return Image.memory(
+                                          bytes!,
+                                          fit: BoxFit.none,
+                                          alignment: Alignment.center,
+                                          filterQuality: FilterQuality.none,
+                                          // Render at intrinsic resolution to avoid first-frame reflow
+                                          cacheWidth: null,
+                                          cacheHeight: null,
+                                          gaplessPlayback: true,
+                                        );
+                                      }),
+                                    ),
                                   ),
                                 ),
                               LayoutBuilder(builder: (context, constraints) {
