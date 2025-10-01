@@ -202,6 +202,8 @@ class _InputValueTypeState extends State<InputValueType> {
     );
     // Initialize current suffix for valueDropdown/selector so something is visible when not hovering
     // Initialize persisted selection for highlighting
+    // Initialize internal selection only when uncontrolled. In controlled
+    // mode (selectedItem provided), render strictly from widget.selectedItem.
     _selectedItem = widget.selectedItem ??
         ((widget.dropdownItems != null && widget.dropdownItems!.isNotEmpty)
             ? widget.dropdownItems!.first
@@ -222,9 +224,11 @@ class _InputValueTypeState extends State<InputValueType> {
       }
     }
     // Keep selection in sync if parent changes
-    if (oldWidget.selectedItem != widget.selectedItem &&
-        widget.selectedItem != null) {
-      _selectedItem = widget.selectedItem;
+    // Controlled mode: reflect external selection changes immediately.
+    if (oldWidget.selectedItem != widget.selectedItem) {
+      if (widget.selectedItem != null) {
+        _selectedItem = widget.selectedItem;
+      }
     }
 
     // If dropdownItems changed, ensure selection still valid. In controlled mode,
@@ -470,6 +474,8 @@ class _InputValueTypeState extends State<InputValueType> {
     final items = widget.dropdownItems ?? const <String>[];
     // For valueDropdown, prefer the currently displayed suffix; otherwise use
     // explicit selectedItem, internal selection, or fall back to field text.
+    // Always derive the visible selection from controlled selectedItem when
+    // provided, otherwise fall back to internal state.
     final String selectionBasis =
         (widget.selectedItem ?? _selectedItem ?? _controller.text);
     // Determine initial highlighted index
@@ -492,12 +498,12 @@ class _InputValueTypeState extends State<InputValueType> {
       isValueDropdownVariant: false,
       onItemSelected: (value) {
         widget.onItemSelected?.call(value);
-        setState(() {
-          // Only update internal selection when uncontrolled
-          if (widget.selectedItem == null) {
+        // Only update internal selection when uncontrolled
+        if (widget.selectedItem == null) {
+          setState(() {
             _selectedItem = value;
-          }
-        });
+          });
+        }
         // Return focus to the input field after a selection
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;

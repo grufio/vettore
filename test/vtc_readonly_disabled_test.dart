@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
-import 'package:vettore/widgets/input_value_type/width_row.dart';
+import 'package:vettore/widgets/input_value_type/dimension_row.dart';
 
 void main() {
   group('Read-only view', () {

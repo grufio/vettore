@@ -15,8 +15,8 @@ import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/providers/image_providers.dart';
 import 'package:vettore/data/database.dart';
 import 'dart:async';
-import 'package:vettore/widgets/input_value_type/width_row.dart';
-import 'package:vettore/widgets/input_value_type/height_row.dart';
+// Replaced specific rows with unified DimensionRow
+import 'package:vettore/widgets/input_value_type/dimension_row.dart';
 import 'package:vettore/providers/canvas_preview_provider.dart';
 import 'package:vettore/services/dimensions_guard.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
@@ -31,6 +31,7 @@ import 'package:vettore/providers/navigation_providers.dart';
 // PhotoView removed in favor of InteractiveViewer for infinite pasteboard
 
 import 'package:vettore/widgets/snackbar_image.dart';
+import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
 import 'package:vettore/providers/image_spec_providers.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
@@ -85,6 +86,9 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   final TransformationController _ivController = TransformationController();
   // Viewport key to compute center for zoom focus
   final GlobalKey _viewportKey = GlobalKey();
+  // Value controllers to unify value/unit/dpi and linking
+  UnitValueController? _widthVC;
+  UnitValueController? _heightVC;
   @override
   bool get wantKeepAlive => true;
   // Apply 48px padding only on first open of the Image tab
@@ -127,6 +131,10 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     _projectController = TextEditingController();
     // Transform will be restored once when project id is known
     _initProject();
+    // Initialize controllers with default units and typical DPI
+    _widthVC = UnitValueController(unit: _widthUnit, dpi: 72);
+    _heightVC = UnitValueController(unit: _heightUnit, dpi: 72);
+    _widthVC!.linkWith(_heightVC!);
   }
 
   // didChangeDependencies no longer hosts ref.listen; listeners are set in build
@@ -303,10 +311,13 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                           return SectionSidebar(
                             title: 'Title',
                             children: [
-                              WidthRow(
-                                widthController: _inputValueController,
-                                heightController: _inputValueController2,
+                              DimensionRow(
+                                primaryController: _inputValueController,
+                                partnerController: _inputValueController2,
+                                valueController: _widthVC,
                                 enabled: hasImage,
+                                isWidth: true,
+                                showLinkToggle: true,
                                 initialLinked: _linkWH,
                                 onLinkChanged: (v) => setState(() {
                                   _linkWH = v;
@@ -331,14 +342,13 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                         72)
                                     : 72,
                               ),
-                              HeightRow(
-                                heightController: _inputValueController2,
+                              DimensionRow(
+                                primaryController: _inputValueController2,
+                                partnerController: _inputValueController,
+                                valueController: _heightVC,
                                 enabled: hasImage,
-                                dpiOverride: (imageId != null)
-                                    ? (ref.watch(imageDpiProvider(imageId)
-                                            .select((a) => a.asData?.value)) ??
-                                        72)
-                                    : 72,
+                                isWidth: false,
+                                showLinkToggle: false,
                                 onUnitChanged: (u) {
                                   _heightUnit = u;
                                   if (_currentProjectId != null) {
@@ -353,6 +363,11 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                     ? ref.watch(imageHeightUnitProvider
                                         .call(_currentProjectId!))
                                     : _heightUnit,
+                                dpiOverride: (imageId != null)
+                                    ? (ref.watch(imageDpiProvider(imageId)
+                                            .select((a) => a.asData?.value)) ??
+                                        72)
+                                    : 72,
                               ),
                               InterpolationSelector(
                                 value: _interp,
@@ -382,6 +397,9 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                       [newDpi, imgId],
                                     );
                                     ref.invalidate(imageDpiProvider(imgId));
+                                    // keep controllers dpi in sync
+                                    _widthVC?.setDpi(newDpi);
+                                    _heightVC?.setDpi(newDpi);
                                   },
                                 );
                               }),
@@ -815,38 +833,15 @@ class _ArtboardView extends StatelessWidget {
                                     maxWidth: double.infinity,
                                     maxHeight: double.infinity,
                                     child: Builder(builder: (context) {
-                                      final RenderBox? vb = (viewportKey
-                                              is GlobalKey)
-                                          ? (viewportKey as GlobalKey)
-                                              .currentContext
-                                              ?.findRenderObject() as RenderBox?
-                                          : null;
-                                      final Size vp = vb?.size ?? Size.zero;
-                                      final double s =
-                                          controller.value.getMaxScaleOnAxis();
-                                      final double safeScale =
-                                          (s <= 0) ? 1.0 : s;
-                                      final double dpr = MediaQuery.of(context)
-                                          .devicePixelRatio;
-                                      final bool hasVp =
-                                          vp.width > 0 && vp.height > 0;
-                                      final int? targetW = hasVp
-                                          ? (vp.width * dpr / safeScale)
-                                              .clamp(64.0, 8192.0)
-                                              .toInt()
-                                          : null;
-                                      final int? targetH = hasVp
-                                          ? (vp.height * dpr / safeScale)
-                                              .clamp(64.0, 8192.0)
-                                              .toInt()
-                                          : null;
+                                      // No viewport-dependent calculations here to avoid first-frame scaling
                                       return Image.memory(
                                         bytes!,
                                         fit: BoxFit.none,
                                         alignment: Alignment.center,
                                         filterQuality: FilterQuality.none,
-                                        cacheWidth: targetW,
-                                        cacheHeight: targetH,
+                                        // Render at intrinsic resolution to avoid first-frame reflow
+                                        cacheWidth: null,
+                                        cacheHeight: null,
                                         gaplessPlayback: true,
                                       );
                                     }),

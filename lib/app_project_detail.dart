@@ -19,8 +19,8 @@ import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/data/database.dart';
 import 'dart:async';
-import 'package:vettore/widgets/input_value_type/width_row.dart';
-import 'package:vettore/widgets/input_value_type/height_row.dart';
+import 'package:vettore/widgets/input_value_type/dimension_row.dart';
+import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
 import 'package:vettore/widgets/constants/input_constants.dart';
 import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
 // import 'package:vettore/services/dimensions_guard.dart';
@@ -101,6 +101,9 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
   double? _gridCellPxW;
   double? _gridCellPxH;
   bool _showGrid = true;
+  // Unified unit-value controllers for width/height
+  UnitValueController? _widthVC;
+  UnitValueController? _heightVC;
   @override
   bool get wantKeepAlive => true;
   // Safely call setState from helpers/extensions
@@ -144,6 +147,13 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     _canvasPxW = pxW;
     _canvasPxH = pxH;
     _canvasPxNotifier.value = Size(pxW, pxH);
+    // Sync value controllers in px and units
+    _widthVC?.setDpi(kCanvasPreviewPpi);
+    _heightVC?.setDpi(kCanvasPreviewPpi);
+    _widthVC?.setUnit(_canvasWUnit);
+    _heightVC?.setUnit(_canvasHUnit);
+    _widthVC?.setValuePx(pxW);
+    _heightVC?.setValuePx(pxH);
   }
 
   void _recomputeGridFromInputs() {
@@ -168,6 +178,11 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     super.initState();
     _inputValueController = TextEditingController();
     _inputValueController2 = TextEditingController();
+    // Initialize UnitValueControllers with default units and preview dpi
+    _widthVC = UnitValueController(unit: _canvasWUnit, dpi: kCanvasPreviewPpi);
+    _heightVC = UnitValueController(unit: _canvasHUnit, dpi: kCanvasPreviewPpi);
+    // Link width -> height aspect; aspect will be inferred when values arrive
+    _widthVC!.linkWith(_heightVC!);
     _singleInputController = TextEditingController();
     _projectController = TextEditingController();
     _gridWController = TextEditingController(text: '');
@@ -189,11 +204,10 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
       }
     });
     _projectController.addListener(_onTitleChangedDebounced);
-    // Recompute preview and trigger button enable state on any input change
+    // Recompute only grid preview on input change; canvas updates on button tap
     _dimsListener = () {
       _recomputeDebounceTimer?.cancel();
       _recomputeDebounceTimer = Timer(_recomputeDebounceDelay, () {
-        _recomputeCanvasFromInputs();
         _recomputeGridFromInputs();
         // No full setState here; preview listens via _canvasPxNotifier
       });
@@ -355,14 +369,19 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                           return SectionSidebar(
                             title: 'Dimensions',
                             children: [
-                              WidthRow(
-                                widthController: _inputValueController,
-                                heightController: _inputValueController2,
+                              DimensionRow(
+                                primaryController: _inputValueController,
+                                partnerController: _inputValueController2,
+                                valueController: _widthVC,
                                 enabled: true,
+                                isWidth: true,
+                                showLinkToggle: true,
                                 initialLinked: _linkWH,
                                 onLinkChanged: (v) => setState(() {
                                   _linkWH = v;
                                 }),
+                                dpiOverride: _AppProjectDetailPageState
+                                    .kCanvasPreviewPpi,
                                 units: kUnits,
                                 initialUnit: _canvasWUnit,
                                 onUnitChanged: (u) {
@@ -381,9 +400,12 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                                 clampDpi: _AppProjectDetailPageState
                                     .kCanvasPreviewPpi,
                               ),
-                              HeightRow(
-                                heightController: _inputValueController2,
+                              DimensionRow(
+                                primaryController: _inputValueController2,
+                                partnerController: _inputValueController,
+                                valueController: _heightVC,
                                 enabled: true,
+                                isWidth: false,
                                 units: kUnits,
                                 initialUnit: _canvasHUnit,
                                 onUnitChanged: (u) {
@@ -393,6 +415,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                                   });
                                   _recomputeCanvasFromInputs();
                                 },
+                                dpiOverride: _AppProjectDetailPageState
+                                    .kCanvasPreviewPpi,
                                 inputFormatters: <TextInputFormatter>[
                                   FilteringTextInputFormatter.allow(
                                       RegExp(r'[0-9\.]')),
@@ -412,7 +436,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                                     final enabled = _isInputsDirty();
                                     return OutlinedActionButton(
                                       label: 'Update Canvas',
-                                      onTap: _onResizeTap,
+                                      onTap: _onUpdateCanvasTap,
                                       enabled: enabled,
                                     );
                                   },
@@ -533,6 +557,60 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
 }
 
 extension on _AppProjectDetailPageState {
+  Future<void> _onUpdateCanvasTap() async {
+    final double? wVal = double.tryParse(_inputValueController.text.trim());
+    final double? hVal = double.tryParse(_inputValueController2.text.trim());
+    if (wVal == null || hVal == null || wVal <= 0 || hVal <= 0) return;
+    // Convert to px and update preview/canvas spec
+    final double wPx = convertUnitTyped(
+        value: wVal,
+        from: _canvasWUnitE,
+        to: Unit.px,
+        dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);
+    final double hPx = convertUnitTyped(
+        value: hVal,
+        from: _canvasHUnitE,
+        to: Unit.px,
+        dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);
+    _canvasPxW = wPx;
+    _canvasPxH = hPx;
+    _canvasPxNotifier.value = Size(wPx, hPx);
+    // Sync controllers
+    _widthVC?.setDpi(_AppProjectDetailPageState.kCanvasPreviewPpi);
+    _heightVC?.setDpi(_AppProjectDetailPageState.kCanvasPreviewPpi);
+    _widthVC?.setUnit(_canvasWUnit);
+    _heightVC?.setUnit(_canvasHUnit);
+    _widthVC?.setValuePx(wPx);
+    _heightVC?.setValuePx(hPx);
+    // Persist canvas value + unit to DB
+    if (_currentProjectId != null) {
+      try {
+        final db = ref.read(appDatabaseProvider);
+        await db.customUpdate(
+          'UPDATE projects SET '
+          'canvas_width_value = ?, canvas_width_unit = ?, '
+          'canvas_height_value = ?, canvas_height_unit = ?, '
+          'updated_at = ? WHERE id = ?',
+          variables: [
+            Variable.withReal(wVal),
+            Variable.withString(_canvasWUnit),
+            Variable.withReal(hVal),
+            Variable.withString(_canvasHUnit),
+            Variable.withInt(DateTime.now().millisecondsSinceEpoch),
+            Variable.withInt(_currentProjectId!),
+          ],
+        );
+        // Update persisted spec baselines so dirty check resets
+        _persistWVal = wVal;
+        _persistHVal = hVal;
+        _persistWUnitE = _canvasWUnitE;
+        _persistHUnitE = _canvasHUnitE;
+      } catch (_) {
+        // ignore persistence errors in UI
+      }
+    }
+  }
+
   bool _isInputsDirty() {
     final double? wVal = double.tryParse(_inputValueController.text.trim());
     final double? hVal = double.tryParse(_inputValueController2.text.trim());
@@ -550,64 +628,7 @@ extension on _AppProjectDetailPageState {
     return unitChanged || valueChanged;
   }
 
-  void _onResizeTap() async {
-    final double? wVal = double.tryParse(_inputValueController.text.trim());
-    final double? hVal = double.tryParse(_inputValueController2.text.trim());
-    if (wVal == null || hVal == null) return;
-    // Skip if nothing changed to minimize DB writes and provider chatter
-    if (!_isInputsDirty()) return;
-    // Convert to px for preview using kCanvasPreviewPpi (3.7795 px/mm baseline)
-    final double wPx = convertUnitTyped(
-        value: wVal,
-        from: _canvasWUnitE,
-        to: Unit.px,
-        dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);
-    final double hPx = convertUnitTyped(
-        value: hVal,
-        from: _canvasHUnitE,
-        to: Unit.px,
-        dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);
-    // Always update preview & spec
-    _canvasPxW = wPx;
-    _canvasPxH = hPx;
-    _canvasPxNotifier.value = Size(wPx, hPx);
-    {
-      final current = ref.read(canvasSpecProvider);
-      final spec = CanvasSpec(widthPx: wPx, heightPx: hPx);
-      if (current.widthPx != spec.widthPx ||
-          current.heightPx != spec.heightPx) {
-        ref.read(canvasSpecProvider.notifier).setSpec(spec);
-      }
-    }
-    // Persist value + unit to DB only if a project is loaded
-    if (_currentProjectId == null) return;
-    try {
-      final db = ref.read(appDatabaseProvider);
-      await db.customUpdate(
-        'UPDATE projects SET '
-        'canvas_width_value = ?, canvas_width_unit = ?, '
-        'canvas_height_value = ?, canvas_height_unit = ?, '
-        'updated_at = ? WHERE id = ?',
-        variables: [
-          Variable.withReal(wVal),
-          Variable.withString(_canvasWUnitE.asDbString),
-          Variable.withReal(hVal),
-          Variable.withString(_canvasHUnitE.asDbString),
-          Variable.withInt(DateTime.now().millisecondsSinceEpoch),
-          Variable.withInt(_currentProjectId!),
-        ],
-        updates: {db.projects},
-      );
-    } catch (_) {
-      // ignore persistence errors in UI
-    }
-    // Update persisted spec to the latest inputs
-    _persistWVal = wVal;
-    _persistHVal = hVal;
-    _persistWUnitE = _canvasWUnitE;
-    _persistHUnitE = _canvasHUnitE;
-    // Do not resize image here; canvas is independent
-  }
+  // _onResizeTap removed; Update Canvas handled by _onUpdateCanvasTap
 
   // _handleImageBytes removed; upload handled on Image Detail page
 
@@ -705,11 +726,7 @@ extension on _AppProjectDetailPageState {
         _persistHVal = newHVal;
         _inputValueController.text = newWVal.toString();
         _inputValueController2.text = newHVal.toString();
-        // Recompute preview pixels and update notifier
-        _recomputeCanvasFromInputs();
-        if (_canvasPxW != null && _canvasPxH != null) {
-          _canvasPxNotifier.value = Size(_canvasPxW!, _canvasPxH!);
-        }
+        // Do not recompute canvas here; wait for explicit Update Canvas
       }
     });
   }
@@ -767,6 +784,13 @@ extension on _AppProjectDetailPageState {
         _canvasPxH = hPx;
       });
       _canvasPxNotifier.value = Size(wPx, hPx);
+      // Sync controllers with DB units and px
+      _widthVC?.setDpi(_AppProjectDetailPageState.kCanvasPreviewPpi);
+      _heightVC?.setDpi(_AppProjectDetailPageState.kCanvasPreviewPpi);
+      _widthVC?.setUnit(_canvasWUnit);
+      _heightVC?.setUnit(_canvasHUnit);
+      _widthVC?.setValuePx(wPx);
+      _heightVC?.setValuePx(hPx);
       final current = ref.read(canvasSpecProvider);
       final spec = CanvasSpec(widthPx: wPx, heightPx: hPx);
       if (current.widthPx != spec.widthPx ||
@@ -828,17 +852,15 @@ extension on _AppProjectDetailPageState {
       await db.customUpdate(
         'UPDATE projects SET '
         'grid_cell_width_value = ?, grid_cell_width_unit = ?, '
-        'grid_cell_height_value = ?, grid_cell_height_unit = ?, '
-        'updated_at = ? WHERE id = ?',
+        'grid_cell_height_value = ?, grid_cell_height_unit = ? '
+        'WHERE id = ?',
         variables: [
           Variable.withReal(gwVal),
           Variable.withString(_gridWUnitE.asDbString),
           Variable.withReal(ghVal),
           Variable.withString(_gridHUnitE.asDbString),
-          Variable.withInt(DateTime.now().millisecondsSinceEpoch),
           Variable.withInt(_currentProjectId!),
         ],
-        updates: {db.projects},
       );
     } catch (_) {
       // ignore persistence errors in UI
