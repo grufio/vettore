@@ -22,6 +22,11 @@ class UnitValueController extends ChangeNotifier {
   double? _partnerOverThisAspect; // partner.valuePx = this.valuePx * aspect
   bool _syncing = false;
 
+  // User echo state to avoid visible rounding flip-flops
+  double? _lastUserTypedValueInUnit;
+  String? _lastUserTypedUnit;
+  double? _lastUserTypedPxSnapshot;
+
   double? get valuePx => _valuePx;
   String get unit => _unit;
   int get dpi => _dpi;
@@ -41,7 +46,9 @@ class UnitValueController extends ChangeNotifier {
   }
 
   /// Sets value by providing a measurement in the current unit.
-  void setValueFromUnit(double valueInCurrentUnit) {
+  /// If isUserInput is true, the controller remembers the typed value/unit
+  /// to allow stable echo on display without re-rounding.
+  void setValueFromUnit(double valueInCurrentUnit, {bool isUserInput = false}) {
     final double px = convertUnit(
       value: valueInCurrentUnit,
       fromUnit: _unit,
@@ -49,6 +56,11 @@ class UnitValueController extends ChangeNotifier {
       dpi: _dpi,
     );
     setValuePx(px);
+    if (isUserInput) {
+      _lastUserTypedValueInUnit = valueInCurrentUnit;
+      _lastUserTypedUnit = _unit;
+      _lastUserTypedPxSnapshot = _valuePx;
+    }
   }
 
   /// Sets the internal pixel value directly.
@@ -86,6 +98,26 @@ class UnitValueController extends ChangeNotifier {
     if (px == null) return null;
     final String u = overrideUnit ?? _unit;
     return convertUnit(value: px, fromUnit: 'px', toUnit: u, dpi: _dpi);
+  }
+
+  /// Returns a display value for the given (or current) unit that prefers
+  /// echoing the last user-typed value when possible to avoid double-rounding.
+  double? getDisplayValueInUnit({String? overrideUnit}) {
+    final String u = overrideUnit ?? _unit;
+    if (_lastUserTypedUnit == u &&
+        _lastUserTypedPxSnapshot != null &&
+        _valuePx != null) {
+      final double delta = (_valuePx! - _lastUserTypedPxSnapshot!).abs();
+      const double epsilon = 1e-6;
+      if (delta <= epsilon && _lastUserTypedValueInUnit != null) {
+        return _lastUserTypedValueInUnit;
+      }
+    }
+    final double? raw = getValueInUnit(overrideUnit: overrideUnit);
+    if (raw == null) return null;
+    // Round to 4 decimals internally to stabilize UI at 2 decimals
+    final double scaled = (raw * 10000.0).round() / 10000.0;
+    return scaled;
   }
 
   /// Establish bidirectional linking with a partner controller.

@@ -7,20 +7,15 @@ import 'dart:typed_data';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
-import 'package:vettore/widgets/section_sidebar.dart';
-import 'package:vettore/widgets/button_app.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/providers/image_providers.dart';
 import 'package:vettore/data/database.dart';
 import 'dart:async';
-// Replaced specific rows with unified DimensionRow
-import 'package:vettore/widgets/input_value_type/dimension_row.dart';
+// Replaced specific rows with unified DimensionRow (now used inside panel)
 import 'package:vettore/providers/canvas_preview_provider.dart';
 // dimensions_guard not used here any more
-import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
-import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 import 'package:flutter/foundation.dart'
     show compute, debugPrint, kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:file_picker/file_picker.dart';
@@ -31,9 +26,11 @@ import 'package:vettore/providers/navigation_providers.dart';
 // PhotoView removed in favor of InteractiveViewer for infinite pasteboard
 
 import 'package:vettore/widgets/snackbar_image.dart';
-import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
 import 'package:vettore/providers/image_spec_providers.dart';
-import 'package:vettore/widgets/input_value_type/number_utils.dart';
+import 'package:vettore/services/image_detail_controller.dart';
+import 'package:vettore/widgets/image_dimension_panel.dart';
+import 'package:vettore/widgets/artboard_view.dart';
+import 'package:vettore/services/image_resize_service.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
   final int initialActiveIndex;
@@ -71,25 +68,22 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   StreamSubscription<DbProject?>? _projectSub;
   // Link/unlink width/height
   bool _linkWH = false;
-  // Units for image resize wiring
-  String _widthUnit = 'px';
-  String _heightUnit = 'px';
+  // Units are controlled by ImageDetailController
   // Original dimensions no longer tracked here; DimensionsRow manages aspect
   // Guard to avoid re-initializing dimensions on stream rebuilds
-  int? _lastDimsImageId;
+  // moved to controller
   // Removed one-time init gate; we now apply dims whenever they change
   // Removed fallback image bytes; we render directly from provider for stability
   int? _requestedDimsForImageId;
   int? _lastProjectId;
   int? _lastImageId;
-  (int?, int?)? _lastAppliedDims;
+  // moved to controller
   // InteractiveViewer transform controller for pan/zoom
   final TransformationController _ivController = TransformationController();
   // Viewport key to compute center for zoom focus
   final GlobalKey _viewportKey = GlobalKey();
-  // Value controllers to unify value/unit/dpi and linking
-  UnitValueController? _widthVC;
-  UnitValueController? _heightVC;
+  // Central controller (wraps UnitValueControllers)
+  ImageDetailController? _imgCtrl;
   @override
   bool get wantKeepAlive => true;
   // Apply 48px padding only on first open of the Image tab
@@ -112,13 +106,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
       return true;
     }());
     if (!changed) return;
-    // Update controllers in px; DimensionRow listener will format fields
-    if (width != null && _widthVC != null) {
-      _widthVC!.setValuePx(width.toDouble());
-    }
-    if (height != null && _heightVC != null) {
-      _heightVC!.setValuePx(height.toDouble());
-    }
+    // Route through controller for consistency
+    _imgCtrl?.applyRemoteDims(width: width, height: height);
     // mark that we have applied dims at least once
   }
 
@@ -130,10 +119,9 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     _projectController = TextEditingController();
     // Transform will be restored once when project id is known
     _initProject();
-    // Initialize controllers with default units and typical DPI
-    _widthVC = UnitValueController(unit: _widthUnit, dpi: 96);
-    _heightVC = UnitValueController(unit: _heightUnit, dpi: 96);
-    _widthVC!.linkWith(_heightVC!);
+    // Initialize controller and link internal VCs
+    _imgCtrl = ImageDetailController(uiDpi: 96);
+    _imgCtrl!.widthVC.linkWith(_imgCtrl!.heightVC);
   }
 
   // didChangeDependencies no longer hosts ref.listen; listeners are set in build
@@ -176,13 +164,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     // Guarded listeners (allowed in build)
     if (_currentProjectId != null && _currentProjectId != _lastProjectId) {
       _lastProjectId = _currentProjectId;
-      ref.listen(projectByIdProvider(_currentProjectId!), (prev, next) {
-        final int? nextImageId = next.asData?.value?.imageId;
-        if (_lastDimsImageId != nextImageId) {
-          _lastDimsImageId = nextImageId;
-          _lastAppliedDims = null;
-        }
-      });
+      // No longer listen here; controller will listen to image dimensions when we know imageId
     }
 
     final int? imgIdForBuild = (_currentProjectId != null)
@@ -190,31 +172,11 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
         : null;
     if (imgIdForBuild != null && imgIdForBuild != _lastImageId) {
       _lastImageId = imgIdForBuild;
-      // Listen for future changes
-      ref.listen(imageDimensionsProvider(imgIdForBuild), (prev, next) {
-        final dims = next.asData?.value;
-        if (dims != null) {
-          final last = _lastAppliedDims;
-          final changed =
-              last == null || last.$1 != dims.$1 || last.$2 != dims.$2;
-          if (changed) {
-            _applyImageDims(width: dims.$1, height: dims.$2);
-            _lastAppliedDims = dims;
-          }
-        }
-      });
-      // Seed immediately with current value if already available
-      final seedDims =
-          ref.read(imageDimensionsProvider(imgIdForBuild)).asData?.value;
-      if (seedDims != null) {
-        final last = _lastAppliedDims;
-        final changed =
-            last == null || last.$1 != seedDims.$1 || last.$2 != seedDims.$2;
-        if (changed) {
-          _applyImageDims(width: seedDims.$1, height: seedDims.$2);
-          _lastAppliedDims = seedDims;
-        }
-      }
+      _imgCtrl?.listenImageDimensions(
+        ref: ref,
+        imageId: imgIdForBuild,
+        onDims: (w, h) => _applyImageDims(width: w, height: h),
+      );
     }
 
     // Restore per-project transform once when project id is ready
@@ -315,106 +277,73 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                                 imageHeightUnitProvider(_currentProjectId!));
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (!mounted) return;
-                              if (_widthVC != null && _widthVC!.unit != wPref) {
-                                _widthVC!.setUnit(wPref);
-                              }
-                              if (_heightVC != null &&
-                                  _heightVC!.unit != hPref) {
-                                _heightVC!.setUnit(hPref);
-                              }
+                              _imgCtrl?.setUnits(
+                                  widthUnit: wPref, heightUnit: hPref);
+                              // Bind persistence callbacks
+                              _imgCtrl?.onWidthUnitChanged = (u) {
+                                if (_currentProjectId == null) return;
+                                ref
+                                    .read(imageWidthUnitProvider
+                                        .call(_currentProjectId!)
+                                        .notifier)
+                                    .state = u;
+                              };
+                              _imgCtrl?.onHeightUnitChanged = (u) {
+                                if (_currentProjectId == null) return;
+                                ref
+                                    .read(imageHeightUnitProvider
+                                        .call(_currentProjectId!)
+                                        .notifier)
+                                    .state = u;
+                              };
                             });
                           }
-                          return SectionSidebar(
-                            title: 'Title',
-                            children: [
-                              DimensionRow(
-                                primaryController: _inputValueController,
-                                partnerController: _inputValueController2,
-                                valueController: _widthVC,
-                                enabled: hasImage,
-                                isWidth: true,
-                                showLinkToggle: true,
-                                initialLinked: _linkWH,
-                                onLinkChanged: (v) => setState(() {
-                                  _linkWH = v;
-                                }),
-                                onUnitChanged: (u) {
-                                  _widthUnit = u;
-                                  if (_currentProjectId != null) {
-                                    ref
-                                        .read(imageWidthUnitProvider
-                                            .call(_currentProjectId!)
-                                            .notifier)
-                                        .state = u;
-                                  }
-                                },
-                                initialUnit: (_currentProjectId != null)
-                                    ? ref.watch(imageWidthUnitProvider
-                                        .call(_currentProjectId!))
-                                    : _widthUnit,
-                                dpiOverride: 96,
-                              ),
-                              DimensionRow(
-                                primaryController: _inputValueController2,
-                                partnerController: _inputValueController,
-                                valueController: _heightVC,
-                                enabled: hasImage,
-                                isWidth: false,
-                                showLinkToggle: false,
-                                onUnitChanged: (u) {
-                                  _heightUnit = u;
-                                  if (_currentProjectId != null) {
-                                    ref
-                                        .read(imageHeightUnitProvider
-                                            .call(_currentProjectId!)
-                                            .notifier)
-                                        .state = u;
-                                  }
-                                },
-                                initialUnit: (_currentProjectId != null)
-                                    ? ref.watch(imageHeightUnitProvider
-                                        .call(_currentProjectId!))
-                                    : _heightUnit,
-                                dpiOverride: 96,
-                              ),
-                              InterpolationSelector(
-                                value: _interp,
-                                onChanged: (v) => setState(() {
-                                  _interp = v;
-                                }),
-                                enabled: hasImage,
-                              ),
-                              Builder(builder: (context) {
-                                final int? imgId = (_currentProjectId != null)
-                                    ? ref.watch(imageIdStableProvider(
-                                        _currentProjectId!))
-                                    : null;
-                                final int? dpiVal = (imgId != null)
-                                    ? ref.watch(imageDpiProvider(imgId)
-                                        .select((a) => a.asData?.value))
-                                    : null;
-                                final currentDpi = dpiVal ?? 72;
-                                return ResolutionSelector(
-                                  value: currentDpi,
-                                  enabled: hasImage,
-                                  onChanged: (newDpi) async {
-                                    if (imgId == null) return;
-                                    final db = ref.read(appDatabaseProvider);
-                                    await db.customStatement(
-                                      'UPDATE images SET dpi = ? WHERE id = ?',
-                                      [newDpi, imgId],
-                                    );
-                                    ref.invalidate(imageDpiProvider(imgId));
-                                  },
-                                );
-                              }),
-                              SectionInput(
-                                full: OutlinedActionButton(
-                                  label: 'Resize',
-                                  onTap: _onResizeTap,
-                                ),
-                              ),
-                            ],
+                          final int? imgId = (_currentProjectId != null)
+                              ? ref.watch(
+                                  imageIdStableProvider(_currentProjectId!))
+                              : null;
+                          final int? dpiVal = (imgId != null)
+                              ? ref.watch(imageDpiProvider(imgId)
+                                  .select((a) => a.asData?.value))
+                              : null;
+                          final int currentDpi = dpiVal ?? 72;
+                          return ImageDimensionPanel(
+                            widthTextController: _inputValueController,
+                            heightTextController: _inputValueController2,
+                            widthValueController: _imgCtrl?.widthVC,
+                            heightValueController: _imgCtrl?.heightVC,
+                            enabled: hasImage,
+                            initialLinked: _linkWH,
+                            onLinkChanged: (v) => setState(() {
+                              _linkWH = v;
+                            }),
+                            initialWidthUnit: (_currentProjectId != null)
+                                ? ref.watch(imageWidthUnitProvider
+                                    .call(_currentProjectId!))
+                                : 'px',
+                            initialHeightUnit: (_currentProjectId != null)
+                                ? ref.watch(imageHeightUnitProvider
+                                    .call(_currentProjectId!))
+                                : 'px',
+                            onWidthUnitChanged: (u) =>
+                                _imgCtrl?.handleWidthUnitChange(u),
+                            onHeightUnitChanged: (u) =>
+                                _imgCtrl?.handleHeightUnitChange(u),
+                            currentDpi: currentDpi,
+                            onDpiChanged: (newDpi) async {
+                              if (imgId == null) return;
+                              final db = ref.read(appDatabaseProvider);
+                              await db.customStatement(
+                                'UPDATE images SET dpi = ? WHERE id = ?',
+                                [newDpi, imgId],
+                              );
+                              ref.invalidate(imageDpiProvider(imgId));
+                            },
+                            interpolation: _interp,
+                            onInterpolationChanged: (v) => setState(() {
+                              _interp = v;
+                            }),
+                            onResizeTap: _onResizeTap,
                           );
                         }),
                         const Expanded(child: SizedBox.shrink()),
@@ -434,54 +363,23 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
 extension on _AppImageDetailPageState {
   void _onResizeTap() async {
     if (_currentProjectId == null) return;
-    // Always read what the user typed
     final double? wVal = double.tryParse(_inputValueController.text.trim());
     final double? hVal = double.tryParse(_inputValueController2.text.trim());
     if (wVal == null || hVal == null) return;
-    // Resolve current imageId and DPI
-    final int? imageId = (_currentProjectId != null)
-        ? ref.read(imageIdStableProvider(_currentProjectId!))
-        : null;
-    final int dpi = (imageId != null)
-        ? (ref.read(imageDpiProvider(imageId)).asData?.value ?? 72)
-        : 72;
-    // Convert using controller units and image DPI
-    int toPxLocal(num v, String unit) {
-      switch (unit) {
-        case 'px':
-          return v.round();
-        case 'in':
-          return (v * dpi).round();
-        case 'cm':
-          return (v * (dpi / 2.54)).round();
-        case 'mm':
-          return (v * (dpi / 25.4)).round();
-        case 'pt':
-          return (v * (dpi / 72.0)).round();
-        default:
-          return v.round();
-      }
-    }
 
-    final String wUnit = _widthVC?.unit ?? _widthUnit;
-    final String hUnit = _heightVC?.unit ?? _heightUnit;
-    final int targetW = (_widthVC != null)
-        ? toPx(wVal, _widthVC!.unit, _widthVC!.dpi).round()
-        : toPxLocal(wVal, wUnit);
-    final int targetH = (_heightVC != null)
-        ? toPx(hVal, _heightVC!.unit, _heightVC!.dpi).round()
-        : toPxLocal(hVal, hUnit);
-    if (targetW <= 0 || targetH <= 0) return;
-    // Preserve the user's typed unit values in the controllers to avoid
-    // mm→px→mm drift (e.g., 100.00 → 100.01). Controllers keep fractional px.
-    _widthVC?.setValueFromUnit(wVal);
-    _heightVC?.setValueFromUnit(hVal);
-    // Map interpolation string to a suitable name for cv script
-    final String interp = kInterpolationToCvName[_interp] ?? 'linear';
-    await ref
-        .read(projectLogicProvider(_currentProjectId!))
-        .resizeToCv(targetW, targetH, interp);
-    // Keep showing original bytes per baseline; no session flip
+    final service = ImageResizeService();
+    await service.resizeWithTypedUnits(
+      ref: ref,
+      projectId: _currentProjectId!,
+      widthValue: wVal,
+      widthUnit: _imgCtrl?.widthVC.unit ?? 'px',
+      heightValue: hVal,
+      heightUnit: _imgCtrl?.heightVC.unit ?? 'px',
+      interpolation: kInterpolationToCvName[_interp] ?? 'linear',
+    );
+
+    _imgCtrl?.widthVC.setValueFromUnit(wVal, isUserInput: true);
+    _imgCtrl?.heightVC.setValueFromUnit(hVal, isUserInput: true);
   }
 
   Future<void> _handleImageBytes(Uint8List bytes) async {
@@ -541,10 +439,8 @@ extension on _AppImageDetailPageState {
       return true;
     }());
     // Ensure the new image dimensions overwrite any previous values in fields
-    _lastDimsImageId = imageId;
-    _lastAppliedDims = null;
+    // controller tracks last applied dims; no local state
     _applyImageDims(width: width, height: height);
-    _lastAppliedDims = (width, height);
     _setHasImage(true);
   }
 
@@ -627,9 +523,7 @@ extension on _AppImageDetailPageState {
       _requestedDimsForImageId = imageId;
       ref.read(imageDimensionsProvider(imageId).future).then((dims) {
         if (!mounted) return;
-        _lastAppliedDims = null;
         _applyImageDims(width: dims.$1, height: dims.$2);
-        _lastAppliedDims = dims;
       });
     }
 
@@ -644,7 +538,7 @@ extension on _AppImageDetailPageState {
           child: Stack(
             children: [
               const DecoratedBox(decoration: BoxDecoration(color: kWhite)),
-              CustomPaint(painter: _HairlineCanvasBorderPainter()),
+              CustomPaint(painter: HairlineCanvasBorderPainter()),
             ],
           ),
         ),
@@ -664,7 +558,7 @@ extension on _AppImageDetailPageState {
           child: Stack(
             children: [
               const DecoratedBox(decoration: BoxDecoration(color: kWhite)),
-              CustomPaint(painter: _HairlineCanvasBorderPainter()),
+              CustomPaint(painter: HairlineCanvasBorderPainter()),
             ],
           ),
         ),
@@ -700,7 +594,7 @@ extension on _AppImageDetailPageState {
       color: kGrey70,
       child: Stack(
         children: [
-          _ArtboardView(
+          ArtboardView(
             controller: _ivController,
             boardW: boardW,
             boardH: boardH,
@@ -781,166 +675,6 @@ extension on _AppImageDetailPageState {
       ),
     );
   }
-}
-
-class _ArtboardView extends StatelessWidget {
-  final TransformationController controller;
-  final double boardW;
-  final double boardH;
-  final double canvasW;
-  final double canvasH;
-  final Uint8List? bytes;
-  final double outerPad;
-  final Key? viewportKey;
-  const _ArtboardView({
-    required this.controller,
-    required this.boardW,
-    required this.boardH,
-    required this.canvasW,
-    required this.canvasH,
-    required this.bytes,
-    this.outerPad = 0.0,
-    this.viewportKey,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: LayoutBuilder(builder: (context, constraints) {
-        final double maxSide = constraints.maxWidth > constraints.maxHeight
-            ? constraints.maxWidth
-            : constraints.maxHeight;
-        final EdgeInsets margin = EdgeInsets.all(maxSide * 2);
-        return ClipRect(
-          child: InteractiveViewer(
-            key: viewportKey,
-            transformationController: controller,
-            minScale: 0.25,
-            maxScale: 8.0,
-            scaleEnabled: true,
-            panEnabled: true,
-            constrained: false,
-            boundaryMargin: margin,
-            child: RepaintBoundary(
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.all(outerPad),
-                  child: SizedBox(
-                    width: boardW,
-                    height: boardH,
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          left: (boardW - canvasW) / 2,
-                          top: (boardH - canvasH) / 2,
-                          width: canvasW,
-                          height: canvasH,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              const Positioned.fill(
-                                child: ColoredBox(color: kWhite),
-                              ),
-                              if (bytes != null)
-                                Center(
-                                  child: ClipRect(
-                                    child: OverflowBox(
-                                      minWidth: 0,
-                                      minHeight: 0,
-                                      maxWidth: double.infinity,
-                                      maxHeight: double.infinity,
-                                      child: Builder(builder: (context) {
-                                        // No viewport-dependent calculations here to avoid first-frame scaling
-                                        return Image.memory(
-                                          bytes!,
-                                          fit: BoxFit.none,
-                                          alignment: Alignment.center,
-                                          filterQuality: FilterQuality.none,
-                                          // Render at intrinsic resolution to avoid first-frame reflow
-                                          cacheWidth: null,
-                                          cacheHeight: null,
-                                          gaplessPlayback: true,
-                                        );
-                                      }),
-                                    ),
-                                  ),
-                                ),
-                              LayoutBuilder(builder: (context, constraints) {
-                                final double s =
-                                    controller.value.getMaxScaleOnAxis();
-                                final double dpr =
-                                    MediaQuery.of(context).devicePixelRatio;
-                                return IgnorePointer(
-                                  child: CustomPaint(
-                                    painter: _HairlineBorderPainter(
-                                        scale: s, dpr: dpr),
-                                    size: Size(constraints.maxWidth,
-                                        constraints.maxHeight),
-                                  ),
-                                );
-                              }),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class _HairlineCanvasBorderPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint p = Paint()
-      ..color = kGrey100
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-    canvas.drawRect(Offset.zero & size, p);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _HairlineBorderPainter extends CustomPainter {
-  final double scale;
-  final double dpr;
-  const _HairlineBorderPainter({required this.scale, required this.dpr});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Draw a crisp hairline (1 physical pixel) regardless of zoom/DPR.
-    // Use strokeWidth=0.0 (Flutter hairline) and snap the rect to the
-    // device pixel grid in the transformed space by insetting by
-    // 0.5/(dpr*scale) on all sides to avoid antialias broadening.
-    final double s = scale <= 0 ? 1.0 : scale;
-    final double ratio = dpr <= 0 ? 1.0 : dpr;
-    final double inset = 0.5 / (ratio * s);
-    final Rect rect = Rect.fromLTWH(
-      inset,
-      inset,
-      size.width - inset * 2.0,
-      size.height - inset * 2.0,
-    );
-
-    final Paint p = Paint()
-      ..color = kGrey100
-      ..strokeWidth = 0.0 // true hairline
-      ..isAntiAlias = false
-      ..style = PaintingStyle.stroke;
-    canvas.drawRect(rect, p);
-  }
-
-  @override
-  bool shouldRepaint(covariant _HairlineBorderPainter oldDelegate) =>
-      oldDelegate.scale != scale || oldDelegate.dpr != dpr;
 }
 
 // _loadImageDimensions removed; dimensions are provided exclusively by imageDimensionsProvider

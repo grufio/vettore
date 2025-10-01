@@ -76,12 +76,14 @@ class _DimensionRowState extends State<DimensionRow> {
     widget.primaryController.addListener(_onPrimaryChanged);
     widget.partnerController?.addListener(_onPartnerChanged);
     // Initialize internal px value from current text if present
-    final int dpi = widget.dpiOverride ?? 72;
+    final int? dpiOverride = widget.dpiOverride;
     final double? initial = double.tryParse(widget.primaryController.text);
     if (widget.valueController != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        widget.valueController!.setDpi(dpi);
+        if (dpiOverride != null) {
+          widget.valueController!.setDpi(dpiOverride);
+        }
         widget.valueController!.setUnit(_unit);
         if (initial != null) {
           widget.valueController!.setValueFromUnit(initial);
@@ -90,7 +92,7 @@ class _DimensionRowState extends State<DimensionRow> {
       _vcListener = () {
         if (!mounted) return;
         if (_syncing) return;
-        final double? v = widget.valueController!.getValueInUnit();
+        final double? v = widget.valueController!.getDisplayValueInUnit();
         final String txt = (v == null)
             ? ''
             : formatFieldUnitValue(v, widget.valueController!.unit);
@@ -110,7 +112,7 @@ class _DimensionRowState extends State<DimensionRow> {
           value: initial,
           fromUnit: _unit,
           toUnit: 'px',
-          dpi: dpi,
+          dpi: dpiOverride ?? 72,
         );
       }
     }
@@ -132,12 +134,14 @@ class _DimensionRowState extends State<DimensionRow> {
         });
       }
     }
-    // Sync controller DPI after build if changed
-    final int newDpi = widget.dpiOverride ?? 72;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      widget.valueController?.setDpi(newDpi);
-    });
+    // Sync controller DPI only when override is provided
+    if (widget.dpiOverride != null) {
+      final int newDpi = widget.dpiOverride!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        widget.valueController?.setDpi(newDpi);
+      });
+    }
   }
 
   @override
