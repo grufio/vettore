@@ -248,7 +248,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                     horizontalPadding: 16.0,
                     resizable: true,
                     minWidth: 200.0,
-                    maxWidth: 400.0,
+                    maxWidth: 300.0,
                     onResizeDelta: (delta) {
                       setState(() {
                         _rightPanelWidth =
