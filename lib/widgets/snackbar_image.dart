@@ -1,0 +1,105 @@
+import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/theme/app_theme_colors.dart';
+
+class SnackbarImage extends StatelessWidget {
+  final VoidCallback? onZoomIn;
+  final VoidCallback? onZoomOut;
+  final VoidCallback? onFitToScreen;
+
+  const SnackbarImage({
+    super.key,
+    this.onZoomIn,
+    this.onZoomOut,
+    this.onFitToScreen,
+  });
+
+  static const double _height = 40.0;
+  static const double _iconSize = 24.0;
+  static const double _gap = 12.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: _height,
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: kWhite,
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: kBordersColor, width: 1.0),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _IconButton(
+            asset: 'assets/icons/32/zoom--in.svg',
+            onTap: onZoomIn,
+          ),
+          const SizedBox(width: _gap),
+          _IconButton(
+            asset: 'assets/icons/32/zoom--out.svg',
+            onTap: onZoomOut,
+          ),
+          const SizedBox(width: _gap),
+          _IconButton(
+            asset: 'assets/icons/32/fit-to-screen.svg',
+            onTap: onFitToScreen,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IconButton extends StatelessWidget {
+  final String asset;
+  final VoidCallback? onTap;
+
+  const _IconButton({required this.asset, this.onTap});
+
+  @override
+  Widget build(BuildContext context) =>
+      _IconButtonInner(asset: asset, onTap: onTap);
+}
+
+class _IconButtonInner extends StatefulWidget {
+  final String asset;
+  final VoidCallback? onTap;
+
+  const _IconButtonInner({required this.asset, this.onTap});
+
+  @override
+  State<_IconButtonInner> createState() => _IconButtonInnerState();
+}
+
+class _IconButtonInnerState extends State<_IconButtonInner> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: widget.onTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          width: SnackbarImage._iconSize,
+          height: SnackbarImage._iconSize,
+          child: Center(
+            child: SvgPicture.asset(
+              widget.asset,
+              width: SnackbarImage._iconSize,
+              height: SnackbarImage._iconSize,
+              colorFilter: ColorFilter.mode(
+                  _hovered ? kGrey100 : kGrey70, BlendMode.srcIn),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

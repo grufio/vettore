@@ -1,0 +1,99 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+
+# IntelliJ
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Other
+**/doc/api/
+
+
+
+# VS Code
+.vscode/
+
+# Xcode
+.xcworkspace/
+xcuserdata/
+DerivedData/
+Runner.xcodeproj/project.xcworkspace/
+Runner.xcodeproj/xcshareddata/
+Runner.xcworkspace/
+build/
+ios/.symlinks/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Generated.xcconfig
+ios/Pods/
+
+# Android
+.gradle/
+**/app/src/main/kotlin/**/GeneratedPluginRegistrant.java
+android/app/build/
+android/build/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/key.properties
+*.jks
+
+# Web
+web/build/
+web/dart_tool/
+web/.dart_tool/
+web/.metadata
+web/service_worker.js
+
+# Windows
+windows/build/
+windows/runner/Debug/
+windows/runner/Release/
+windows/runner/Profile/
+
+# Linux
+linux/build/
+linux/flutter/ephemeral/
+linux/.cmake/
+linux/.dart_tool/
+
+# macOS
+macos/build/
+macos/Pods/
+macos/Flutter/ephemeral/
+macos/.symlinks/
+
+# Generated files
+pubspec.lock
+melos.yaml
+melos.lock
+melos_local.yaml
+
+# SQLite databases
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-wal
+*.sqlite-shm
+*.db-wal
+*.db-shm
+
+**/.DS_Store

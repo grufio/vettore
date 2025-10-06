@@ -1,0 +1,64 @@
+import 'package:vettore/data/database.dart';
+import 'package:drift/drift.dart';
+
+class ProjectRepository {
+  final AppDatabase _db;
+
+  ProjectRepository(this._db);
+
+  // Watch for changes to the projects table
+  Stream<List<Project>> watchProjects() {
+    return _db.select(_db.projects).watch();
+  }
+
+  // Get a list of all projects once
+  Future<List<Project>> getProjects() {
+    return _db.select(_db.projects).get();
+  }
+
+  // Watch for changes to a single project
+  Stream<Project> watchProject(int id) {
+    return (_db.select(_db.projects)..where((p) => p.id.equals(id)))
+        .watchSingle();
+  }
+
+  // Get a single project by its ID
+  Future<Project> getProject(int id) {
+    return (_db.select(_db.projects)..where((p) => p.id.equals(id)))
+        .getSingle();
+  }
+
+  // Find a project by its palette ID
+  Future<Project?> findProjectByPaletteId(int paletteId) {
+    return (_db.select(_db.projects)
+          ..where((p) => p.paletteId.equals(paletteId)))
+        .getSingleOrNull();
+  }
+
+  // Add a new project
+  Future<int> addProject(ProjectsCompanion project) {
+    return _db.into(_db.projects).insert(project);
+  }
+
+  // Add a new project and its associated empty palette in a transaction
+  Future<void> addProjectWithPalette(
+      ProjectsCompanion project, PalettesCompanion palette) async {
+    return _db.transaction(() async {
+      final paletteId = await _db.into(_db.palettes).insert(palette);
+      final projectWithPalette = project.copyWith(paletteId: Value(paletteId));
+      await _db.into(_db.projects).insert(projectWithPalette);
+    });
+  }
+
+  // Delete a project by its ID
+  Future<void> deleteProject(int id) {
+    return (_db.delete(_db.projects)..where((p) => p.id.equals(id))).go();
+  }
+
+  // Update an existing project
+  Future<void> updateProject(ProjectsCompanion project) {
+    return (_db.update(_db.projects)
+          ..where((p) => p.id.equals(project.id.value)))
+        .write(project);
+  }
+}

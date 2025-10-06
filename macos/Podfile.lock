@@ -1,0 +1,153 @@
+PODS:
+  - appkit_ui_element_colors (1.0.0):
+    - FlutterMacOS
+  - bitsdojo_window_macos (0.0.1):
+    - FlutterMacOS
+  - desktop_drop (0.0.1):
+    - FlutterMacOS
+  - device_info_plus (0.0.1):
+    - FlutterMacOS
+  - file_picker (0.0.1):
+    - FlutterMacOS
+  - file_selector_macos (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+  - irondash_engine_context (0.0.1):
+    - FlutterMacOS
+  - macos_ui (0.1.0):
+    - FlutterMacOS
+  - macos_window_utils (1.0.0):
+    - FlutterMacOS
+  - open_file_mac (0.0.1):
+    - FlutterMacOS
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - printing (1.0.0):
+    - FlutterMacOS
+  - screen_retriever_macos (0.0.1):
+    - FlutterMacOS
+  - sqlite3 (3.50.4):
+    - sqlite3/common (= 3.50.4)
+  - sqlite3/common (3.50.4)
+  - sqlite3/dbstatvtab (3.50.4):
+    - sqlite3/common
+  - sqlite3/fts5 (3.50.4):
+    - sqlite3/common
+  - sqlite3/math (3.50.4):
+    - sqlite3/common
+  - sqlite3/perf-threadsafe (3.50.4):
+    - sqlite3/common
+  - sqlite3/rtree (3.50.4):
+    - sqlite3/common
+  - sqlite3/session (3.50.4):
+    - sqlite3/common
+  - sqlite3_flutter_libs (0.0.1):
+    - Flutter
+    - FlutterMacOS
+    - sqlite3 (~> 3.50.4)
+    - sqlite3/dbstatvtab
+    - sqlite3/fts5
+    - sqlite3/math
+    - sqlite3/perf-threadsafe
+    - sqlite3/rtree
+    - sqlite3/session
+  - super_native_extensions (0.0.1):
+    - FlutterMacOS
+  - syncfusion_pdfviewer_macos (0.0.1):
+    - FlutterMacOS
+  - url_launcher_macos (0.0.1):
+    - FlutterMacOS
+  - window_manager (0.5.0):
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - appkit_ui_element_colors (from `Flutter/ephemeral/.symlinks/plugins/appkit_ui_element_colors/macos`)
+  - bitsdojo_window_macos (from `Flutter/ephemeral/.symlinks/plugins/bitsdojo_window_macos/macos`)
+  - desktop_drop (from `Flutter/ephemeral/.symlinks/plugins/desktop_drop/macos`)
+  - device_info_plus (from `Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos`)
+  - file_picker (from `Flutter/ephemeral/.symlinks/plugins/file_picker/macos`)
+  - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - irondash_engine_context (from `Flutter/ephemeral/.symlinks/plugins/irondash_engine_context/macos`)
+  - macos_ui (from `Flutter/ephemeral/.symlinks/plugins/macos_ui/macos`)
+  - macos_window_utils (from `Flutter/ephemeral/.symlinks/plugins/macos_window_utils/macos`)
+  - open_file_mac (from `Flutter/ephemeral/.symlinks/plugins/open_file_mac/macos`)
+  - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
+  - printing (from `Flutter/ephemeral/.symlinks/plugins/printing/macos`)
+  - screen_retriever_macos (from `Flutter/ephemeral/.symlinks/plugins/screen_retriever_macos/macos`)
+  - sqlite3_flutter_libs (from `Flutter/ephemeral/.symlinks/plugins/sqlite3_flutter_libs/darwin`)
+  - super_native_extensions (from `Flutter/ephemeral/.symlinks/plugins/super_native_extensions/macos`)
+  - syncfusion_pdfviewer_macos (from `Flutter/ephemeral/.symlinks/plugins/syncfusion_pdfviewer_macos/macos`)
+  - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
+  - window_manager (from `Flutter/ephemeral/.symlinks/plugins/window_manager/macos`)
+
+SPEC REPOS:
+  trunk:
+    - sqlite3
+
+EXTERNAL SOURCES:
+  appkit_ui_element_colors:
+    :path: Flutter/ephemeral/.symlinks/plugins/appkit_ui_element_colors/macos
+  bitsdojo_window_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/bitsdojo_window_macos/macos
+  desktop_drop:
+    :path: Flutter/ephemeral/.symlinks/plugins/desktop_drop/macos
+  device_info_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos
+  file_picker:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_picker/macos
+  file_selector_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  irondash_engine_context:
+    :path: Flutter/ephemeral/.symlinks/plugins/irondash_engine_context/macos
+  macos_ui:
+    :path: Flutter/ephemeral/.symlinks/plugins/macos_ui/macos
+  macos_window_utils:
+    :path: Flutter/ephemeral/.symlinks/plugins/macos_window_utils/macos
+  open_file_mac:
+    :path: Flutter/ephemeral/.symlinks/plugins/open_file_mac/macos
+  path_provider_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin
+  printing:
+    :path: Flutter/ephemeral/.symlinks/plugins/printing/macos
+  screen_retriever_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/screen_retriever_macos/macos
+  sqlite3_flutter_libs:
+    :path: Flutter/ephemeral/.symlinks/plugins/sqlite3_flutter_libs/darwin
+  super_native_extensions:
+    :path: Flutter/ephemeral/.symlinks/plugins/super_native_extensions/macos
+  syncfusion_pdfviewer_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/syncfusion_pdfviewer_macos/macos
+  url_launcher_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
+  window_manager:
+    :path: Flutter/ephemeral/.symlinks/plugins/window_manager/macos
+
+SPEC CHECKSUMS:
+  appkit_ui_element_colors: c8e13c23cbd781e0f5d9b75cad686e6a4bb958da
+  bitsdojo_window_macos: 7959fb0ca65a3ccda30095c181ecb856fae48ea9
+  desktop_drop: 248706031734554504f939cab1ad4c5fbc9c9c72
+  device_info_plus: 4fb280989f669696856f8b129e4a5e3cd6c48f76
+  file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
+  file_selector_macos: 6280b52b459ae6c590af5d78fc35c7267a3c4b31
+  FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+  irondash_engine_context: 893c7d96d20ce361d7e996f39d360c4c2f9869ba
+  macos_ui: ff29104a215c2e1b76f37aacdcbba648abb25faa
+  macos_window_utils: 23f54331a0fd51eea9e0ed347253bf48fd379d1d
+  open_file_mac: 01874b6d6a2c1485ac9b126d7105b99102dea2cf
+  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
+  printing: c4cf83c78fd684f9bc318e6aadc18972aa48f617
+  screen_retriever_macos: 452e51764a9e1cdb74b3c541238795849f21557f
+  sqlite3: 73513155ec6979715d3904ef53a8d68892d4032b
+  sqlite3_flutter_libs: 83f8e9f5b6554077f1d93119fe20ebaa5f3a9ef1
+  super_native_extensions: c2795d6d9aedf4a79fae25cb6160b71b50549189
+  syncfusion_pdfviewer_macos: b3b110c68039178ca4105dd03ef38761eca3b36b
+  url_launcher_macos: 0fba8ddabfc33ce0a9afe7c5fef5aab3d8d2d673
+  window_manager: b729e31d38fb04905235df9ea896128991cad99e
+
+PODFILE CHECKSUM: 72a145d68bd940d5270f2b51d39e5183b43f0d31
+
+COCOAPODS: 1.16.2
