@@ -33,8 +33,10 @@ samples, guidance on mobile development, and a full API reference.
 
 ## DPI and Units
 
-- Default DPI: 96. On import, DPI is set from EXIF when available; otherwise 96.
-- Conversions: internal math uses exact factors; no rounding applied during conversion.
-- Display: px shows as integer; all physical units (mm, cm, in, pt) display 2 decimals.
-- Stability: internal echo snaps non‑px values to 4 decimals to prevent flip‑flop when toggling units.
-- Resize: targets are computed once from the typed values and current DPI; resizing is skipped when the target matches the current converted size.
+ - Default DPI: 96. On import, DPI is set from EXIF when available; otherwise 96.
+ - Conversions: internal math uses exact factors; no rounding applied during conversion.
+ - Precision: system uses up to 4 decimals internally for non‑px units (e.g., 100.1202 mm) to avoid cumulative error.
+ - Display: UI shows 2 decimals for non‑px units (e.g., 100.12); px is shown as integer. Trailing zeros are trimmed when appropriate.
+ - Typing: no live formatting while typing; inputs are sanitized only. Formatting is applied on Resize and on remote updates.
+ - Resize: targets are computed once from the typed values and current DPI; resizing is skipped when the target matches the current converted size.
+ - Resize prerequisites: both fields must be numeric (> 0), units selected, and targets must differ from current size. The button is disabled otherwise.

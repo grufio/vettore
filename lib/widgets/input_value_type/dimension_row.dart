@@ -61,11 +61,12 @@ class _DimensionRowState extends State<DimensionRow> {
   static const List<String> _defaultUnits = kUnits;
 
   bool _linked = false;
-  final bool _syncing = false;
+  bool _echoing = false;
+  double? _lastEchoedPx;
+  bool _userEdited = false;
   // Linking/aspect disabled in typing-only mode
   String _unit = 'px';
-  // Preserve high-precision value in base pixels to avoid mm→px→mm drift
-  double? _valuePx; // may be fractional
+  // Preserve state only via UnitValueController; no local px cache
   VoidCallback? _vcListener;
 
   @override
@@ -92,30 +93,41 @@ class _DimensionRowState extends State<DimensionRow> {
       });
       _vcListener = () {
         if (!mounted) return;
-        if (_syncing) return;
-        final double? v = widget.valueController!.getDisplayValueInUnit();
-        final String txt = (v == null)
-            ? ''
-            : formatFieldUnitValue(v, widget.valueController!.unit);
-        if (widget.primaryController.text != txt) {
-          widget.primaryController.text = txt;
-          widget.primaryController.selection =
-              TextSelection.collapsed(offset: txt.length);
+        // Only echo into the field when the underlying pixel value changes
+        final double? px = widget.valueController!.valuePx;
+        final bool pxChanged = px != _lastEchoedPx;
+        if (pxChanged && !_echoing) {
+          final String u = widget.valueController!.unit.trim().toLowerCase();
+          final bool unitBlocksEcho = (u == 'mm' || u == 'cm');
+          final bool fieldHasText =
+              widget.primaryController.text.trim().isNotEmpty;
+          // Block echo if user is actively editing or unit is mm/cm and field has text
+          final bool userBlocksEcho = _userEdited && fieldHasText;
+          final bool blockEcho =
+              (unitBlocksEcho || userBlocksEcho) && fieldHasText;
+          if (!blockEcho) {
+            final double? v = widget.valueController!.getValueInUnit();
+            final String txt = (v == null)
+                ? ''
+                : formatFieldUnitValue(v, widget.valueController!.unit);
+            _echoing = true;
+            widget.primaryController.text = txt;
+            widget.primaryController.selection =
+                TextSelection.collapsed(offset: txt.length);
+            _echoing = false;
+            _lastEchoedPx = px;
+            _userEdited = false;
+          } else {
+            // Do not rewrite typed mm/cm text from px; still track last px
+            _lastEchoedPx = px;
+          }
         }
+        // Always update unit for suffix, but do not rewrite numeric text on unit-only change
         setState(() {
           _unit = widget.valueController!.unit;
         });
       };
       widget.valueController!.addListener(_vcListener!);
-    } else {
-      if (initial != null) {
-        _valuePx = convertUnit(
-          value: initial,
-          fromUnit: _unit,
-          toUnit: 'px',
-          dpi: dpiOverride ?? 96,
-        );
-      }
     }
   }
 
@@ -169,7 +181,7 @@ class _DimensionRowState extends State<DimensionRow> {
 
   @override
   Widget build(BuildContext context) {
-    final int dpi = widget.dpiOverride ?? 96;
+    // final int dpi = widget.dpiOverride ?? 96;
     // DPI sync is handled in didUpdateWidget via post-frame callback
     final bool readOnly = !widget.enabled;
     final List<String> units = widget.units ?? _defaultUnits;
@@ -201,44 +213,27 @@ class _DimensionRowState extends State<DimensionRow> {
           widget.primaryController.selection =
               TextSelection.collapsed(offset: newOffset);
         }
-        // Do not apply conversions on typing; only explicit actions apply
+        // Mark that the user is editing to prevent echo overriding
+        _userEdited = true;
         return;
       },
       onItemSelected: (nextUnit) {
-        final String text = widget.primaryController.text.trim();
-        final double? value = double.tryParse(text);
         setState(() {
           if (widget.valueController != null) {
+            // Change unit and update field text immediately to reflect unit
             widget.valueController!.setUnit(nextUnit);
             final double? v = widget.valueController!.getValueInUnit();
             if (v != null) {
               final String txt = formatFieldUnitValue(v, nextUnit);
+              _echoing = true;
               widget.primaryController.text = txt;
               widget.primaryController.selection =
                   TextSelection.collapsed(offset: txt.length);
+              _echoing = false;
+              _userEdited = false;
             }
             widget.onUnitChanged?.call(nextUnit);
           } else {
-            if (value != null) {
-              final double pxValue = _valuePx ??
-                  convertUnit(
-                    value: value,
-                    fromUnit: _unit,
-                    toUnit: 'px',
-                    dpi: dpi,
-                  );
-              final double converted = convertUnit(
-                value: pxValue,
-                fromUnit: 'px',
-                toUnit: nextUnit,
-                dpi: dpi,
-              );
-              widget.primaryController.text =
-                  formatFieldUnitValue(converted, nextUnit);
-              if (widget.showLinkToggle && _linked) {
-                _onPrimaryChanged();
-              }
-            }
             _unit = nextUnit;
             widget.onUnitChanged?.call(_unit);
           }

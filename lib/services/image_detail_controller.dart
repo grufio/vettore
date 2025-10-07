@@ -51,6 +51,10 @@ class ImageDetailController extends ChangeNotifier {
   void applyRemoteDims({int? width, int? height}) {
     if (width != null) _widthVC.setValuePx(width.toDouble());
     if (height != null) _heightVC.setValuePx(height.toDouble());
+    // Establish aspect ratio for linking once both dims are known
+    if (width != null && height != null && width > 0) {
+      _widthVC.setAspect(height / width);
+    }
   }
 
   // Listening plumbing

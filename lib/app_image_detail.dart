@@ -359,28 +359,59 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
 extension on _AppImageDetailPageState {
   void _onResizeTap() async {
     if (_currentProjectId == null) return;
-    final double? wVal = double.tryParse(_inputValueController.text.trim());
-    final double? hVal = double.tryParse(_inputValueController2.text.trim());
-    if (wVal == null || hVal == null) return;
+    String _trimDot(String s) {
+      final String t = s.trim();
+      return t.endsWith('.') ? t.substring(0, t.length - 1) : t;
+    }
+
+    final String wText = _trimDot(_inputValueController.text);
+    final String hText = _trimDot(_inputValueController2.text);
+    final double? wVal = double.tryParse(wText);
+    final double? hVal = double.tryParse(hText);
     // Resolve image id and DPI
     final int? imgId = ref.read(imageIdStableProvider(_currentProjectId!));
     if (imgId == null) return;
     final int dpi = (await ref.read(imageDpiProvider(imgId).future)) ?? 96;
     final String wUnit = _imgCtrl?.widthVC.unit ?? 'px';
     final String hUnit = _imgCtrl?.heightVC.unit ?? 'px';
-    // Compute targets in px once
-    final int targetW = toPx(wVal, wUnit, dpi).round();
-    final int targetH = toPx(hVal, hUnit, dpi).round();
-    if (targetW <= 0 || targetH <= 0) return;
-    // Skip if no change
+    // Load current dimensions (for untouched side and no-op check)
     final (int?, int?) currentDims =
         await ref.read(imageDimensionsProvider(imgId).future);
-    if (currentDims.$1 == targetW && currentDims.$2 == targetH) {
+    final int curW = currentDims.$1 ?? 0;
+    final int curH = currentDims.$2 ?? 0;
+    // Compute targets from provided fields; use current for the untouched side
+    int targetW = (wVal != null) ? toPx(wVal, wUnit, dpi).round() : curW;
+    int targetH = (hVal != null) ? toPx(hVal, hUnit, dpi).round() : curH;
+    // If linked, keep aspect for the untouched side
+    if (_linkWH && curW > 0 && curH > 0) {
+      if (wVal != null && hVal == null) {
+        targetH = (targetW * (curH / curW)).round();
+      } else if (hVal != null && wVal == null) {
+        targetW = (targetH * (curW / curH)).round();
+      }
+    }
+    if (targetW <= 0 || targetH <= 0) return;
+    // Skip if no change
+    if (curW == targetW && curH == targetH) {
+      assert(() {
+        debugPrint(
+            '[ImageDetail] Resize skipped: no-op (current=${curW}x${curH} target=${targetW}x${targetH})');
+        return true;
+      }());
       return;
     }
     // Perform resize directly via project logic
-    await ref.read(projectLogicProvider(_currentProjectId!)).resizeToCv(
-        targetW, targetH, kInterpolationToCvName[_interp] ?? 'linear');
+    try {
+      await ref.read(projectLogicProvider(_currentProjectId!)).resizeToCv(
+          targetW, targetH, kInterpolationToCvName[_interp] ?? 'linear');
+    } catch (e, st) {
+      assert(() {
+        debugPrint('[ImageDetail] Resize failed: $e');
+        debugPrint(st.toString());
+        return true;
+      }());
+      return;
+    }
     // Refresh input fields from new converted dimensions
     final (int?, int?) newDims =
         await ref.read(imageDimensionsProvider(imgId).future);
