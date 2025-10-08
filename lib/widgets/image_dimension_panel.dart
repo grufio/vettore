@@ -127,8 +127,8 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
 
     final String wText = _trimDot(widget.widthTextController.text);
     final String hText = _trimDot(widget.heightTextController.text);
-    final int? curW = widget.widthValueController?.valuePx?.round();
-    final int? curH = widget.heightValueController?.valuePx?.round();
+    final double? curPhysW = widget.widthValueController?.valuePx;
+    final double? curPhysH = widget.heightValueController?.valuePx;
 
     final bool wNumericPos =
         _isNumeric(wText) && (double.tryParse(wText) ?? 0) > 0;
@@ -139,20 +139,20 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
 
     String? expectedW;
     String? expectedH;
-    if (curW != null) {
+    if (curPhysW != null) {
       final String wUnit = (widget.widthValueController?.unit ?? 'px');
       final double wDisp = convertUnit(
-        value: curW.toDouble(),
+        value: curPhysW,
         fromUnit: 'px',
         toUnit: wUnit,
         dpi: widget.currentDpi,
       );
       expectedW = formatFieldUnitValue(wDisp, wUnit);
     }
-    if (curH != null) {
+    if (curPhysH != null) {
       final String hUnit = (widget.heightValueController?.unit ?? 'px');
       final double hDisp = convertUnit(
-        value: curH.toDouble(),
+        value: curPhysH,
         fromUnit: 'px',
         toUnit: hUnit,
         dpi: widget.currentDpi,
@@ -168,7 +168,7 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
         normalize(hText) != normalize(expectedH);
 
     final bool canResize = widget.enabled &&
-        ((curW == null || curH == null)
+        ((curPhysW == null || curPhysH == null)
             ? (wNumericPos || hNumericPos)
             : (differsW || differsH));
 

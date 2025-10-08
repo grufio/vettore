@@ -57,6 +57,15 @@ class ImageDetailController extends ChangeNotifier {
     }
   }
 
+  /// Apply remote physical pixel values (4-dec floats)
+  void applyRemotePx({double? widthPx, double? heightPx}) {
+    if (widthPx != null) _widthVC.setValuePx(widthPx);
+    if (heightPx != null) _heightVC.setValuePx(heightPx);
+    if (widthPx != null && heightPx != null && widthPx > 0) {
+      _widthVC.setAspect(heightPx / widthPx);
+    }
+  }
+
   // Listening plumbing
   int? _lastDimsImageId;
   (int?, int?)? _lastAppliedDims;
@@ -112,5 +121,29 @@ class ImageDetailController extends ChangeNotifier {
       dpi: _heightVC.dpi,
     ).round();
     return (wPx, hPx);
+  }
+
+  // Listen to physical pixel values and seed controllers with floats
+  void listenImagePhysPx({
+    required WidgetRef ref,
+    required int imageId,
+    required void Function(double? widthPx, double? heightPx) onDims,
+  }) {
+    if (_lastDimsImageId == imageId) return;
+    _lastDimsImageId = imageId;
+    ref.listen<AsyncValue<(double?, double?)>>(
+      imagePhysPixelsProvider(imageId),
+      (prev, next) {
+        final (double?, double?)? dims = next.asData?.value;
+        if (dims != null) {
+          onDims(dims.$1, dims.$2);
+        }
+      },
+    );
+    final (double?, double?)? seed =
+        ref.read(imagePhysPixelsProvider(imageId)).asData?.value;
+    if (seed != null) {
+      onDims(seed.$1, seed.$2);
+    }
   }
 }

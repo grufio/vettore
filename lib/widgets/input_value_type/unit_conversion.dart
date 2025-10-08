@@ -162,11 +162,7 @@ double convertUnit({
 }
 
 String formatUnitValue(double value, String unit) {
-  final String u = unit.trim().toLowerCase();
-  if (u == 'px') {
-    return value.round().toString();
-  }
-  // UI rule: all non-px units show 2 decimals
+  // Always show 2 decimals in UI for consistency across units
   final double snapped = (value * 100.0).round() / 100.0;
   return snapped.toStringAsFixed(2);
 }
@@ -174,11 +170,7 @@ String formatUnitValue(double value, String unit) {
 /// UI-Feld-Formatierung: mm/cm mit 2 Nachkommastellen, px ganzzahlig,
 /// andere Einheiten (in/pt) mit 4 Nachkommastellen.
 String formatFieldUnitValue(double value, String unit) {
-  final String u = unit.trim().toLowerCase();
-  if (u == 'px') {
-    return value.round().toString();
-  }
-  // UI rule: all non-px units show 2 decimals (avoid float drift)
+  // Always show 2 decimals in UI for consistency across units
   final double snapped = (value * 100.0).round() / 100.0;
   return snapped.toStringAsFixed(2);
 }

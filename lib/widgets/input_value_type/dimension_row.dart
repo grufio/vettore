@@ -63,7 +63,6 @@ class _DimensionRowState extends State<DimensionRow> {
   bool _linked = false;
   bool _echoing = false;
   double? _lastEchoedPx;
-  bool _userEdited = false;
   // Linking/aspect disabled in typing-only mode
   String _unit = 'px';
   // Preserve state only via UnitValueController; no local px cache
@@ -93,34 +92,20 @@ class _DimensionRowState extends State<DimensionRow> {
       });
       _vcListener = () {
         if (!mounted) return;
-        // Only echo into the field when the underlying pixel value changes
+        // Echo from model whenever pixel value changes (always show real dimensions)
         final double? px = widget.valueController!.valuePx;
         final bool pxChanged = px != _lastEchoedPx;
         if (pxChanged && !_echoing) {
-          final String u = widget.valueController!.unit.trim().toLowerCase();
-          final bool unitBlocksEcho = (u == 'mm' || u == 'cm');
-          final bool fieldHasText =
-              widget.primaryController.text.trim().isNotEmpty;
-          // Block echo if user is actively editing or unit is mm/cm and field has text
-          final bool userBlocksEcho = _userEdited && fieldHasText;
-          final bool blockEcho =
-              (unitBlocksEcho || userBlocksEcho) && fieldHasText;
-          if (!blockEcho) {
-            final double? v = widget.valueController!.getValueInUnit();
-            final String txt = (v == null)
-                ? ''
-                : formatFieldUnitValue(v, widget.valueController!.unit);
-            _echoing = true;
-            widget.primaryController.text = txt;
-            widget.primaryController.selection =
-                TextSelection.collapsed(offset: txt.length);
-            _echoing = false;
-            _lastEchoedPx = px;
-            _userEdited = false;
-          } else {
-            // Do not rewrite typed mm/cm text from px; still track last px
-            _lastEchoedPx = px;
-          }
+          final double? v = widget.valueController!.getValueInUnit();
+          final String txt = (v == null)
+              ? ''
+              : formatFieldUnitValue(v, widget.valueController!.unit);
+          _echoing = true;
+          widget.primaryController.text = txt;
+          widget.primaryController.selection =
+              TextSelection.collapsed(offset: txt.length);
+          _echoing = false;
+          _lastEchoedPx = px;
         }
         // Always update unit for suffix, but do not rewrite numeric text on unit-only change
         setState(() {
@@ -213,8 +198,7 @@ class _DimensionRowState extends State<DimensionRow> {
           widget.primaryController.selection =
               TextSelection.collapsed(offset: newOffset);
         }
-        // Mark that the user is editing to prevent echo overriding
-        _userEdited = true;
+        // No user-edit guard; model → field echo always applies on updates
         return;
       },
       onItemSelected: (nextUnit) {
@@ -230,7 +214,6 @@ class _DimensionRowState extends State<DimensionRow> {
               widget.primaryController.selection =
                   TextSelection.collapsed(offset: txt.length);
               _echoing = false;
-              _userEdited = false;
             }
             widget.onUnitChanged?.call(nextUnit);
           } else {

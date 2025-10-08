@@ -85,6 +85,9 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   final GlobalKey _viewportKey = GlobalKey();
   // Central controller (wraps UnitValueControllers)
   ImageDetailController? _imgCtrl;
+  // Track last persisted physical px to avoid redundant writes
+  double? _lastPhysW;
+  double? _lastPhysH;
   @override
   bool get wantKeepAlive => true;
   // Apply 48px padding only on first open of the Image tab
@@ -123,6 +126,28 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     // Initialize controller and link internal VCs
     _imgCtrl = ImageDetailController();
     _imgCtrl!.widthVC.linkWith(_imgCtrl!.heightVC);
+    // Persist physical float pixels when user edits values
+    void _persistPhysIfChanged() async {
+      if (_currentProjectId == null) return;
+      final int? imgId = ref.read(imageIdStableProvider(_currentProjectId!));
+      if (imgId == null) return;
+      final double? w = _imgCtrl?.widthVC.valuePx;
+      final double? h = _imgCtrl?.heightVC.valuePx;
+      if (w == null && h == null) return;
+      final bool wChanged = (w != null && w != _lastPhysW);
+      final bool hChanged = (h != null && h != _lastPhysH);
+      if (!wChanged && !hChanged) return;
+      final db = ref.read(appDatabaseProvider);
+      await db.customStatement(
+        'UPDATE images SET phys_width_px4 = COALESCE(?, phys_width_px4), phys_height_px4 = COALESCE(?, phys_height_px4) WHERE id = ?',
+        [w, h, imgId],
+      );
+      _lastPhysW = w ?? _lastPhysW;
+      _lastPhysH = h ?? _lastPhysH;
+    }
+
+    _imgCtrl!.widthVC.addListener(_persistPhysIfChanged);
+    _imgCtrl!.heightVC.addListener(_persistPhysIfChanged);
   }
 
   // didChangeDependencies no longer hosts ref.listen; listeners are set in build
@@ -173,10 +198,12 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
         : null;
     if (imgIdForBuild != null && imgIdForBuild != _lastImageId) {
       _lastImageId = imgIdForBuild;
-      _imgCtrl?.listenImageDimensions(
+      // Listen to physical pixel floats and seed controllers
+      _imgCtrl?.listenImagePhysPx(
         ref: ref,
         imageId: imgIdForBuild,
-        onDims: (w, h) => _applyImageDims(width: w, height: h),
+        onDims: (wPx, hPx) =>
+            _imgCtrl?.applyRemotePx(widthPx: wPx, heightPx: hPx),
       );
     }
 
@@ -374,30 +401,46 @@ extension on _AppImageDetailPageState {
     final int dpi = (await ref.read(imageDpiProvider(imgId).future)) ?? 96;
     final String wUnit = _imgCtrl?.widthVC.unit ?? 'px';
     final String hUnit = _imgCtrl?.heightVC.unit ?? 'px';
-    // Load current dimensions (for untouched side and no-op check)
+    // Load current physical float dims (single source of truth for size)
+    final (double?, double?) phys =
+        await ref.read(imagePhysPixelsProvider(imgId).future);
+    final double curPhysW = phys.$1 ?? 0.0;
+    final double curPhysH = phys.$2 ?? 0.0;
+    // Compute target physical floats from provided fields; use current phys for untouched side
+    double targetPhysW = (wVal != null) ? toPx(wVal, wUnit, dpi) : curPhysW;
+    double targetPhysH = (hVal != null) ? toPx(hVal, hUnit, dpi) : curPhysH;
+    // If linked, keep aspect for the untouched side using phys floats
+    if (_linkWH && curPhysW > 0 && curPhysH > 0) {
+      if (wVal != null && hVal == null) {
+        targetPhysH = targetPhysW * (curPhysH / curPhysW);
+      } else if (hVal != null && wVal == null) {
+        targetPhysW = targetPhysH * (curPhysW / curPhysH);
+      }
+    }
+    if (targetPhysW <= 0 || targetPhysH <= 0) return;
+    // Persist phys floats regardless of raster no-op
+    final db = ref.read(appDatabaseProvider);
+    await db.customStatement(
+      'UPDATE images SET phys_width_px4 = ?, phys_height_px4 = ? WHERE id = ?',
+      [targetPhysW, targetPhysH, imgId],
+    );
+    // Compute raster targets by rounding phys floats
+    final int targetW = targetPhysW.round();
+    final int targetH = targetPhysH.round();
+    // Load current raster dims for no-op check
     final (int?, int?) currentDims =
         await ref.read(imageDimensionsProvider(imgId).future);
     final int curW = currentDims.$1 ?? 0;
     final int curH = currentDims.$2 ?? 0;
-    // Compute targets from provided fields; use current for the untouched side
-    int targetW = (wVal != null) ? toPx(wVal, wUnit, dpi).round() : curW;
-    int targetH = (hVal != null) ? toPx(hVal, hUnit, dpi).round() : curH;
-    // If linked, keep aspect for the untouched side
-    if (_linkWH && curW > 0 && curH > 0) {
-      if (wVal != null && hVal == null) {
-        targetH = (targetW * (curH / curW)).round();
-      } else if (hVal != null && wVal == null) {
-        targetW = (targetH * (curW / curH)).round();
-      }
-    }
-    if (targetW <= 0 || targetH <= 0) return;
-    // Skip if no change
     if (curW == targetW && curH == targetH) {
       assert(() {
         debugPrint(
             '[ImageDetail] Resize skipped: no-op (current=${curW}x${curH} target=${targetW}x${targetH})');
         return true;
       }());
+      if (mounted) {
+        _imgCtrl?.applyRemotePx(widthPx: targetPhysW, heightPx: targetPhysH);
+      }
       return;
     }
     // Perform resize directly via project logic
@@ -412,11 +455,9 @@ extension on _AppImageDetailPageState {
       }());
       return;
     }
-    // Refresh input fields from new converted dimensions
-    final (int?, int?) newDims =
-        await ref.read(imageDimensionsProvider(imgId).future);
+    // Refresh controllers from physical floats (maintain logical source)
     if (mounted) {
-      _applyImageDims(width: newDims.$1, height: newDims.$2);
+      _imgCtrl?.applyRemotePx(widthPx: targetPhysW, heightPx: targetPhysH);
     }
   }
 
@@ -468,9 +509,14 @@ extension on _AppImageDetailPageState {
           '[ImageDetail] image stored id=$imageId; updating controllers');
       return true;
     }());
-    // Ensure the new image dimensions overwrite any previous values in fields
-    // controller tracks last applied dims; no local state
-    _applyImageDims(width: width, height: height);
+    // Seed physical pixel floats from original dimensions
+    await imagesDao.customStatement(
+      'UPDATE images SET phys_width_px4 = ?, phys_height_px4 = ? WHERE id = ?',
+      [width?.toDouble(), height?.toDouble(), imageId],
+    );
+    // Update controllers from physical floats
+    _imgCtrl?.applyRemotePx(
+        widthPx: width?.toDouble(), heightPx: height?.toDouble());
     _setHasImage(true);
   }
 
@@ -551,9 +597,9 @@ extension on _AppImageDetailPageState {
             _inputValueController2.text.isEmpty) &&
         _requestedDimsForImageId != imageId) {
       _requestedDimsForImageId = imageId;
-      ref.read(imageDimensionsProvider(imageId).future).then((dims) {
+      ref.read(imagePhysPixelsProvider(imageId).future).then((dims) {
         if (!mounted) return;
-        _applyImageDims(width: dims.$1, height: dims.$2);
+        _imgCtrl?.applyRemotePx(widthPx: dims.$1, heightPx: dims.$2);
       });
     }
 

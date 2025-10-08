@@ -29,6 +29,20 @@ final imageDimensionsProvider =
   return (w, h);
 });
 
+// Physical float dimensions provider (px with 4-dec precision), single source of truth for size
+final imagePhysPixelsProvider =
+    FutureProvider.family<(double?, double?), int>((ref, imageId) async {
+  final db = ref.read(appDatabaseProvider);
+  final row = await db.customSelect(
+      'SELECT phys_width_px4, phys_height_px4 FROM images WHERE id = ? LIMIT 1',
+      variables: [drift.Variable<int>(imageId)]).getSingleOrNull();
+  if (row == null) return (null, null);
+  final data = row.data;
+  final num? w = data['phys_width_px4'] as num?;
+  final num? h = data['phys_height_px4'] as num?;
+  return (w?.toDouble(), h?.toDouble());
+});
+
 // Image DPI provider: returns the mutable image DPI (images.dpi)
 final imageDpiProvider = FutureProvider.family<int?, int>((ref, imageId) async {
   final db = ref.read(appDatabaseProvider);
