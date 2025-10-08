@@ -35,8 +35,19 @@ samples, guidance on mobile development, and a full API reference.
 
  - Default DPI: 96. On import, DPI is set from EXIF when available; otherwise 96.
  - Conversions: internal math uses exact factors; no rounding applied during conversion.
- - Precision: system uses up to 4 decimals internally for non‑px units (e.g., 100.1202 mm) to avoid cumulative error.
- - Display: UI shows 2 decimals for non‑px units (e.g., 100.12); px is shown as integer. Trailing zeros are trimmed when appropriate.
- - Typing: no live formatting while typing; inputs are sanitized only. Formatting is applied on Resize and on remote updates.
- - Resize: targets are computed once from the typed values and current DPI; resizing is skipped when the target matches the current converted size.
- - Resize prerequisites: both fields must be numeric (> 0), units selected, and targets must differ from current size. The button is disabled otherwise.
+ - Precision policy:
+   - Single source of truth: physical size in pixels (float) at 4‑decimal precision per side (`images.phys_width_px4`, `images.phys_height_px4`).
+   - UI display: always 2 decimals for every unit (including `px`).
+   - Raster/preview: snapped integer pixels (nearest) only for rendering and OpenCV resize.
+ - Typing: no live formatting while typing; formatting to 2 decimals happens on blur/unit change. Physical values commit on Resize.
+ - Resize flow: compute physical target (float) from typed values + DPI → persist phys floats → round to nearest integer px for raster → OpenCV resize → invalidate providers.
+ - Resize prerequisites: at least one field must be numeric; enabled when typed 2‑dec differs from committed phys 2‑dec.
+
+### Schema v27
+
+- Added columns to `images`:
+  - `phys_width_px4 REAL`
+  - `phys_height_px4 REAL`
+- Backfill: initialize phys from converted dims when present; else from original dims.
+- Providers:
+  - `imagePhysPixelsProvider` returns physical floats; `imageDimensionsProvider` returns raster ints for preview.

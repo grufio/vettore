@@ -21,17 +21,17 @@ import 'package:flutter/foundation.dart'
 import 'package:file_picker/file_picker.dart';
 import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/services/image_compute.dart' as ic;
+import 'package:vettore/services/image_detail_service.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/providers/navigation_providers.dart';
 // PhotoView removed in favor of InteractiveViewer for infinite pasteboard
 
-import 'package:vettore/widgets/snackbar_image.dart';
-import 'package:vettore/providers/image_spec_providers.dart';
+import 'package:vettore/widgets/image_preview.dart';
 import 'package:vettore/services/image_detail_controller.dart';
-import 'package:vettore/widgets/image_dimension_panel.dart';
+// Dimension panel now wrapped by ImageDimensionsSection
+import 'package:vettore/widgets/image_dimensions_section.dart';
 import 'package:vettore/widgets/artboard_view.dart';
 // removed unused image_resize_service import after inlining px computation
-import 'package:vettore/widgets/input_value_type/number_utils.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
   const AppImageDetailPage({
@@ -85,9 +85,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   final GlobalKey _viewportKey = GlobalKey();
   // Central controller (wraps UnitValueControllers)
   ImageDetailController? _imgCtrl;
-  // Track last persisted physical px to avoid redundant writes
-  double? _lastPhysW;
-  double? _lastPhysH;
+  // Removed last-phys trackers; commit-on-resize policy
   @override
   bool get wantKeepAlive => true;
   // Apply 48px padding only on first open of the Image tab
@@ -99,21 +97,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   }
 
   // Linking logic is handled inside DimensionsRow
-  void _applyImageDims({int? width, int? height}) {
-    final int? curW = int.tryParse(_inputValueController.text);
-    final int? curH = int.tryParse(_inputValueController2.text);
-    final bool changed =
-        (width != null && width != curW) || (height != null && height != curH);
-    assert(() {
-      debugPrint(
-          '[ImageDetail] _applyImageDims cur=${curW}x$curH new=${width}x$height changed=$changed');
-      return true;
-    }());
-    if (!changed) return;
-    // Route through controller for consistency
-    _imgCtrl?.applyRemoteDims(width: width, height: height);
-    // mark that we have applied dims at least once
-  }
 
   @override
   void initState() {
@@ -264,89 +247,19 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Builder(builder: (context) {
-                          final int? imageId = (_currentProjectId != null)
-                              ? ref.watch(
-                                  imageIdStableProvider(_currentProjectId!))
-                              : null;
-                          final bool hasImage = imageId != null;
-                          // Ensure unit controllers reflect persisted selection (per project)
-                          if (_currentProjectId != null) {
-                            final String wPref = ref.watch(
-                                imageWidthUnitProvider(_currentProjectId!));
-                            final String hPref = ref.watch(
-                                imageHeightUnitProvider(_currentProjectId!));
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (!mounted) return;
-                              _imgCtrl?.setUnits(
-                                  widthUnit: wPref, heightUnit: hPref);
-                              // Bind persistence callbacks
-                              _imgCtrl?.onWidthUnitChanged = (u) {
-                                if (_currentProjectId == null) return;
-                                ref
-                                    .read(imageWidthUnitProvider
-                                        .call(_currentProjectId!)
-                                        .notifier)
-                                    .state = u;
-                              };
-                              _imgCtrl?.onHeightUnitChanged = (u) {
-                                if (_currentProjectId == null) return;
-                                ref
-                                    .read(imageHeightUnitProvider
-                                        .call(_currentProjectId!)
-                                        .notifier)
-                                    .state = u;
-                              };
-                            });
-                          }
-                          final int? imgId = (_currentProjectId != null)
-                              ? ref.watch(
-                                  imageIdStableProvider(_currentProjectId!))
-                              : null;
-                          final int? dpiVal = (imgId != null)
-                              ? ref.watch(imageDpiProvider(imgId)
-                                  .select((a) => a.asData?.value))
-                              : null;
-                          final int currentDpi = dpiVal ?? 96;
-                          return ImageDimensionPanel(
-                            widthTextController: _inputValueController,
-                            heightTextController: _inputValueController2,
-                            widthValueController: _imgCtrl?.widthVC,
-                            heightValueController: _imgCtrl?.heightVC,
-                            enabled: hasImage,
-                            initialLinked: _linkWH,
-                            onLinkChanged: (v) => setState(() {
-                              _linkWH = v;
-                            }),
-                            initialWidthUnit: (_currentProjectId != null)
-                                ? ref.watch(imageWidthUnitProvider
-                                    .call(_currentProjectId!))
-                                : 'px',
-                            initialHeightUnit: (_currentProjectId != null)
-                                ? ref.watch(imageHeightUnitProvider
-                                    .call(_currentProjectId!))
-                                : 'px',
-                            onWidthUnitChanged: (u) =>
-                                _imgCtrl?.handleWidthUnitChange(u),
-                            onHeightUnitChanged: (u) =>
-                                _imgCtrl?.handleHeightUnitChange(u),
-                            currentDpi: currentDpi,
-                            onDpiChanged: (newDpi) async {
-                              if (imgId == null) return;
-                              final db = ref.read(appDatabaseProvider);
-                              await db.customStatement(
-                                'UPDATE images SET dpi = ? WHERE id = ?',
-                                [newDpi, imgId],
-                              );
-                              ref.invalidate(imageDpiProvider(imgId));
-                            },
-                            interpolation: _interp,
-                            onInterpolationChanged: (v) => setState(() {
-                              _interp = v;
-                            }),
-                            onResizeTap: _onResizeTap,
-                          );
-                        }),
+                        ImageDimensionsSection(
+                          projectId: _currentProjectId!,
+                          widthTextController: _inputValueController,
+                          heightTextController: _inputValueController2,
+                          imgCtrl: _imgCtrl!,
+                          linkWH: _linkWH,
+                          onLinkChanged: (v) => setState(() => _linkWH = v),
+                          interpolation: _interp,
+                          onInterpolationChanged: (v) => setState(() {
+                            _interp = v;
+                          }),
+                          onResizeTap: _onResizeTap,
+                        ),
                         const Expanded(child: SizedBox.shrink()),
                       ],
                     ),
@@ -379,32 +292,29 @@ extension on _AppImageDetailPageState {
     final int dpi = (await ref.read(imageDpiProvider(imgId).future)) ?? 96;
     final String wUnit = _imgCtrl?.widthVC.unit ?? 'px';
     final String hUnit = _imgCtrl?.heightVC.unit ?? 'px';
+    final service = ref.read(imageDetailServiceProvider);
     // Load current physical float dims (single source of truth for size)
     final (double?, double?) phys =
         await ref.read(imagePhysPixelsProvider(imgId).future);
     final double curPhysW = phys.$1 ?? 0.0;
     final double curPhysH = phys.$2 ?? 0.0;
-    // Compute target physical floats from provided fields; use current phys for untouched side
-    double targetPhysW = (wVal != null) ? toPx(wVal, wUnit, dpi) : curPhysW;
-    double targetPhysH = (hVal != null) ? toPx(hVal, hUnit, dpi) : curPhysH;
-    // If linked, keep aspect for the untouched side using phys floats
-    if (_linkWH && curPhysW > 0 && curPhysH > 0) {
-      if (wVal != null && hVal == null) {
-        targetPhysH = targetPhysW * (curPhysH / curPhysW);
-      } else if (hVal != null && wVal == null) {
-        targetPhysW = targetPhysH * (curPhysW / curPhysH);
-      }
-    }
+    // Compute target physical floats via service
+    final (double targetPhysW, double targetPhysH) = service.computeTargetPhys(
+      typedW: wVal,
+      wUnit: wUnit,
+      typedH: hVal,
+      hUnit: hUnit,
+      dpi: dpi,
+      curPhysW: curPhysW,
+      curPhysH: curPhysH,
+      linked: _linkWH,
+    );
     if (targetPhysW <= 0 || targetPhysH <= 0) return;
     // Persist phys floats regardless of raster no-op
-    final db = ref.read(appDatabaseProvider);
-    await db.customStatement(
-      'UPDATE images SET phys_width_px4 = ?, phys_height_px4 = ? WHERE id = ?',
-      [targetPhysW, targetPhysH, imgId],
-    );
+    await service.persistPhys(ref, imgId, targetPhysW, targetPhysH);
     // Compute raster targets by rounding phys floats
-    final int targetW = targetPhysW.round();
-    final int targetH = targetPhysH.round();
+    final (int targetW, int targetH) =
+        service.rasterFromPhys(targetPhysW, targetPhysH);
     // Load current raster dims for no-op check
     final (int?, int?) currentDims =
         await ref.read(imageDimensionsProvider(imgId).future);
@@ -423,8 +333,11 @@ extension on _AppImageDetailPageState {
     }
     // Perform resize directly via project logic
     try {
-      await ref.read(projectLogicProvider(_currentProjectId!)).resizeToCv(
-          targetW, targetH, kInterpolationToCvName[_interp] ?? 'linear');
+      await service.performResize(ref,
+          projectId: _currentProjectId!,
+          targetW: targetW,
+          targetH: targetH,
+          interpolationName: kInterpolationToCvName[_interp] ?? 'linear');
     } catch (e, st) {
       assert(() {
         debugPrint('[ImageDetail] Resize failed: $e');
@@ -643,88 +556,17 @@ extension on _AppImageDetailPageState {
       );
     }
 
-    const double pad = 0.0;
+    // no local pad; styles handled in child widgets
     return ColoredBox(
       color: kGrey70,
-      child: Stack(
-        children: [
-          ArtboardView(
-            controller: _ivController,
-            boardW: boardW,
-            boardH: boardH,
-            canvasW: canvasW,
-            canvasH: canvasH,
-            bytes: bytes,
-            viewportKey: _viewportKey,
-          ),
-          if (bytes != null)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 16.0,
-              child: Center(
-                child: SnackbarImage(
-                  onZoomIn: () {
-                    final double cur = _ivController.value.getMaxScaleOnAxis();
-                    final double next = (cur * 1.25).clamp(0.25, 8.0);
-                    final double factor = next / cur;
-                    final RenderBox? box = _viewportKey.currentContext
-                        ?.findRenderObject() as RenderBox?;
-                    final Size vp = box?.size ?? const Size(0, 0);
-                    if (vp.width == 0 || vp.height == 0) {
-                      final Matrix4 m = _ivController.value.clone();
-                      _ivController.value = m..scale(factor);
-                      return;
-                    }
-                    final Offset viewportCenter =
-                        Offset(vp.width / 2, vp.height / 2);
-                    final Matrix4 inv =
-                        Matrix4.inverted(_ivController.value.clone());
-                    final Offset sceneFocal =
-                        MatrixUtils.transformPoint(inv, viewportCenter);
-                    final Matrix4 m = _ivController.value.clone()
-                      ..translate(sceneFocal.dx, sceneFocal.dy)
-                      ..scale(factor)
-                      ..translate(-sceneFocal.dx, -sceneFocal.dy);
-                    _ivController.value = m;
-                  },
-                  onZoomOut: () {
-                    final double cur = _ivController.value.getMaxScaleOnAxis();
-                    final double next = (cur / 1.25).clamp(0.25, 8.0);
-                    final double factor = next / cur;
-                    final RenderBox? box = _viewportKey.currentContext
-                        ?.findRenderObject() as RenderBox?;
-                    final Size vp = box?.size ?? const Size(0, 0);
-                    if (vp.width == 0 || vp.height == 0) {
-                      final Matrix4 m = _ivController.value.clone();
-                      _ivController.value = m..scale(factor);
-                      return;
-                    }
-                    final Offset viewportCenter =
-                        Offset(vp.width / 2, vp.height / 2);
-                    final Matrix4 inv =
-                        Matrix4.inverted(_ivController.value.clone());
-                    final Offset sceneFocal =
-                        MatrixUtils.transformPoint(inv, viewportCenter);
-                    final Matrix4 m = _ivController.value.clone()
-                      ..translate(sceneFocal.dx, sceneFocal.dy)
-                      ..scale(factor)
-                      ..translate(-sceneFocal.dx, -sceneFocal.dy);
-                    _ivController.value = m;
-                  },
-                  onFitToScreen: () {
-                    _ivController.value = Matrix4.identity();
-                  },
-                ),
-              ),
-            ),
-          if (showUpload)
-            const Positioned.fill(
-              child: Center(
-                child: SizedBox.shrink(),
-              ),
-            ),
-        ],
+      child: ImagePreview(
+        controller: _ivController,
+        boardW: boardW,
+        boardH: boardH,
+        canvasW: canvasW,
+        canvasH: canvasH,
+        bytes: bytes,
+        viewportKey: _viewportKey,
       ),
     );
   }
