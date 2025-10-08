@@ -125,29 +125,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     _initProject();
     // Initialize controller and link internal VCs
     _imgCtrl = ImageDetailController();
-    _imgCtrl!.widthVC.linkWith(_imgCtrl!.heightVC);
-    // Persist physical float pixels when user edits values
-    void _persistPhysIfChanged() async {
-      if (_currentProjectId == null) return;
-      final int? imgId = ref.read(imageIdStableProvider(_currentProjectId!));
-      if (imgId == null) return;
-      final double? w = _imgCtrl?.widthVC.valuePx;
-      final double? h = _imgCtrl?.heightVC.valuePx;
-      if (w == null && h == null) return;
-      final bool wChanged = (w != null && w != _lastPhysW);
-      final bool hChanged = (h != null && h != _lastPhysH);
-      if (!wChanged && !hChanged) return;
-      final db = ref.read(appDatabaseProvider);
-      await db.customStatement(
-        'UPDATE images SET phys_width_px4 = COALESCE(?, phys_width_px4), phys_height_px4 = COALESCE(?, phys_height_px4) WHERE id = ?',
-        [w, h, imgId],
-      );
-      _lastPhysW = w ?? _lastPhysW;
-      _lastPhysH = h ?? _lastPhysH;
-    }
-
-    _imgCtrl!.widthVC.addListener(_persistPhysIfChanged);
-    _imgCtrl!.heightVC.addListener(_persistPhysIfChanged);
+    // Commit-on-resize policy: do not persist phys during typing
   }
 
   // didChangeDependencies no longer hosts ref.listen; listeners are set in build

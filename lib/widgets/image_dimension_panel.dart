@@ -130,10 +130,8 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
     final double? curPhysW = widget.widthValueController?.valuePx;
     final double? curPhysH = widget.heightValueController?.valuePx;
 
-    final bool wNumericPos =
-        _isNumeric(wText) && (double.tryParse(wText) ?? 0) > 0;
-    final bool hNumericPos =
-        _isNumeric(hText) && (double.tryParse(hText) ?? 0) > 0;
+    final bool wNumericPos = _isNumeric(wText);
+    final bool hNumericPos = _isNumeric(hText);
 
     String normalize(String s) => s.trim();
 
@@ -167,10 +165,10 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
         expectedH != null &&
         normalize(hText) != normalize(expectedH);
 
+    // Enable Resize when either field has a valid number and differs from committed phys
     final bool canResize = widget.enabled &&
-        ((curPhysW == null || curPhysH == null)
-            ? (wNumericPos || hNumericPos)
-            : (differsW || differsH));
+        (wNumericPos || hNumericPos) &&
+        (differsW || differsH);
 
     return SectionSidebar(
       title: 'Title',
