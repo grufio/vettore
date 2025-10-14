@@ -166,6 +166,13 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
         onDims: (wPx, hPx) =>
             _imgCtrl?.applyRemotePx(widthPx: wPx, heightPx: hPx),
       );
+      // Sync controller DPI to the image DPI on image change
+      ref.read(imageDpiProvider(imgIdForBuild).future).then((dpiVal) {
+        if (!mounted) return;
+        if (dpiVal != null && dpiVal > 0) {
+          _imgCtrl?.setUiDpi(dpiVal);
+        }
+      });
     }
 
     // Restore per-project transform once when project id is ready
@@ -315,22 +322,7 @@ extension on _AppImageDetailPageState {
     // Compute raster targets by rounding phys floats
     final (int targetW, int targetH) =
         service.rasterFromPhys(targetPhysW, targetPhysH);
-    // Load current raster dims for no-op check
-    final (int?, int?) currentDims =
-        await ref.read(imageDimensionsProvider(imgId).future);
-    final int curW = currentDims.$1 ?? 0;
-    final int curH = currentDims.$2 ?? 0;
-    if (curW == targetW && curH == targetH) {
-      assert(() {
-        debugPrint(
-            '[ImageDetail] Resize skipped: no-op (current=${curW}x${curH} target=${targetW}x${targetH})');
-        return true;
-      }());
-      if (mounted) {
-        _imgCtrl?.applyRemotePx(widthPx: targetPhysW, heightPx: targetPhysH);
-      }
-      return;
-    }
+    // Always perform raster resize (no no-op skip)
     // Perform resize directly via project logic
     try {
       await service.performResize(ref,

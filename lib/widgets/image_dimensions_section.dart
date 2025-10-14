@@ -74,6 +74,8 @@ class ImageDimensionsSection extends ConsumerWidget {
           'UPDATE images SET dpi = ? WHERE id = ?',
           [newDpi, imageId],
         );
+        // Update controllers immediately to keep conversions consistent
+        imgCtrl.setUiDpi(newDpi);
         ref.invalidate(imageDpiProvider(imageId));
       },
       interpolation: interpolation,

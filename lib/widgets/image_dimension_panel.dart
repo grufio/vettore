@@ -184,6 +184,7 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
           onLinkChanged: widget.onLinkChanged,
           onUnitChanged: widget.onWidthUnitChanged,
           initialUnit: widget.initialWidthUnit,
+          dpiOverride: widget.currentDpi,
           // use controller DPI
         ),
         DimensionRow(
@@ -195,6 +196,7 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
           showLinkToggle: false,
           onUnitChanged: widget.onHeightUnitChanged,
           initialUnit: widget.initialHeightUnit,
+          dpiOverride: widget.currentDpi,
           // use controller DPI
         ),
         InterpolationSelector(
