@@ -119,10 +119,6 @@ class Images extends Table {
   // Current DPI (mutable, user-editable)
   IntColumn get dpi => integer().named('dpi').nullable()();
 
-  // Physical dimensions stored as float pixels (single source of truth for size)
-  RealColumn get physWidthPx4 => real().named('phys_width_px4').nullable()();
-  RealColumn get physHeightPx4 => real().named('phys_height_px4').nullable()();
-
   // Extras
   BlobColumn get thumbnail => blob().nullable()();
   TextColumn get mimeType => text().nullable()();
@@ -204,7 +200,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 27;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration {
@@ -550,28 +546,6 @@ class AppDatabase extends _$AppDatabase {
               "UPDATE projects SET grid_cell_height_value = COALESCE(grid_cell_height_value, 10.0)");
           await m.database.customStatement(
               "UPDATE projects SET grid_cell_height_unit = COALESCE(grid_cell_height_unit, 'mm')");
-        }
-        if (from < 27) {
-          // Add physical float pixel dimensions to images if missing
-          Future<void> addIfMissingImg(String name, String sql) async {
-            final exists = await m.database
-                .customSelect(
-                    "SELECT 1 FROM pragma_table_info('images') WHERE name = '$name' LIMIT 1")
-                .get();
-            if (exists.isEmpty) {
-              await m.database.customStatement(sql);
-            }
-          }
-
-          await addIfMissingImg('phys_width_px4',
-              "ALTER TABLE images ADD COLUMN phys_width_px4 REAL");
-          await addIfMissingImg('phys_height_px4',
-              "ALTER TABLE images ADD COLUMN phys_height_px4 REAL");
-          // Backfill from converted or original dims when available
-          await m.database.customStatement(
-              "UPDATE images SET phys_width_px4 = COALESCE(phys_width_px4, CASE WHEN conv_width IS NOT NULL AND conv_width > 0 THEN conv_width*1.0 ELSE orig_width*1.0 END)");
-          await m.database.customStatement(
-              "UPDATE images SET phys_height_px4 = COALESCE(phys_height_px4, CASE WHEN conv_height IS NOT NULL AND conv_height > 0 THEN conv_height*1.0 ELSE orig_height*1.0 END)");
         }
       },
     );

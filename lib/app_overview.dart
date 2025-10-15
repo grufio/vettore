@@ -29,6 +29,12 @@ import 'package:vettore/widgets/context_menu.dart';
 
 const double _kToolbarHeight = 40.0;
 
+// Stream provider for vendors list (unifies pattern with projects provider)
+final vendorsStreamProvider = StreamProvider<List<Vendor>>((ref) {
+  final db = ref.read(appDatabaseProvider);
+  return db.select(db.vendors).watch();
+});
+
 /// A lightweight wrapper that connects all tabs into a scrollable Row:
 class GrufioTabsApp extends StatelessWidget {
   final List<GrufioTabData> tabs;
@@ -423,90 +429,85 @@ class _HomeGalleryContainer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final projectsAsync = ref.watch(projectsStreamProvider);
     final projects = projectsAsync.asData?.value ?? const <DbProject>[];
-    final db = ref.watch(appDatabaseProvider);
-    return StreamBuilder<List<Vendor>>(
-      stream: db.select(db.vendors).watch(),
-      builder: (context, vendorSnap) {
-        final vendors = vendorSnap.data ?? const <Vendor>[];
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final double width = constraints.maxWidth;
-            final int columns =
-                width.isFinite ? (width / 280.0).floor().clamp(1, 12) : 3;
-            final items = <Widget>[];
-            if (showVendors) {
-              for (final v in vendors) {
-                final now = DateTime.now();
-                String two(int n) => n.toString().padLeft(2, '0');
-                final formatted =
-                    '${two(now.day)}.${two(now.month)}.${now.year}, ${two(now.hour)}:${two(now.minute)}';
-                items.add(GestureDetector(
-                  onTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
-                  onDoubleTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
-                  child: ThumbnailTile(
-                    assetPath: null,
-                    imageBytes: null,
-                    footerHeight: 72.0,
-                    lines: [v.vendorName, v.vendorBrand, formatted],
-                    textPadding: 12.0,
-                    lineSpacing: 12.0,
-                  ),
-                ));
+    final vendors =
+        ref.watch(vendorsStreamProvider).asData?.value ?? const <Vendor>[];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+        final int columns =
+            width.isFinite ? (width / 280.0).floor().clamp(1, 12) : 3;
+        final items = <Widget>[];
+        if (showVendors) {
+          for (final v in vendors) {
+            final now = DateTime.now();
+            String two(int n) => n.toString().padLeft(2, '0');
+            final formatted =
+                '${two(now.day)}.${two(now.month)}.${now.year}, ${two(now.hour)}:${two(now.minute)}';
+            items.add(GestureDetector(
+              onTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
+              onDoubleTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
+              child: ThumbnailTile(
+                assetPath: null,
+                imageBytes: null,
+                footerHeight: 72.0,
+                lines: [v.vendorName, v.vendorBrand, formatted],
+                textPadding: 12.0,
+                lineSpacing: 12.0,
+              ),
+            ));
+          }
+        }
+        if (showProjects) {
+          for (final p in projects) {
+            items.add(Consumer(builder: (context, ref, _) {
+              final bytesAsync = (p.imageId != null)
+                  ? ref.watch(imageBytesProvider(p.imageId!))
+                  : const AsyncValue<Uint8List?>.data(null);
+              final bytes = bytesAsync.asData?.value;
+              // Image dimensions: converted if present else original
+              final dimsAsync = (p.imageId != null)
+                  ? ref.watch(imageDimensionsProvider(p.imageId!))
+                  : const AsyncValue<(int?, int?)>.data((null, null));
+              final dims = dimsAsync.asData?.value;
+              final int? w = dims?.$1;
+              final int? h = dims?.$2;
+              String baseSize = '';
+              if (w != null && h != null) {
+                baseSize = '${w}px x ${h}px';
               }
-            }
-            if (showProjects) {
-              for (final p in projects) {
-                items.add(Consumer(builder: (context, ref, _) {
-                  final bytesAsync = (p.imageId != null)
-                      ? ref.watch(imageBytesProvider(p.imageId!))
-                      : const AsyncValue<Uint8List?>.data(null);
-                  final bytes = bytesAsync.asData?.value;
-                  // Image dimensions: converted if present else original
-                  final dimsAsync = (p.imageId != null)
-                      ? ref.watch(imageDimensionsProvider(p.imageId!))
-                      : const AsyncValue<(int?, int?)>.data((null, null));
-                  final dims = dimsAsync.asData?.value;
-                  final int? w = dims?.$1;
-                  final int? h = dims?.$2;
-                  String baseSize = '';
-                  if (w != null && h != null) {
-                    baseSize = '${w}px x ${h}px';
-                  }
-                  String two(int n) => n.toString().padLeft(2, '0');
-                  final dt = DateTime.fromMillisecondsSinceEpoch(p.createdAt);
-                  final line3 =
-                      '${two(dt.day)}.${two(dt.month)}.${dt.year}, ${two(dt.hour)}:${two(dt.minute)}';
+              String two(int n) => n.toString().padLeft(2, '0');
+              final dt = DateTime.fromMillisecondsSinceEpoch(p.createdAt);
+              final line3 =
+                  '${two(dt.day)}.${two(dt.month)}.${dt.year}, ${two(dt.hour)}:${two(dt.minute)}';
 
-                  // Read DPI from image (per spec: DPI belongs to image)
-                  final dpiAsync = (p.imageId != null)
-                      ? ref.watch(imageDpiProvider(p.imageId!))
-                      : const AsyncValue<int?>.data(null);
-                  final int? dpi = dpiAsync.asData?.value;
-                  final String line2 = (dpi == null || dpi == 0)
-                      ? baseSize
-                      : (baseSize.isEmpty ? '$dpi dpi' : '$baseSize, $dpi dpi');
-                  return _ProjectThumbnail(
-                    bytes: bytes,
-                    title: p.title,
-                    lines: [p.title, line2, line3],
-                    onOpen: () => onOpenProject?.call(p.id),
-                    onDelete: () async {
-                      final repo = ref.read(projectRepositoryProvider);
-                      await repo.delete(p.id);
-                    },
-                  );
-                }));
-              }
-            }
-            return MasonryGridView.count(
-              crossAxisCount: columns,
-              mainAxisSpacing: 16.0,
-              crossAxisSpacing: 16.0,
-              padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
-              itemCount: items.length,
-              itemBuilder: (context, index) => items[index],
-            );
-          },
+              // Read DPI from image (per spec: DPI belongs to image)
+              final dpiAsync = (p.imageId != null)
+                  ? ref.watch(imageDpiProvider(p.imageId!))
+                  : const AsyncValue<int?>.data(null);
+              final int? dpi = dpiAsync.asData?.value;
+              final String line2 = (dpi == null || dpi == 0)
+                  ? baseSize
+                  : (baseSize.isEmpty ? '$dpi dpi' : '$baseSize, $dpi dpi');
+              return _ProjectThumbnail(
+                bytes: bytes,
+                title: p.title,
+                lines: [p.title, line2, line3],
+                onOpen: () => onOpenProject?.call(p.id),
+                onDelete: () async {
+                  final repo = ref.read(projectRepositoryProvider);
+                  await repo.delete(p.id);
+                },
+              );
+            }));
+          }
+        }
+        return MasonryGridView.count(
+          crossAxisCount: columns,
+          mainAxisSpacing: 16.0,
+          crossAxisSpacing: 16.0,
+          padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
+          itemCount: items.length,
+          itemBuilder: (context, index) => items[index],
         );
       },
     );

@@ -331,11 +331,8 @@ extension on _AppImageDetailPageState {
           targetH: targetH,
           interpolationName: kInterpolationToCvName[_interp] ?? 'linear');
     } catch (e, st) {
-      assert(() {
-        debugPrint('[ImageDetail] Resize failed: $e');
-        debugPrint(st.toString());
-        return true;
-      }());
+      debugPrint('[ImageDetail] Resize failed: $e');
+      debugPrint(st.toString());
       return;
     }
     // Refresh controllers from physical floats (maintain logical source)
@@ -376,22 +373,15 @@ extension on _AppImageDetailPageState {
       'UPDATE images SET orig_dpi = ?, dpi = ? WHERE id = ?',
       [resolvedDpi, resolvedDpi, imageId],
     );
-    // Point project to this image
-    final repo = ref.read(projectRepositoryProvider);
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await repo.update(
-      ProjectsCompanion(
-        id: Value(_currentProjectId!),
-        imageId: Value(imageId),
-        updatedAt: Value(now),
-      ),
+    // Point project to this image via ProjectService (batched writes)
+    final projectService = ref.read(projectServiceProvider);
+    await projectService.batchUpdate(
+      ref,
+      _currentProjectId!,
+      imageId: imageId,
     );
     // Do not modify project canvas from Image upload path (strict decoupling)
-    assert(() {
-      debugPrint(
-          '[ImageDetail] image stored id=$imageId; updating controllers');
-      return true;
-    }());
+    debugPrint('[ImageDetail] image stored id=$imageId; updating controllers');
     // Seed physical pixel floats from original dimensions
     await imagesDao.customStatement(
       'UPDATE images SET phys_width_px4 = ?, phys_height_px4 = ? WHERE id = ?',

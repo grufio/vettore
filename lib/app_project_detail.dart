@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, TextInputFormatter;
-import 'package:drift/drift.dart' show Value, Variable;
+import 'package:drift/drift.dart' show Variable;
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
@@ -350,198 +350,9 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SectionSidebar(
-                          title: 'Projekt',
-                          children: [
-                            TextDefaultInput(
-                              controller: _projectController,
-                              focusNode: _projectTitleFocusNode,
-                              placeholder: null,
-                              suffixText: null,
-                              onActionTap: null,
-                              onSubmitted: (_) => _saveProjectTitle(),
-                            ),
-                          ],
-                        ),
-                        // Model section removed as requested
-                        Builder(builder: (context) {
-                          // imageId not used for canvas; keep watch minimal
-                          return SectionSidebar(
-                            title: 'Dimensions',
-                            children: [
-                              DimensionRow(
-                                primaryController: _inputValueController,
-                                partnerController: _inputValueController2,
-                                valueController: _widthVC,
-                                enabled: true,
-                                isWidth: true,
-                                showLinkToggle: true,
-                                initialLinked: _linkWH,
-                                onLinkChanged: (v) => setState(() {
-                                  _linkWH = v;
-                                }),
-                                dpiOverride: _AppProjectDetailPageState
-                                    .kCanvasPreviewPpi,
-                                units: kUnits,
-                                initialUnit: _canvasWUnit,
-                                onUnitChanged: (u) {
-                                  setState(() {
-                                    _canvasWUnit = u;
-                                    _canvasWUnitE = parseUnit(u);
-                                  });
-                                  _recomputeCanvasFromInputs();
-                                },
-                                inputFormatters: <TextInputFormatter>[
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp(r'[0-9\.]')),
-                                ],
-                                clampPxMin: 1.0,
-                                clampPxMax: 20000.0,
-                                clampDpi: _AppProjectDetailPageState
-                                    .kCanvasPreviewPpi,
-                              ),
-                              DimensionRow(
-                                primaryController: _inputValueController2,
-                                partnerController: _inputValueController,
-                                valueController: _heightVC,
-                                enabled: true,
-                                isWidth: false,
-                                units: kUnits,
-                                initialUnit: _canvasHUnit,
-                                onUnitChanged: (u) {
-                                  setState(() {
-                                    _canvasHUnit = u;
-                                    _canvasHUnitE = parseUnit(u);
-                                  });
-                                  _recomputeCanvasFromInputs();
-                                },
-                                dpiOverride: _AppProjectDetailPageState
-                                    .kCanvasPreviewPpi,
-                                inputFormatters: <TextInputFormatter>[
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp(r'[0-9\.]')),
-                                ],
-                                clampPxMin: 1.0,
-                                clampPxMax: 20000.0,
-                                clampDpi: _AppProjectDetailPageState
-                                    .kCanvasPreviewPpi,
-                              ),
-                              SectionInput(
-                                full: AnimatedBuilder(
-                                  animation: Listenable.merge([
-                                    _inputValueController,
-                                    _inputValueController2,
-                                  ]),
-                                  builder: (context, _) {
-                                    final enabled = _isInputsDirty();
-                                    return OutlinedActionButton(
-                                      label: 'Update Canvas',
-                                      onTap: _onUpdateCanvasTap,
-                                      enabled: enabled,
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          );
-                        }),
-                        SectionSidebar(
-                          title: 'Grid',
-                          showTitleToggle: true,
-                          titleToggleOn: _showGrid,
-                          onTitleToggle: (v) => setState(() => _showGrid = v),
-                          children: [
-                            SectionInput(
-                              full: InputValueType(
-                                key: const ValueKey('grid_cell_width'),
-                                controller: _gridWController,
-                                placeholder: 'Cell width',
-                                prefixIconAsset: 'assets/icons/16/width.svg',
-                                prefixIconFit: BoxFit.none,
-                                prefixIconAlignment: Alignment.centerLeft,
-                                dropdownItems: kUnits,
-                                selectedItem: _gridWUnit,
-                                suffixText: _gridWUnit,
-                                variant: InputVariant.selector,
-                                readOnly: false,
-                                readOnlyView: false,
-                                onChanged: (raw) {
-                                  final sanitized =
-                                      raw.replaceAll(RegExp(r'[^0-9\.]'), '');
-                                  if (sanitized != raw) {
-                                    _gridWController.text = sanitized;
-                                    _gridWController.selection =
-                                        TextSelection.collapsed(
-                                            offset: sanitized.length);
-                                  }
-                                },
-                                onItemSelected: (u) {
-                                  setState(() {
-                                    _gridWUnit = u;
-                                    _gridWUnitE = parseUnit(u);
-                                  });
-                                  _recomputeGridFromInputs();
-                                },
-                              ),
-                            ),
-                            SectionInput(
-                              full: InputValueType(
-                                key: const ValueKey('grid_cell_height'),
-                                controller: _gridHController,
-                                placeholder: 'Cell height',
-                                prefixIconAsset: 'assets/icons/16/height.svg',
-                                prefixIconFit: BoxFit.none,
-                                prefixIconAlignment: Alignment.centerLeft,
-                                dropdownItems: kUnits,
-                                selectedItem: _gridHUnit,
-                                suffixText: _gridHUnit,
-                                variant: InputVariant.selector,
-                                readOnly: false,
-                                readOnlyView: false,
-                                onChanged: (raw) {
-                                  final sanitized =
-                                      raw.replaceAll(RegExp(r'[^0-9\.]'), '');
-                                  if (sanitized != raw) {
-                                    _gridHController.text = sanitized;
-                                    _gridHController.selection =
-                                        TextSelection.collapsed(
-                                            offset: sanitized.length);
-                                  }
-                                },
-                                onItemSelected: (u) {
-                                  setState(() {
-                                    _gridHUnit = u;
-                                    _gridHUnitE = parseUnit(u);
-                                  });
-                                  _recomputeGridFromInputs();
-                                },
-                              ),
-                            ),
-                            SectionInput(
-                              full: AnimatedBuilder(
-                                animation: Listenable.merge([
-                                  _gridWController,
-                                  _gridHController,
-                                ]),
-                                builder: (context, _) {
-                                  final gw = double.tryParse(
-                                      _gridWController.text.trim());
-                                  final gh = double.tryParse(
-                                      _gridHController.text.trim());
-                                  final bool e = (gw != null &&
-                                      gw > 0 &&
-                                      gh != null &&
-                                      gh > 0);
-                                  return OutlinedActionButton(
-                                    label: 'Update Grid',
-                                    enabled: e,
-                                    onTap: _onUpdateGridTap,
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
+                        _buildProjectTitleSection(),
+                        _buildDimensionsSection(),
+                        _buildGridSection(),
                         const Expanded(child: SizedBox.shrink()),
                       ],
                     ),
@@ -552,6 +363,190 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
           ),
         ],
       ),
+    );
+  }
+}
+
+extension _Sections on _AppProjectDetailPageState {
+  Widget _buildProjectTitleSection() {
+    return SectionSidebar(
+      title: 'Projekt',
+      children: [
+        TextDefaultInput(
+          controller: _projectController,
+          focusNode: _projectTitleFocusNode,
+          placeholder: null,
+          suffixText: null,
+          onActionTap: null,
+          onSubmitted: (_) => _saveProjectTitle(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDimensionsSection() {
+    return SectionSidebar(
+      title: 'Dimensions',
+      children: [
+        DimensionRow(
+          primaryController: _inputValueController,
+          partnerController: _inputValueController2,
+          valueController: _widthVC,
+          enabled: true,
+          isWidth: true,
+          showLinkToggle: true,
+          initialLinked: _linkWH,
+          onLinkChanged: (v) => _safeSetState(() {
+            _linkWH = v;
+          }),
+          dpiOverride: _AppProjectDetailPageState.kCanvasPreviewPpi,
+          units: kUnits,
+          initialUnit: _canvasWUnit,
+          onUnitChanged: (u) {
+            _safeSetState(() {
+              _canvasWUnit = u;
+              _canvasWUnitE = parseUnit(u);
+            });
+            _recomputeCanvasFromInputs();
+          },
+          inputFormatters: <TextInputFormatter>[
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]')),
+          ],
+          clampPxMin: 1.0,
+          clampPxMax: 20000.0,
+          clampDpi: _AppProjectDetailPageState.kCanvasPreviewPpi,
+        ),
+        DimensionRow(
+          primaryController: _inputValueController2,
+          partnerController: _inputValueController,
+          valueController: _heightVC,
+          enabled: true,
+          isWidth: false,
+          units: kUnits,
+          initialUnit: _canvasHUnit,
+          onUnitChanged: (u) {
+            _safeSetState(() {
+              _canvasHUnit = u;
+              _canvasHUnitE = parseUnit(u);
+            });
+            _recomputeCanvasFromInputs();
+          },
+          dpiOverride: _AppProjectDetailPageState.kCanvasPreviewPpi,
+          inputFormatters: <TextInputFormatter>[
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]')),
+          ],
+          clampPxMin: 1.0,
+          clampPxMax: 20000.0,
+          clampDpi: _AppProjectDetailPageState.kCanvasPreviewPpi,
+        ),
+        SectionInput(
+          full: AnimatedBuilder(
+            animation: Listenable.merge([
+              _inputValueController,
+              _inputValueController2,
+            ]),
+            builder: (context, _) {
+              final enabled = _isInputsDirty();
+              return OutlinedActionButton(
+                label: 'Update Canvas',
+                onTap: _onUpdateCanvasTap,
+                enabled: enabled,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGridSection() {
+    return SectionSidebar(
+      title: 'Grid',
+      showTitleToggle: true,
+      titleToggleOn: _showGrid,
+      onTitleToggle: (v) => _safeSetState(() => _showGrid = v),
+      children: [
+        SectionInput(
+          full: InputValueType(
+            key: const ValueKey('grid_cell_width'),
+            controller: _gridWController,
+            placeholder: 'Cell width',
+            prefixIconAsset: 'assets/icons/16/width.svg',
+            prefixIconFit: BoxFit.none,
+            prefixIconAlignment: Alignment.centerLeft,
+            dropdownItems: kUnits,
+            selectedItem: _gridWUnit,
+            suffixText: _gridWUnit,
+            variant: InputVariant.selector,
+            readOnly: false,
+            readOnlyView: false,
+            onChanged: (raw) {
+              final sanitized = raw.replaceAll(RegExp(r'[^0-9\.]'), '');
+              if (sanitized != raw) {
+                _gridWController.text = sanitized;
+                _gridWController.selection =
+                    TextSelection.collapsed(offset: sanitized.length);
+              }
+            },
+            onItemSelected: (u) {
+              _safeSetState(() {
+                _gridWUnit = u;
+                _gridWUnitE = parseUnit(u);
+              });
+              _recomputeGridFromInputs();
+            },
+          ),
+        ),
+        SectionInput(
+          full: InputValueType(
+            key: const ValueKey('grid_cell_height'),
+            controller: _gridHController,
+            placeholder: 'Cell height',
+            prefixIconAsset: 'assets/icons/16/height.svg',
+            prefixIconFit: BoxFit.none,
+            prefixIconAlignment: Alignment.centerLeft,
+            dropdownItems: kUnits,
+            selectedItem: _gridHUnit,
+            suffixText: _gridHUnit,
+            variant: InputVariant.selector,
+            readOnly: false,
+            readOnlyView: false,
+            onChanged: (raw) {
+              final sanitized = raw.replaceAll(RegExp(r'[^0-9\.]'), '');
+              if (sanitized != raw) {
+                _gridHController.text = sanitized;
+                _gridHController.selection =
+                    TextSelection.collapsed(offset: sanitized.length);
+              }
+            },
+            onItemSelected: (u) {
+              _safeSetState(() {
+                _gridHUnit = u;
+                _gridHUnitE = parseUnit(u);
+              });
+              _recomputeGridFromInputs();
+            },
+          ),
+        ),
+        SectionInput(
+          full: AnimatedBuilder(
+            animation: Listenable.merge([
+              _gridWController,
+              _gridHController,
+            ]),
+            builder: (context, _) {
+              final gw = double.tryParse(_gridWController.text.trim());
+              final gh = double.tryParse(_gridHController.text.trim());
+              final bool e = (gw != null && gw > 0 && gh != null && gh > 0);
+              return OutlinedActionButton(
+                label: 'Update Grid',
+                enabled: e,
+                onTap: _onUpdateGridTap,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -585,20 +580,14 @@ extension on _AppProjectDetailPageState {
     // Persist canvas value + unit to DB
     if (_currentProjectId != null) {
       try {
-        final db = ref.read(appDatabaseProvider);
-        await db.customUpdate(
-          'UPDATE projects SET '
-          'canvas_width_value = ?, canvas_width_unit = ?, '
-          'canvas_height_value = ?, canvas_height_unit = ?, '
-          'updated_at = ? WHERE id = ?',
-          variables: [
-            Variable.withReal(wVal),
-            Variable.withString(_canvasWUnit),
-            Variable.withReal(hVal),
-            Variable.withString(_canvasHUnit),
-            Variable.withInt(DateTime.now().millisecondsSinceEpoch),
-            Variable.withInt(_currentProjectId!),
-          ],
+        final svc = ref.read(projectServiceProvider);
+        await svc.updateCanvasSpec(
+          ref,
+          _currentProjectId!,
+          widthValue: wVal,
+          widthUnit: _canvasWUnit,
+          heightValue: hVal,
+          heightUnit: _canvasHUnit,
         );
         // Update persisted spec baselines so dirty check resets
         _persistWVal = wVal;
@@ -671,12 +660,8 @@ extension on _AppProjectDetailPageState {
     if (_currentProjectId == null) return;
     final text = _projectController.text.trim();
     if (text == _lastSavedTitle) return;
-    final repo = ref.read(projectRepositoryProvider);
-    await repo.update(ProjectsCompanion(
-      id: Value(_currentProjectId!),
-      title: Value(text),
-      updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
-    ));
+    final svc = ref.read(projectServiceProvider);
+    await svc.updateTitle(ref, _currentProjectId!, text);
     _lastSavedTitle = text;
     widget.onProjectTitleSaved?.call(text);
   }
@@ -848,19 +833,14 @@ extension on _AppProjectDetailPageState {
     _safeSetState(() {});
     if (_currentProjectId == null) return;
     try {
-      final db = ref.read(appDatabaseProvider);
-      await db.customUpdate(
-        'UPDATE projects SET '
-        'grid_cell_width_value = ?, grid_cell_width_unit = ?, '
-        'grid_cell_height_value = ?, grid_cell_height_unit = ? '
-        'WHERE id = ?',
-        variables: [
-          Variable.withReal(gwVal),
-          Variable.withString(_gridWUnitE.asDbString),
-          Variable.withReal(ghVal),
-          Variable.withString(_gridHUnitE.asDbString),
-          Variable.withInt(_currentProjectId!),
-        ],
+      final svc = ref.read(projectServiceProvider);
+      await svc.updateGridSpec(
+        ref,
+        _currentProjectId!,
+        cellWidthValue: gwVal,
+        cellWidthUnit: _gridWUnitE.asDbString,
+        cellHeightValue: ghVal,
+        cellHeightUnit: _gridHUnitE.asDbString,
       );
     } catch (_) {
       // ignore persistence errors in UI

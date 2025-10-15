@@ -29,7 +29,17 @@ final imageDimensionsProvider =
   return (w, h);
 });
 
-// Physical float dimensions provider (px with 4-dec precision), single source of truth for size
+// Image DPI provider: returns the mutable image DPI (images.dpi)
+final imageDpiProvider = FutureProvider.family<int?, int>((ref, imageId) async {
+  final db = ref.read(appDatabaseProvider);
+  final row = await db.customSelect(
+      'SELECT dpi FROM images WHERE id = ? LIMIT 1',
+      variables: [drift.Variable<int>(imageId)]).getSingleOrNull();
+  if (row == null) return null;
+  return row.data['dpi'] as int?;
+});
+
+// Physical pixel dimensions provider (4-decimal floats) - single source of truth
 final imagePhysPixelsProvider =
     FutureProvider.family<(double?, double?), int>((ref, imageId) async {
   final db = ref.read(appDatabaseProvider);
@@ -41,14 +51,4 @@ final imagePhysPixelsProvider =
   final num? w = data['phys_width_px4'] as num?;
   final num? h = data['phys_height_px4'] as num?;
   return (w?.toDouble(), h?.toDouble());
-});
-
-// Image DPI provider: returns the mutable image DPI (images.dpi)
-final imageDpiProvider = FutureProvider.family<int?, int>((ref, imageId) async {
-  final db = ref.read(appDatabaseProvider);
-  final row = await db.customSelect(
-      'SELECT dpi FROM images WHERE id = ? LIMIT 1',
-      variables: [drift.Variable<int>(imageId)]).getSingleOrNull();
-  if (row == null) return null;
-  return row.data['dpi'] as int?;
 });

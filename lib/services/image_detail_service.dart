@@ -77,3 +77,4 @@ class ImageDetailService {
 final imageDetailServiceProvider = Provider<ImageDetailService>((ref) {
   return const ImageDetailService();
 });
+
