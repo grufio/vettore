@@ -61,8 +61,8 @@ class _ResolutionSelectorState extends State<ResolutionSelector> {
         selectedItem: '${widget.value}',
         suffixText: 'dpi',
         variant: InputVariant.dropdown,
-        readOnly: true,
-        readOnlyView: widget.readOnlyView,
+        readOnly: !widget.enabled,
+        readOnlyView: widget.readOnlyView || !widget.enabled,
         onChanged: null,
         suffixKey: const ValueKey('dpi-suffix'),
         onItemSelected: (label) {

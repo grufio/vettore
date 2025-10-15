@@ -232,23 +232,10 @@ class _DimensionRowState extends State<DimensionRow> {
       },
       onItemSelected: (nextUnit) {
         setState(() {
-          if (widget.valueController != null) {
-            // Change unit and update field text immediately to reflect unit
-            widget.valueController!.setUnit(nextUnit);
-            final double? v = widget.valueController!.getValueInUnit();
-            if (v != null) {
-              final String txt = formatFieldUnitValue(v, nextUnit);
-              _echoing = true;
-              widget.primaryController.text = txt;
-              widget.primaryController.selection =
-                  TextSelection.collapsed(offset: txt.length);
-              _echoing = false;
-            }
-            widget.onUnitChanged?.call(nextUnit);
-          } else {
-            _unit = nextUnit;
-            widget.onUnitChanged?.call(_unit);
-          }
+          _unit =
+              nextUnit; // Update suffix/unit only; do not rewrite numeric text
+          widget.valueController?.setUnit(nextUnit);
+          widget.onUnitChanged?.call(nextUnit);
         });
       },
     );

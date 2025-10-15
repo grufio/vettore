@@ -6,7 +6,6 @@ import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
 import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
 import 'package:vettore/widgets/button_app.dart' show OutlinedActionButton;
-import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
 
 class ImageDimensionPanel extends StatefulWidget {
   final TextEditingController widthTextController;
@@ -55,10 +54,15 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
   VoidCallback? _hTextListener;
   VoidCallback? _wVcListener;
   VoidCallback? _hVcListener;
+  // Baseline of committed texts (updated on model commits)
+  String _baselineWText = '';
+  String _baselineHText = '';
 
   @override
   void initState() {
     super.initState();
+    _baselineWText = widget.widthTextController.text;
+    _baselineHText = widget.heightTextController.text;
     _attachListeners(oldWtc: null, oldHtc: null, oldWvc: null, oldHvc: null);
   }
 
@@ -70,6 +74,12 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
         oldHtc: oldWidget.heightTextController,
         oldWvc: oldWidget.widthValueController,
         oldHvc: oldWidget.heightValueController);
+    // Reset baselines on DPI change so Resize remains disabled until user edits
+    if (oldWidget.currentDpi != widget.currentDpi) {
+      _baselineWText = widget.widthTextController.text;
+      _baselineHText = widget.heightTextController.text;
+      setState(() {});
+    }
   }
 
   void _attachListeners({
@@ -90,12 +100,27 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
     }
     if (oldWvc != widget.widthValueController) {
       oldWvc?.removeListener(_wVcListener ?? () {});
-      _wVcListener = () => setState(() {});
+      _wVcListener = () {
+        // On model commit (e.g., resize or remote phys update), sync baselines
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _baselineWText = widget.widthTextController.text;
+          _baselineHText = widget.heightTextController.text;
+          setState(() {});
+        });
+      };
       widget.widthValueController?.addListener(_wVcListener!);
     }
     if (oldHvc != widget.heightValueController) {
       oldHvc?.removeListener(_hVcListener ?? () {});
-      _hVcListener = () => setState(() {});
+      _hVcListener = () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _baselineWText = widget.widthTextController.text;
+          _baselineHText = widget.heightTextController.text;
+          setState(() {});
+        });
+      };
       widget.heightValueController?.addListener(_hVcListener!);
     }
   }
@@ -127,43 +152,24 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
 
     final String wText = _trimDot(widget.widthTextController.text);
     final String hText = _trimDot(widget.heightTextController.text);
-    final double? curPhysW = widget.widthValueController?.valuePx;
-    final double? curPhysH = widget.heightValueController?.valuePx;
+    // Current committed physical px (not used in baseline model)
+    // final double? curPhysW = widget.widthValueController?.valuePx;
+    // final double? curPhysH = widget.heightValueController?.valuePx;
 
     final bool wNumericPos = _isNumeric(wText);
     final bool hNumericPos = _isNumeric(hText);
 
     String normalize(String s) => s.trim();
 
-    String? expectedW;
-    String? expectedH;
-    if (curPhysW != null) {
-      final String wUnit = (widget.widthValueController?.unit ?? 'px');
-      final double wDisp = convertUnit(
-        value: curPhysW,
-        fromUnit: 'px',
-        toUnit: wUnit,
-        dpi: widget.currentDpi,
-      );
-      expectedW = formatFieldUnitValue(wDisp, wUnit);
-    }
-    if (curPhysH != null) {
-      final String hUnit = (widget.heightValueController?.unit ?? 'px');
-      final double hDisp = convertUnit(
-        value: curPhysH,
-        fromUnit: 'px',
-        toUnit: hUnit,
-        dpi: widget.currentDpi,
-      );
-      expectedH = formatFieldUnitValue(hDisp, hUnit);
-    }
-
-    final bool differsW = wNumericPos &&
-        expectedW != null &&
-        normalize(wText) != normalize(expectedW);
-    final bool differsH = hNumericPos &&
-        expectedH != null &&
-        normalize(hText) != normalize(expectedH);
+    // Compare against baselines captured at last commit
+    final String baseW = _baselineWText.trim().endsWith('.')
+        ? _baselineWText.trim().substring(0, _baselineWText.trim().length - 1)
+        : _baselineWText.trim();
+    final String baseH = _baselineHText.trim().endsWith('.')
+        ? _baselineHText.trim().substring(0, _baselineHText.trim().length - 1)
+        : _baselineHText.trim();
+    final bool differsW = wNumericPos && normalize(wText) != normalize(baseW);
+    final bool differsH = hNumericPos && normalize(hText) != normalize(baseH);
 
     // Enable Resize when either field has a valid number and differs from committed phys
     final bool canResize = widget.enabled &&
