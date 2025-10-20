@@ -105,9 +105,8 @@ class PalettesOverview extends ConsumerWidget {
 }
 
 class _PaletteGrid extends ConsumerWidget {
-  final List<FullPalette> palettes;
-
   const _PaletteGrid({required this.palettes});
+  final List<FullPalette> palettes;
 
   Future<void> _showDeleteConfirmDialog(
     BuildContext context,
@@ -164,9 +163,9 @@ class _PaletteGrid extends ConsumerWidget {
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () {
-              Navigator.push(
+              Navigator.push<void>(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (context) =>
                       PaletteDetailPage(paletteId: palette.id),
                 ),
@@ -185,9 +184,9 @@ class _PaletteGrid extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.white),
                       onPressed: () {
-                        Navigator.push(
+                        Navigator.push<void>(
                           context,
-                          MaterialPageRoute(
+                          MaterialPageRoute<void>(
                             builder: (context) =>
                                 PaletteDetailPage(paletteId: palette.id),
                           ),

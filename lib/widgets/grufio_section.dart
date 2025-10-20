@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 
 class GrufioSection extends StatelessWidget {
-  final String? title;
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-
   const GrufioSection({
     super.key,
     this.title,
     required this.child,
     this.padding,
   });
+  final String? title;
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +22,6 @@ class GrufioSection extends StatelessWidget {
         border: Border(
           bottom: BorderSide(
             color: theme.dividerColor,
-            width: 1.0,
           ),
         ),
       ),

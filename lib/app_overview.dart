@@ -37,16 +37,15 @@ final vendorsStreamProvider = StreamProvider<List<Vendor>>((ref) {
 
 /// A lightweight wrapper that connects all tabs into a scrollable Row:
 class GrufioTabsApp extends StatelessWidget {
-  final List<GrufioTabData> tabs;
-  final int activeIndex;
-  final ValueChanged<int> onTabSelected;
-
   const GrufioTabsApp({
     super.key,
     required this.tabs,
     required this.activeIndex,
     required this.onTabSelected,
   });
+  final List<GrufioTabData> tabs;
+  final int activeIndex;
+  final ValueChanged<int> onTabSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +58,6 @@ class GrufioTabsApp extends StatelessWidget {
           width: t.width,
           isActive: i == activeIndex,
           showLeftBorder: i == 0, // home: left border
-          showRightBorder: true, // all tabs: right border (home has both)
           onTap: () => onTabSelected(i),
         );
       }),
@@ -68,16 +66,16 @@ class GrufioTabsApp extends StatelessWidget {
 }
 
 class AppOverviewPage extends ConsumerStatefulWidget {
-  final bool showHeader;
-  final ValueChanged<int>? onOpenProject;
-  final VoidCallback? onAddProject;
-  final void Function(int vendorId, String vendorBrand)? onOpenVendor;
   const AppOverviewPage(
       {super.key,
       this.showHeader = true,
       this.onOpenProject,
       this.onAddProject,
       this.onOpenVendor});
+  final bool showHeader;
+  final ValueChanged<int>? onOpenProject;
+  final VoidCallback? onAddProject;
+  final void Function(int vendorId, String vendorBrand)? onOpenVendor;
   @override
   ConsumerState<AppOverviewPage> createState() => _AppOverviewPageState();
 }
@@ -185,8 +183,6 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
               SidePanel(
                 side: SidePanelSide.left,
                 width: _sidePanelWidth,
-                topPadding: 8.0,
-                horizontalPadding: 16.0,
                 resizable: true,
                 minWidth: 200.0,
                 maxWidth: 400.0,
@@ -199,7 +195,6 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                 child: Consumer(builder: (context, ref, _) {
                   final navIndex = ref.watch(homeNavSelectedIndexProvider);
                   return HomeNavigation(
-                    rowHeight: 24.0,
                     selectedIndex: navIndex,
                     onTap: (i) {
                       ref.read(homeNavSelectedIndexProvider.notifier).set(i);
@@ -255,8 +250,6 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
               tabs: _tabs,
               activeIndex: _activeIndex,
               onTabSelected: _onTabSelected,
-              height: _kToolbarHeight,
-              leftPaddingWhenWindowed: 72,
               onCloseTab: _onCloseTab,
               onAddTab: _onAddTab,
             ),
@@ -272,8 +265,6 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                       SidePanel(
                         side: SidePanelSide.left,
                         width: _sidePanelWidth,
-                        topPadding: 8.0,
-                        horizontalPadding: 16.0,
                         resizable: true,
                         minWidth: 200.0,
                         maxWidth: 400.0,
@@ -288,7 +279,6 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                           final navIndex =
                               ref.watch(homeNavSelectedIndexProvider);
                           return HomeNavigation(
-                            rowHeight: 24.0,
                             selectedIndex: navIndex,
                             onTap: (i) {
                               ref
@@ -383,7 +373,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
     }
 
     // iOS and other non-macOS platforms: render without macOS-specific widgets.
-    return Container(
+    return ColoredBox(
       color: kWhite,
       child: Column(
         children: [
@@ -414,16 +404,16 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
 }
 
 class _HomeGalleryContainer extends ConsumerWidget {
-  final ValueChanged<int>? onOpenProject;
-  final void Function(int vendorId, String vendorBrand)? onOpenVendor;
-  final bool showProjects;
-  final bool showVendors;
   const _HomeGalleryContainer({
     this.onOpenProject,
     this.onOpenVendor,
     this.showProjects = true,
     this.showVendors = true,
   });
+  final ValueChanged<int>? onOpenProject;
+  final void Function(int vendorId, String vendorBrand)? onOpenVendor;
+  final bool showProjects;
+  final bool showVendors;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -447,12 +437,8 @@ class _HomeGalleryContainer extends ConsumerWidget {
               onTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
               onDoubleTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
               child: ThumbnailTile(
-                assetPath: null,
                 imageBytes: null,
-                footerHeight: 72.0,
                 lines: [v.vendorName, v.vendorBrand, formatted],
-                textPadding: 12.0,
-                lineSpacing: 12.0,
               ),
             ));
           }
@@ -515,11 +501,6 @@ class _HomeGalleryContainer extends ConsumerWidget {
 }
 
 class _ProjectThumbnail extends StatefulWidget {
-  final Uint8List? bytes;
-  final String title;
-  final List<String>? lines;
-  final VoidCallback onOpen;
-  final Future<void> Function() onDelete;
   const _ProjectThumbnail({
     required this.bytes,
     required this.title,
@@ -527,6 +508,11 @@ class _ProjectThumbnail extends StatefulWidget {
     required this.onDelete,
     this.lines,
   });
+  final Uint8List? bytes;
+  final String title;
+  final List<String>? lines;
+  final VoidCallback onOpen;
+  final Future<void> Function() onDelete;
   @override
   State<_ProjectThumbnail> createState() => _ProjectThumbnailState();
 }
@@ -560,11 +546,7 @@ class _ProjectThumbnailState extends State<_ProjectThumbnail> {
       onTapDown: (_) => setState(() => _focused = false),
       child: ThumbnailTile(
         imageBytes: widget.bytes,
-        footerHeight: 72.0,
         lines: widget.lines ?? [widget.title, '', ''],
-        textPadding: 12.0,
-        lineSpacing: 12.0,
-        borderWidth: 2.0,
         borderColor: _focused ? kInputFocus : kBordersColor,
       ),
     );

@@ -3,11 +3,6 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
 class ContentToolbar extends StatelessWidget {
-  final List<Widget> children;
-  final double height;
-  final double horizontalPadding;
-  final double gap;
-
   const ContentToolbar({
     super.key,
     required this.children,
@@ -15,6 +10,10 @@ class ContentToolbar extends StatelessWidget {
     this.horizontalPadding = 24.0,
     this.gap = 8.0,
   });
+  final List<Widget> children;
+  final double height;
+  final double horizontalPadding;
+  final double gap;
 
   @override
   Widget build(BuildContext context) {
@@ -23,13 +22,12 @@ class ContentToolbar extends StatelessWidget {
       decoration: const BoxDecoration(
         color: kWhite,
         border: Border(
-          bottom: BorderSide(color: kBordersColor, width: 1.0),
+          bottom: BorderSide(color: kBordersColor),
         ),
       ),
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       alignment: Alignment.centerLeft,
       child: Row(
-        mainAxisSize: MainAxisSize.max,
         children: _withGaps(children, gap),
       ),
     );
@@ -49,16 +47,15 @@ class ContentToolbar extends StatelessWidget {
 }
 
 class ContentToolbarTitle extends StatelessWidget {
-  final String title;
-  final double height;
-  final double horizontalPadding;
-
   const ContentToolbarTitle({
     super.key,
     required this.title,
     this.height = 48.0,
     this.horizontalPadding = 24.0,
   });
+  final String title;
+  final double height;
+  final double horizontalPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +64,7 @@ class ContentToolbarTitle extends StatelessWidget {
       decoration: const BoxDecoration(
         color: kWhite,
         border: Border(
-          bottom: BorderSide(color: kBordersColor, width: 1.0),
+          bottom: BorderSide(color: kBordersColor),
         ),
       ),
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),

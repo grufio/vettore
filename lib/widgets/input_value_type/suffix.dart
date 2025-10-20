@@ -4,11 +4,6 @@ import 'package:vettore/theme/app_theme_typography.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class HoverSelectorSuffix extends StatefulWidget {
-  final String? suffixText;
-  final String iconAsset;
-  final VoidCallback onTap;
-  final bool showAsIcon;
-  final ValueChanged<Offset>? onTapDownGlobal;
   const HoverSelectorSuffix({
     super.key,
     required this.suffixText,
@@ -17,6 +12,11 @@ class HoverSelectorSuffix extends StatefulWidget {
     this.showAsIcon = false,
     this.onTapDownGlobal,
   });
+  final String? suffixText;
+  final String iconAsset;
+  final VoidCallback onTap;
+  final bool showAsIcon;
+  final ValueChanged<Offset>? onTapDownGlobal;
 
   @override
   State<HoverSelectorSuffix> createState() => _HoverSelectorSuffixState();

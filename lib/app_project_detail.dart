@@ -32,11 +32,6 @@ import 'package:vettore/providers/navigation_providers.dart';
 import 'package:vettore/providers/canvas_providers.dart';
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
-  final int initialActiveIndex;
-  final ValueChanged<int>? onNavigateTab;
-  final int? projectId; // optional for now; when null we load/create first
-  final ValueChanged<String>? onProjectTitleSaved;
-  final ValueChanged<int>? onDeleteProject;
   const AppProjectDetailPage({
     super.key,
     this.initialActiveIndex = 1,
@@ -45,6 +40,11 @@ class AppProjectDetailPage extends ConsumerStatefulWidget {
     this.onProjectTitleSaved,
     this.onDeleteProject,
   });
+  final int initialActiveIndex;
+  final ValueChanged<int>? onNavigateTab;
+  final int? projectId; // optional for now; when null we load/create first
+  final ValueChanged<String>? onProjectTitleSaved;
+  final ValueChanged<int>? onDeleteProject;
 
   @override
   ConsumerState<AppProjectDetailPage> createState() =>
@@ -179,8 +179,8 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     _inputValueController = TextEditingController();
     _inputValueController2 = TextEditingController();
     // Initialize UnitValueControllers with default units and preview dpi
-    _widthVC = UnitValueController(unit: _canvasWUnit, dpi: kCanvasPreviewPpi);
-    _heightVC = UnitValueController(unit: _canvasHUnit, dpi: kCanvasPreviewPpi);
+    _widthVC = UnitValueController(unit: _canvasWUnit);
+    _heightVC = UnitValueController(unit: _canvasHUnit);
     // Link width -> height aspect; aspect will be inferred when values arrive
     _widthVC!.linkWith(_heightVC!);
     _singleInputController = TextEditingController();
@@ -288,11 +288,11 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
         children: [
           // Header handled by shared shell; keep content only when embedded
           // Detail filter bar with bottom border
-          Container(
+          DecoratedBox(
             decoration: const BoxDecoration(
               color: kWhite,
               border: Border(
-                bottom: BorderSide(color: kBordersColor, width: 1.0),
+                bottom: BorderSide(color: kBordersColor),
               ),
             ),
             child: ContentFilterBar(
@@ -312,9 +312,6 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                   ref.read(currentPageProvider.notifier).state = PageId.project;
                 }
               },
-              height: 40.0,
-              horizontalPadding: 24.0,
-              gap: 4.0,
             ),
           ),
           Expanded(
@@ -332,7 +329,6 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
                     side: SidePanelSide.right,
                     width: _rightPanelWidth,
                     topPadding: 0.0,
-                    horizontalPadding: 16.0,
                     resizable: true,
                     minWidth: 200.0,
                     maxWidth: 400.0,
@@ -375,9 +371,6 @@ extension _Sections on _AppProjectDetailPageState {
         TextDefaultInput(
           controller: _projectController,
           focusNode: _projectTitleFocusNode,
-          placeholder: null,
-          suffixText: null,
-          onActionTap: null,
           onSubmitted: (_) => _saveProjectTitle(),
         ),
       ],
@@ -478,8 +471,6 @@ extension _Sections on _AppProjectDetailPageState {
             selectedItem: _gridWUnit,
             suffixText: _gridWUnit,
             variant: InputVariant.selector,
-            readOnly: false,
-            readOnlyView: false,
             onChanged: (raw) {
               final sanitized = raw.replaceAll(RegExp(r'[^0-9\.]'), '');
               if (sanitized != raw) {
@@ -509,8 +500,6 @@ extension _Sections on _AppProjectDetailPageState {
             selectedItem: _gridHUnit,
             suffixText: _gridHUnit,
             variant: InputVariant.selector,
-            readOnly: false,
-            readOnlyView: false,
             onChanged: (raw) {
               final sanitized = raw.replaceAll(RegExp(r'[^0-9\.]'), '');
               if (sanitized != raw) {
@@ -862,8 +851,8 @@ class _ProjectHairlineBorder extends StatelessWidget {
 }
 
 class _StaticHairlinePainter extends CustomPainter {
-  final double dpr;
   const _StaticHairlinePainter({required this.dpr});
+  final double dpr;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -888,11 +877,11 @@ class _StaticHairlinePainter extends CustomPainter {
 }
 
 class _GridPainter extends CustomPainter {
+  const _GridPainter(
+      {required this.cellW, required this.cellH, required this.color});
   final double cellW;
   final double cellH;
   final Color color;
-  const _GridPainter(
-      {required this.cellW, required this.cellH, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -920,12 +909,6 @@ class _GridPainter extends CustomPainter {
 }
 
 class _ProjectArtboardView extends StatelessWidget {
-  final double boardW;
-  final double boardH;
-  final double canvasW;
-  final double canvasH;
-  final double? gridCellW;
-  final double? gridCellH;
   const _ProjectArtboardView({
     required this.boardW,
     required this.boardH,
@@ -934,6 +917,12 @@ class _ProjectArtboardView extends StatelessWidget {
     this.gridCellW,
     this.gridCellH,
   });
+  final double boardW;
+  final double boardH;
+  final double canvasW;
+  final double canvasH;
+  final double? gridCellW;
+  final double? gridCellH;
 
   @override
   Widget build(BuildContext context) {
@@ -953,8 +942,6 @@ class _ProjectArtboardView extends StatelessWidget {
                   transformationController: TransformationController(),
                   minScale: 0.25,
                   maxScale: 8.0,
-                  scaleEnabled: true,
-                  panEnabled: true,
                   constrained: false,
                   boundaryMargin: margin,
                   child: RepaintBoundary(

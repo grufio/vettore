@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/providers/project_provider.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/services/image_resize_service.dart';
+import 'package:vettore/providers/project_provider.dart';
+import 'package:vettore/services/image_detail_service.dart';
 
 void main() {
   group('Resize flow with DPI resolution and provider invalidation', () {
@@ -46,15 +46,18 @@ void main() {
           }),
         ],
         child: _Runner(onDone: (ref) async {
-          const service = ImageResizeService();
-          await service.resizeWithTypedUnits(
-            ref: ref,
+          const detail = ImageDetailService();
+          // Convert typed 25.4 mm to phys px at fallback 96 dpi
+          final physW = detail.toPhysPx(25.4, 'mm', 96);
+          final physH = detail.toPhysPx(25.4, 'mm', 96);
+          final raster = detail.rasterFromPhys(physW, physH);
+          // Perform resize
+          await detail.performResize(
+            ref,
             projectId: 123,
-            widthValue: 25.4,
-            widthUnit: 'mm',
-            heightValue: 25.4,
-            heightUnit: 'mm',
-            interpolation: 'nearest',
+            targetW: raster.$1,
+            targetH: raster.$2,
+            interpolationName: 'nearest',
           );
           finalDims = await ref.read(imageDimensionsProvider(1).future);
         }),
@@ -73,30 +76,23 @@ void main() {
   });
 }
 
-class _Runner extends StatefulWidget {
+class _Runner extends ConsumerStatefulWidget {
   const _Runner({required this.onDone});
   final Future<void> Function(WidgetRef ref) onDone;
 
   @override
-  State<_Runner> createState() => _RunnerState();
+  ConsumerState<_Runner> createState() => _RunnerState();
 }
 
-class _RunnerState extends State<_Runner> {
+class _RunnerState extends ConsumerState<_Runner> {
   bool _ran = false;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_ran) return;
     _ran = true;
-    // Run on next microtask with a valid ref
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Bridge ProviderContainer -> WidgetRef via Consumer
-      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) {
-        return Consumer(builder: (context, ref, _) {
-          widget.onDone(ref);
-          return const SizedBox.shrink();
-        });
-      }));
+      await widget.onDone(ref);
     });
   }
 

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
 import 'package:vettore/providers/image_providers.dart';
 import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
+import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
 
 /// Controller to centralize image detail state: units, DPI, and dimension seeding.
 /// This is a minimal introduction used by the Image Detail page, so it wraps

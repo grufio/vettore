@@ -8,23 +8,6 @@ import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
 import 'package:vettore/widgets/button_app.dart' show OutlinedActionButton;
 
 class ImageDimensionPanel extends StatefulWidget {
-  final TextEditingController widthTextController;
-  final TextEditingController heightTextController;
-  final UnitValueController? widthValueController;
-  final UnitValueController? heightValueController;
-  final bool enabled;
-  final bool initialLinked;
-  final ValueChanged<bool>? onLinkChanged;
-  final String? initialWidthUnit;
-  final String? initialHeightUnit;
-  final ValueChanged<String> onWidthUnitChanged;
-  final ValueChanged<String> onHeightUnitChanged;
-  final int currentDpi;
-  final ValueChanged<int> onDpiChanged;
-  final String interpolation;
-  final ValueChanged<String> onInterpolationChanged;
-  final VoidCallback onResizeTap;
-
   const ImageDimensionPanel({
     super.key,
     required this.widthTextController,
@@ -44,6 +27,22 @@ class ImageDimensionPanel extends StatefulWidget {
     required this.onInterpolationChanged,
     required this.onResizeTap,
   });
+  final TextEditingController widthTextController;
+  final TextEditingController heightTextController;
+  final UnitValueController? widthValueController;
+  final UnitValueController? heightValueController;
+  final bool enabled;
+  final bool initialLinked;
+  final ValueChanged<bool>? onLinkChanged;
+  final String? initialWidthUnit;
+  final String? initialHeightUnit;
+  final ValueChanged<String> onWidthUnitChanged;
+  final ValueChanged<String> onHeightUnitChanged;
+  final int currentDpi;
+  final ValueChanged<int> onDpiChanged;
+  final String interpolation;
+  final ValueChanged<String> onInterpolationChanged;
+  final VoidCallback onResizeTap;
 
   @override
   State<ImageDimensionPanel> createState() => _ImageDimensionPanelState();
@@ -63,7 +62,7 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
     super.initState();
     _baselineWText = widget.widthTextController.text;
     _baselineHText = widget.heightTextController.text;
-    _attachListeners(oldWtc: null, oldHtc: null, oldWvc: null, oldHvc: null);
+    _attachListeners(oldHtc: null);
   }
 
   @override
@@ -137,7 +136,7 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
   @override
   Widget build(BuildContext context) {
     // Enable Resize when any field changed vs current size (units aware)
-    bool _isNumeric(String s) {
+    bool isNumeric(String s) {
       if (s.isEmpty) return false;
       final String t = s.trim().endsWith('.')
           ? s.trim().substring(0, s.trim().length - 1)
@@ -145,19 +144,19 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
       return double.tryParse(t) != null;
     }
 
-    String _trimDot(String s) {
+    String trimDot(String s) {
       final String t = s.trim();
       return t.endsWith('.') ? t.substring(0, t.length - 1) : t;
     }
 
-    final String wText = _trimDot(widget.widthTextController.text);
-    final String hText = _trimDot(widget.heightTextController.text);
+    final String wText = trimDot(widget.widthTextController.text);
+    final String hText = trimDot(widget.heightTextController.text);
     // Current committed physical px (not used in baseline model)
     // final double? curPhysW = widget.widthValueController?.valuePx;
     // final double? curPhysH = widget.heightValueController?.valuePx;
 
-    final bool wNumericPos = _isNumeric(wText);
-    final bool hNumericPos = _isNumeric(hText);
+    final bool wNumericPos = isNumeric(wText);
+    final bool hNumericPos = isNumeric(hText);
 
     String normalize(String s) => s.trim();
 
@@ -199,7 +198,6 @@ class _ImageDimensionPanelState extends State<ImageDimensionPanel> {
           valueController: widget.heightValueController,
           enabled: widget.enabled,
           isWidth: false,
-          showLinkToggle: false,
           onUnitChanged: widget.onHeightUnitChanged,
           initialUnit: widget.initialHeightUnit,
           dpiOverride: widget.currentDpi,

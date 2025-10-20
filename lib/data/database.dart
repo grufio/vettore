@@ -590,13 +590,12 @@ class AppDatabase extends _$AppDatabase {
 }
 
 class VendorColorWithVariants {
-  final VendorColor color;
-  final List<VendorColorVariant> variants;
-
   VendorColorWithVariants({
     required this.color,
     required this.variants,
   });
+  final VendorColor color;
+  final List<VendorColorVariant> variants;
 }
 
 LazyDatabase _openConnection() {

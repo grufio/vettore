@@ -5,21 +5,19 @@ import 'package:equatable/equatable.dart';
 
 // A data class to hold a palette and its colors
 class FullPalette extends Equatable {
+  const FullPalette({required this.palette, required this.colors});
   final Palette palette;
   final List<PaletteColorWithComponents> colors;
-
-  const FullPalette({required this.palette, required this.colors});
 
   @override
   List<Object?> get props => [palette, colors];
 }
 
 class PaletteColorWithComponents extends Equatable {
-  final PaletteColor color;
-  final List<ColorComponent> components;
-
   const PaletteColorWithComponents(
       {required this.color, required this.components});
+  final PaletteColor color;
+  final List<ColorComponent> components;
 
   @override
   List<Object?> get props => [color, components];
@@ -27,17 +25,15 @@ class PaletteColorWithComponents extends Equatable {
 
 // An intermediate class to hold the raw results of our join query.
 class _PaletteWithColorAndComponent {
+  _PaletteWithColorAndComponent(this.palette, this.color, this.component);
   final Palette palette;
   final PaletteColor? color;
   final ColorComponent? component;
-
-  _PaletteWithColorAndComponent(this.palette, this.color, this.component);
 }
 
 class PaletteRepository {
-  final AppDatabase _db;
-
   PaletteRepository(this._db);
+  final AppDatabase _db;
 
   // A stream that watches for changes to all palettes and their nested data.
   // This uses an efficient join query to avoid the N+1 problem.

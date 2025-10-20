@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift show Variable;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/providers/application_providers.dart';
 
 // Image bytes provider: render converted (working) bytes when present, else original

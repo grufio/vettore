@@ -3,12 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class PrefixIcon extends StatelessWidget {
-  final String asset;
-  final double size;
-  final AlignmentGeometry alignment;
-  final BoxFit fit;
-  final Color color;
-
   const PrefixIcon({
     super.key,
     required this.asset,
@@ -17,11 +11,15 @@ class PrefixIcon extends StatelessWidget {
     this.fit = BoxFit.none,
     this.color = kGrey70,
   });
+  final String asset;
+  final double size;
+  final AlignmentGeometry alignment;
+  final BoxFit fit;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return ExcludeSemantics(
-      excluding: true,
       child: SvgPicture.asset(
         asset,
         width: size,

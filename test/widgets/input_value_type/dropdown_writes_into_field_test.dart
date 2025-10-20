@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 
 class _DropdownHost extends StatefulWidget {
@@ -51,5 +51,3 @@ void main() {
     expect(field.controller.text, 'Colors');
   });
 }
-
-

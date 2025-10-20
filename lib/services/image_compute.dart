@@ -3,16 +3,16 @@ import 'package:image/image.dart' as img;
 import 'package:exif/exif.dart' as exif;
 
 class DecodedDimensions {
+  const DecodedDimensions(this.width, this.height);
   final int? width;
   final int? height;
-  const DecodedDimensions(this.width, this.height);
 }
 
 class UniqueColorsResult {
+  const UniqueColorsResult({required this.count, this.width, this.height});
   final int count;
   final int? width;
   final int? height;
-  const UniqueColorsResult({required this.count, this.width, this.height});
 }
 
 String detectMimeType(Uint8List bytes) {
@@ -83,7 +83,16 @@ Future<int?> decodeDpi(Uint8List bytes) async {
   if (bytes.length < 12) return null;
   // PNG signature: 89 50 4E 47 0D 0A 1A 0A
   const pngSig = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-  bool isPng = true;
+  bool isPng = (() {
+    bool ok = true;
+    for (int i = 0; i < pngSig.length; i++) {
+      if (bytes[i] != pngSig[i]) {
+        ok = false;
+        break;
+      }
+    }
+    return ok;
+  })();
   for (int i = 0; i < pngSig.length; i++) {
     if (bytes[i] != pngSig[i]) {
       isPng = false;
@@ -94,11 +103,11 @@ Future<int?> decodeDpi(Uint8List bytes) async {
     int offset = 8; // after signature
     while (offset + 12 <= bytes.length) {
       // length (4), type (4), data (length), crc (4)
-      int length = _u32(bytes, offset);
-      int typeA = bytes[offset + 4];
-      int typeB = bytes[offset + 5];
-      int typeC = bytes[offset + 6];
-      int typeD = bytes[offset + 7];
+      final int length = _u32(bytes, offset);
+      final int typeA = bytes[offset + 4];
+      final int typeB = bytes[offset + 5];
+      final int typeC = bytes[offset + 6];
+      final int typeD = bytes[offset + 7];
       // 'pHYs'
       if (typeA == 0x70 && typeB == 0x48 && typeC == 0x59 && typeD == 0x73) {
         if (length >= 9 && offset + 8 + 9 <= bytes.length) {
@@ -126,13 +135,13 @@ Future<int?> decodeDpi(Uint8List bytes) async {
         offset++;
         continue;
       }
-      int marker = bytes[offset + 1];
+      final int marker = bytes[offset + 1];
       offset += 2;
       if (marker == 0xD9 || marker == 0xDA) {
         break; // EOI or SOS
       }
       if (offset + 2 > bytes.length) break;
-      int segmentLength = (bytes[offset] << 8) | bytes[offset + 1];
+      final int segmentLength = (bytes[offset] << 8) | bytes[offset + 1];
       if (segmentLength < 2 || offset + segmentLength > bytes.length) break;
       // APP0 JFIF
       if (marker == 0xE0 && segmentLength >= 16) {

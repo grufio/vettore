@@ -5,12 +5,6 @@ import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
 class SectionSidebar extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-  final bool showTitleToggle;
-  final bool titleToggleOn;
-  final ValueChanged<bool>? onTitleToggle;
-
   const SectionSidebar({
     super.key,
     required this.title,
@@ -19,6 +13,11 @@ class SectionSidebar extends StatelessWidget {
     this.titleToggleOn = true,
     this.onTitleToggle,
   });
+  final String title;
+  final List<Widget> children;
+  final bool showTitleToggle;
+  final bool titleToggleOn;
+  final ValueChanged<bool>? onTitleToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +27,7 @@ class SectionSidebar extends StatelessWidget {
       decoration: const BoxDecoration(
         color: kWhite,
         border: Border(
-          bottom: BorderSide(color: kBordersColor, width: 1.0),
+          bottom: BorderSide(color: kBordersColor),
         ),
       ),
       child: Column(
@@ -62,14 +61,6 @@ class SectionSidebar extends StatelessWidget {
 
 // Row component co-located with SectionSidebar
 class SectionInput extends StatelessWidget {
-  final Widget? left;
-  final Widget? right;
-  final Widget? full; // optional element spanning both input areas
-  final Widget? action; // optional custom trailing action
-  final String? actionIconAsset;
-  final VoidCallback? onActionTap; // Reserved for later use
-  final bool actionDisabled;
-
   const SectionInput({
     super.key,
     this.left,
@@ -100,6 +91,13 @@ class SectionInput extends StatelessWidget {
       onActionTap: onActionTap,
     );
   }
+  final Widget? left;
+  final Widget? right;
+  final Widget? full; // optional element spanning both input areas
+  final Widget? action; // optional custom trailing action
+  final String? actionIconAsset;
+  final VoidCallback? onActionTap; // Reserved for later use
+  final bool actionDisabled;
 
   @override
   Widget build(BuildContext context) {
@@ -125,18 +123,16 @@ class SectionInput extends StatelessWidget {
     children.addAll([const SizedBox(width: 8.0), trailing]);
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: children,
     );
   }
 }
 
 class _ReservedActionIcon extends StatefulWidget {
+  const _ReservedActionIcon({this.asset, this.onTap, this.disabled = false});
   final String? asset;
   final VoidCallback? onTap;
   final bool disabled;
-
-  const _ReservedActionIcon({this.asset, this.onTap, this.disabled = false});
 
   @override
   State<_ReservedActionIcon> createState() => _ReservedActionIconState();
@@ -184,9 +180,9 @@ class _ReservedActionIconState extends State<_ReservedActionIcon> {
 }
 
 class _TitleToggle extends StatefulWidget {
+  const _TitleToggle({required this.on, this.onChanged});
   final bool on;
   final ValueChanged<bool>? onChanged;
-  const _TitleToggle({required this.on, this.onChanged});
 
   @override
   State<_TitleToggle> createState() => _TitleToggleState();

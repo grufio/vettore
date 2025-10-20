@@ -6,14 +6,6 @@ import 'package:vettore/widgets/artboard_view.dart';
 import 'package:vettore/widgets/snackbar_image.dart';
 
 class ImagePreview extends StatelessWidget {
-  final TransformationController controller;
-  final double boardW;
-  final double boardH;
-  final double canvasW;
-  final double canvasH;
-  final Uint8List? bytes;
-  final GlobalKey viewportKey;
-
   const ImagePreview({
     super.key,
     required this.controller,
@@ -24,6 +16,13 @@ class ImagePreview extends StatelessWidget {
     required this.bytes,
     required this.viewportKey,
   });
+  final TransformationController controller;
+  final double boardW;
+  final double boardH;
+  final double canvasW;
+  final double canvasH;
+  final Uint8List? bytes;
+  final GlobalKey viewportKey;
 
   @override
   Widget build(BuildContext context) {
@@ -103,4 +102,3 @@ class ImagePreview extends StatelessWidget {
     );
   }
 }
-

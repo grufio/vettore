@@ -1,12 +1,12 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart' show TextInputFormatter;
-import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
-import 'package:vettore/widgets/input_value_type/input_value_type.dart';
+import 'package:flutter/widgets.dart';
 import 'package:vettore/widgets/button_toggle.dart';
 import 'package:vettore/widgets/constants/input_constants.dart';
+import 'package:vettore/widgets/input_value_type/input_value_type.dart';
+import 'package:vettore/widgets/input_value_type/number_utils.dart';
 import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
 import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
-import 'package:vettore/widgets/input_value_type/number_utils.dart';
+import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
 
 /// A unified dimension row that can render either width or height input.
 /// It consolidates shared logic from WidthRow and HeightRow while preserving
@@ -63,8 +63,6 @@ class _DimensionRowState extends State<DimensionRow> {
   bool _linked = false;
   bool _echoing = false;
   double? _lastEchoedPx;
-  bool _suppressEcho = false;
-  FocusNode? _focusNode;
   // Linking/aspect disabled in typing-only mode
   String _unit = 'px';
   // Preserve state only via UnitValueController; no local px cache
@@ -78,8 +76,6 @@ class _DimensionRowState extends State<DimensionRow> {
     // Linking/aspect disabled; no seeding
     widget.primaryController.addListener(_onPrimaryChanged);
     widget.partnerController?.addListener(_onPartnerChanged);
-    _focusNode = FocusNode();
-    _focusNode!.addListener(_onFocusChanged);
     // Initialize internal px value from current text if present
     final int? dpiOverride = widget.dpiOverride;
     final double? initial = double.tryParse(widget.primaryController.text);
@@ -99,11 +95,7 @@ class _DimensionRowState extends State<DimensionRow> {
         // Echo from model whenever pixel value changes (always show real dimensions)
         final double? px = widget.valueController!.valuePx;
         final bool pxChanged = px != _lastEchoedPx;
-        if (_suppressEcho) {
-          // Skip one echo triggered by our own onChanged write
-          _suppressEcho = false;
-          _lastEchoedPx = px;
-        } else if (pxChanged && !_echoing) {
+        if (pxChanged && !_echoing) {
           final double? v = widget.valueController!.getValueInUnit();
           final String txt = (v == null)
               ? ''
@@ -157,7 +149,6 @@ class _DimensionRowState extends State<DimensionRow> {
     if (_vcListener != null && widget.valueController != null) {
       widget.valueController!.removeListener(_vcListener!);
     }
-    _focusNode?.dispose();
     super.dispose();
   }
 
@@ -171,23 +162,6 @@ class _DimensionRowState extends State<DimensionRow> {
   void _onPartnerChanged() {
     // Typing-only mode: do nothing
     return;
-  }
-
-  void _onFocusChanged() {
-    if (_focusNode == null || _focusNode!.hasFocus) return;
-    // Lost focus: format to 2 decimals if missing
-    final String text = widget.primaryController.text.trim();
-    if (text.isEmpty) return;
-    final double? v = double.tryParse(text);
-    if (v == null) return;
-    final String formatted = formatFieldUnitValue(v, _unit);
-    if (formatted != text) {
-      _echoing = true;
-      widget.primaryController.text = formatted;
-      widget.primaryController.selection =
-          TextSelection.collapsed(offset: formatted.length);
-      _echoing = false;
-    }
   }
 
   @override
@@ -204,7 +178,6 @@ class _DimensionRowState extends State<DimensionRow> {
     final input = InputValueType(
       key: fieldKey,
       controller: widget.primaryController,
-      focusNode: _focusNode,
       placeholder: widget.isWidth ? 'Width' : 'Height',
       prefixIconAsset: iconAsset,
       prefixIconFit: BoxFit.none,
@@ -225,17 +198,28 @@ class _DimensionRowState extends State<DimensionRow> {
           widget.primaryController.selection =
               TextSelection.collapsed(offset: newOffset);
         }
-        // Update value controller from typed value (kept as 4-dec phys px internally)
-        // Do not write into the model while typing; commit on blur/resize
         // No user-edit guard; model → field echo always applies on updates
         return;
       },
       onItemSelected: (nextUnit) {
         setState(() {
-          _unit =
-              nextUnit; // Update suffix/unit only; do not rewrite numeric text
-          widget.valueController?.setUnit(nextUnit);
-          widget.onUnitChanged?.call(nextUnit);
+          if (widget.valueController != null) {
+            // Change unit and update field text immediately to reflect unit
+            widget.valueController!.setUnit(nextUnit);
+            final double? v = widget.valueController!.getValueInUnit();
+            if (v != null) {
+              final String txt = formatFieldUnitValue(v, nextUnit);
+              _echoing = true;
+              widget.primaryController.text = txt;
+              widget.primaryController.selection =
+                  TextSelection.collapsed(offset: txt.length);
+              _echoing = false;
+            }
+            widget.onUnitChanged?.call(nextUnit);
+          } else {
+            _unit = nextUnit;
+            widget.onUnitChanged?.call(_unit);
+          }
         });
       },
     );

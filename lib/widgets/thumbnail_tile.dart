@@ -6,18 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
 class ThumbnailTile extends StatelessWidget {
-  final Uint8List? imageBytes;
-  final String? assetPath; // optional asset image path
-  final Color? backgroundFill; // when no image, fill with solid color
-  final double footerHeight;
-  final List<String> lines; // expect up to 3 lines
-  final double textPadding; // padding inside text area
-  final double lineSpacing;
-  final BorderRadius borderRadius;
-  final Widget? leading; // optional icon
-  final double borderWidth;
-  final Color borderColor;
-
   const ThumbnailTile({
     super.key,
     this.imageBytes,
@@ -32,6 +20,17 @@ class ThumbnailTile extends StatelessWidget {
     this.borderWidth = 2.0,
     this.borderColor = kBordersColor,
   });
+  final Uint8List? imageBytes;
+  final String? assetPath; // optional asset image path
+  final Color? backgroundFill; // when no image, fill with solid color
+  final double footerHeight;
+  final List<String> lines; // expect up to 3 lines
+  final double textPadding; // padding inside text area
+  final double lineSpacing;
+  final BorderRadius borderRadius;
+  final Widget? leading; // optional icon
+  final double borderWidth;
+  final Color borderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +39,7 @@ class ThumbnailTile extends StatelessWidget {
     final double outerRadius = borderRadius.topLeft.x;
     final double innerRadius =
         (outerRadius - borderWidth).clamp(0.0, outerRadius);
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: borderColor, width: borderWidth),
         borderRadius: borderRadius,
@@ -67,7 +66,7 @@ class ThumbnailTile extends StatelessWidget {
                         )
                       : (backgroundFill != null)
                           ? Container(color: backgroundFill)
-                          : Container(
+                          : ColoredBox(
                               color: kGrey20,
                               child: Center(
                                 child: SvgPicture.asset(
@@ -95,12 +94,6 @@ class ThumbnailTile extends StatelessWidget {
 }
 
 class _Footer extends StatelessWidget {
-  final double height;
-  final List<String> lines;
-  final double padding;
-  final double spacing;
-  final Widget? leading;
-
   const _Footer({
     required this.height,
     required this.lines,
@@ -108,12 +101,17 @@ class _Footer extends StatelessWidget {
     required this.spacing,
     this.leading,
   });
+  final double height;
+  final List<String> lines;
+  final double padding;
+  final double spacing;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
-    final List<String> normalizedLines = (this.lines.length >= 3)
-        ? this.lines.sublist(0, 3)
-        : [...this.lines, ...List.filled(3 - this.lines.length, '')];
+    final List<String> normalizedLines = (lines.length >= 3)
+        ? lines.sublist(0, 3)
+        : [...lines, ...List.filled(3 - lines.length, '')];
 
     return Container(
       height: height,

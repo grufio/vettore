@@ -3,13 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 @immutable
 class ImageLayerState {
-  final double offsetX;
-  final double offsetY;
-  final double scale;
-  final double rotationDeg;
-  final double opacity; // 0..1
-  final bool visible;
-
   const ImageLayerState({
     required this.offsetX,
     required this.offsetY,
@@ -26,6 +19,12 @@ class ImageLayerState {
         rotationDeg = 0,
         opacity = 1,
         visible = true;
+  final double offsetX;
+  final double offsetY;
+  final double scale;
+  final double rotationDeg;
+  final double opacity; // 0..1
+  final bool visible;
 
   ImageLayerState copyWith({
     double? offsetX,

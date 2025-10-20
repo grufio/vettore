@@ -4,11 +4,6 @@ import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 import 'package:vettore/widgets/constants/input_constants.dart';
 
 class InterpolationSelector extends StatefulWidget {
-  final String value;
-  final ValueChanged<String> onChanged;
-  final bool enabled;
-  final bool readOnlyView;
-
   const InterpolationSelector({
     super.key,
     required this.value,
@@ -16,6 +11,10 @@ class InterpolationSelector extends StatefulWidget {
     this.enabled = true,
     this.readOnlyView = false,
   });
+  final String value;
+  final ValueChanged<String> onChanged;
+  final bool enabled;
+  final bool readOnlyView;
 
   @override
   State<InterpolationSelector> createState() => _InterpolationSelectorState();
@@ -51,7 +50,6 @@ class _InterpolationSelectorState extends State<InterpolationSelector> {
     return SectionInput(
       full: InputValueType(
         controller: _controller,
-        placeholder: null,
         prefixIconAsset: 'assets/icons/16/help.svg',
         prefixIconFit: BoxFit.none,
         prefixIconAlignment: Alignment.centerLeft,
@@ -59,11 +57,9 @@ class _InterpolationSelectorState extends State<InterpolationSelector> {
         prefixIconHeight: 16.0,
         enableSelection: false,
         dropdownItems: _items,
-        selectedItem: null,
         variant: InputVariant.dropdown,
         readOnly: true,
         readOnlyView: widget.readOnlyView,
-        onChanged: null,
         onItemSelected: (v) => widget.onChanged(v),
       ),
     );

@@ -2,11 +2,7 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 class GrufioTabData {
-  final String iconPath;
-  final String? label;
-  final double? width;
-  final int? projectId; // null for non-project tabs (e.g., Home)
-  final int? vendorId; // null unless this tab shows a vendor overview
+  // null unless this tab shows a vendor overview
 
   const GrufioTabData({
     required this.iconPath,
@@ -15,4 +11,9 @@ class GrufioTabData {
     this.projectId,
     this.vendorId,
   });
+  final String iconPath;
+  final String? label;
+  final double? width;
+  final int? projectId; // null for non-project tabs (e.g., Home)
+  final int? vendorId;
 }

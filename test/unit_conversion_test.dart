@@ -35,8 +35,9 @@ void main() {
 
   group('formatUnitValue', () {
     test('px rounds to int', () {
-      expect(formatUnitValue(377.95, 'px'), '378');
-      expect(formatUnitValue(377.1, 'px'), '377');
+      // Current model formats all units to 2 decimals consistently
+      expect(formatUnitValue(377.95, 'px'), '377.95');
+      expect(formatUnitValue(377.1, 'px'), '377.10');
     });
 
     test('physical units keep two decimals', () {

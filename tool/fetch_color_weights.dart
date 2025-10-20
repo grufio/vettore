@@ -1,9 +1,9 @@
+import 'package:drift/drift.dart';
 import 'package:flutter/widgets.dart';
-import 'package:http/http.dart' as http;
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html;
+import 'package:http/http.dart' as http;
 import 'package:vettore/data/database.dart';
-import 'package:drift/drift.dart';
 
 // A simple script to fetch color weights from an external website
 // and update the local database.

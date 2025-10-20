@@ -8,16 +8,15 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/snackbar_image.dart';
 
 class ImageUploadArea extends StatefulWidget {
-  final Future<void> Function(Uint8List bytes) onBytesSelected;
-  final Uint8List? initialBytes;
-  final List<String> allowedExtensions;
-
   const ImageUploadArea({
     super.key,
     required this.onBytesSelected,
     this.initialBytes,
     this.allowedExtensions = const ['png', 'jpg', 'jpeg'],
   });
+  final Future<void> Function(Uint8List bytes) onBytesSelected;
+  final Uint8List? initialBytes;
+  final List<String> allowedExtensions;
 
   @override
   State<ImageUploadArea> createState() => _ImageUploadAreaState();

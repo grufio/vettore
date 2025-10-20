@@ -11,8 +11,6 @@ void main() {
       home: Scaffold(
         body: HomeNavigation(
           onTap: _noop,
-          selectedIndex: 1, // Projects / All
-          rowHeight: 24.0,
         ),
       ),
     ));
@@ -32,8 +30,6 @@ void main() {
       home: Scaffold(
         body: HomeNavigation(
           onTap: _noop,
-          selectedIndex: 1,
-          rowHeight: 24.0,
         ),
       ),
     ));

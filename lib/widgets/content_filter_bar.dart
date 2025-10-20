@@ -3,20 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:vettore/widgets/chip_filter.dart';
 
 class FilterItem {
+  const FilterItem({required this.id, required this.label});
   final String id;
   final String label;
-  const FilterItem({required this.id, required this.label});
 }
 
 class ContentFilterBar extends StatefulWidget {
-  final List<FilterItem> items;
-  final String activeId;
-  final ValueChanged<String> onChanged;
-  final double height;
-  final double horizontalPadding;
-  final double gap;
-  final bool scrollable;
-
   const ContentFilterBar({
     super.key,
     required this.items,
@@ -27,6 +19,13 @@ class ContentFilterBar extends StatefulWidget {
     this.gap = 4.0,
     this.scrollable = true,
   });
+  final List<FilterItem> items;
+  final String activeId;
+  final ValueChanged<String> onChanged;
+  final double height;
+  final double horizontalPadding;
+  final double gap;
+  final bool scrollable;
 
   @override
   State<ContentFilterBar> createState() => _ContentFilterBarState();

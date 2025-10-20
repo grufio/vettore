@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 enum ColorSortCriteria { none, hue, saturation, lightness, appearance }
 
 class _ColorInfo {
+  _ColorInfo(this.color, this.number);
   final Color color;
   final int number;
-  _ColorInfo(this.color, this.number);
 }
 
 class ColorSettingsDialog extends StatefulWidget {
-  final List<Color> colors;
-
   const ColorSettingsDialog({super.key, required this.colors});
+  final List<Color> colors;
 
   @override
   ColorSettingsDialogState createState() => ColorSettingsDialogState();
@@ -40,12 +39,12 @@ class ColorSettingsDialogState extends State<ColorSettingsDialog> {
         _sortedColors = List.from(_originalColors);
       } else {
         _sortedColors.sort((a, b) {
-          final hslA = HSLColor.fromColor(a.color);
-          final hslB = HSLColor.fromColor(b.color);
+          final HSLColor hslA = HSLColor.fromColor(a.color);
+          final HSLColor hslB = HSLColor.fromColor(b.color);
           switch (criteria) {
             case ColorSortCriteria.appearance:
               // First sort by Hue
-              int hueCompare = hslA.hue.compareTo(hslB.hue);
+              final int hueCompare = hslA.hue.compareTo(hslB.hue);
               if (hueCompare != 0) return hueCompare;
               // Then sort by Lightness
               return hslA.lightness.compareTo(hslB.lightness);

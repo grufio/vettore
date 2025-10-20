@@ -3,13 +3,6 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
 class HomeSidebar extends StatelessWidget {
-  final List<String> items;
-  final ValueChanged<int> onTap;
-  final double width;
-  final double rowHeight;
-  final double topPadding;
-  final double horizontalPadding;
-
   const HomeSidebar({
     super.key,
     required this.items,
@@ -19,6 +12,12 @@ class HomeSidebar extends StatelessWidget {
     this.topPadding = 8.0,
     this.horizontalPadding = 16.0,
   });
+  final List<String> items;
+  final ValueChanged<int> onTap;
+  final double width;
+  final double rowHeight;
+  final double topPadding;
+  final double horizontalPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +28,7 @@ class HomeSidebar extends StatelessWidget {
       decoration: const BoxDecoration(
         color: kWhite,
         border: Border(
-          right: BorderSide(color: kBordersColor, width: 1.0),
+          right: BorderSide(color: kBordersColor),
         ),
       ),
       child: Column(
@@ -150,12 +149,6 @@ class HomeSidebar extends StatelessWidget {
 }
 
 class _SidebarRow extends StatefulWidget {
-  final String label;
-  final double height;
-  final double horizontalPadding;
-  final TextStyle textStyle;
-  final VoidCallback onTap;
-
   const _SidebarRow({
     required this.label,
     required this.height,
@@ -163,6 +156,11 @@ class _SidebarRow extends StatefulWidget {
     required this.textStyle,
     required this.onTap,
   });
+  final String label;
+  final double height;
+  final double horizontalPadding;
+  final TextStyle textStyle;
+  final VoidCallback onTap;
 
   @override
   State<_SidebarRow> createState() => _SidebarRowState();
@@ -184,8 +182,6 @@ class _SidebarRowState extends State<_SidebarRow> {
           padding: EdgeInsets.symmetric(horizontal: widget.horizontalPadding),
           decoration: BoxDecoration(
             color: _isHovered ? kGrey20 : kWhite,
-            // No per-row borders; section dividers are handled externally
-            border: null,
           ),
           alignment: Alignment.centerLeft,
           child: Text(

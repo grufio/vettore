@@ -3,16 +3,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class SnackbarImage extends StatelessWidget {
-  final VoidCallback? onZoomIn;
-  final VoidCallback? onZoomOut;
-  final VoidCallback? onFitToScreen;
-
   const SnackbarImage({
     super.key,
     this.onZoomIn,
     this.onZoomOut,
     this.onFitToScreen,
   });
+  final VoidCallback? onZoomIn;
+  final VoidCallback? onZoomOut;
+  final VoidCallback? onFitToScreen;
 
   static const double _height = 40.0;
   static const double _iconSize = 24.0;
@@ -26,7 +25,7 @@ class SnackbarImage extends StatelessWidget {
       decoration: BoxDecoration(
         color: kWhite,
         borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: kBordersColor, width: 1.0),
+        border: Border.all(color: kBordersColor),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -52,10 +51,9 @@ class SnackbarImage extends StatelessWidget {
 }
 
 class _IconButton extends StatelessWidget {
+  const _IconButton({required this.asset, this.onTap});
   final String asset;
   final VoidCallback? onTap;
-
-  const _IconButton({required this.asset, this.onTap});
 
   @override
   Widget build(BuildContext context) =>
@@ -63,10 +61,9 @@ class _IconButton extends StatelessWidget {
 }
 
 class _IconButtonInner extends StatefulWidget {
+  const _IconButtonInner({required this.asset, this.onTap});
   final String asset;
   final VoidCallback? onTap;
-
-  const _IconButtonInner({required this.asset, this.onTap});
 
   @override
   State<_IconButtonInner> createState() => _IconButtonInnerState();

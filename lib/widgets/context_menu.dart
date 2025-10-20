@@ -5,10 +5,9 @@ import 'package:vettore/widgets/input_value_type/dropdown_overlay.dart'
     show kDropdownItemHeight, kDropdownPanelWidth;
 
 class ContextMenuItem {
+  const ContextMenuItem({required this.label, required this.onTap});
   final String label;
   final VoidCallback onTap;
-
-  const ContextMenuItem({required this.label, required this.onTap});
 }
 
 class ContextMenuController {
@@ -90,9 +89,9 @@ class ContextMenu {
 }
 
 class _ContextMenuPanel extends StatefulWidget {
+  const _ContextMenuPanel({required this.items, required this.onDismiss});
   final List<ContextMenuItem> items;
   final VoidCallback onDismiss;
-  const _ContextMenuPanel({required this.items, required this.onDismiss});
 
   @override
   State<_ContextMenuPanel> createState() => _ContextMenuPanelState();
@@ -127,7 +126,8 @@ class _ContextMenuPanelState extends State<_ContextMenuPanel> {
           return KeyEventResult.ignored;
         },
         child: ConstrainedBox(
-          constraints: const BoxConstraints.tightFor(width: kDropdownPanelWidth),
+          constraints:
+              const BoxConstraints.tightFor(width: kDropdownPanelWidth),
           child: Container(
             padding: ContextMenu.panelPadding,
             decoration: const BoxDecoration(
@@ -166,8 +166,8 @@ class _ContextMenuPanelState extends State<_ContextMenuPanel> {
 }
 
 class _MenuRow extends StatefulWidget {
-  final String label;
   const _MenuRow({required this.label});
+  final String label;
   @override
   State<_MenuRow> createState() => _MenuRowState();
 }
@@ -204,12 +204,6 @@ class _MenuRowState extends State<_MenuRow> {
 }
 
 class _ContextMenuRow extends StatelessWidget {
-  final String label;
-  final bool hovered;
-  final VoidCallback onTap;
-  final VoidCallback onEnter;
-  final VoidCallback onExit;
-
   const _ContextMenuRow({
     required this.label,
     required this.hovered,
@@ -217,6 +211,11 @@ class _ContextMenuRow extends StatelessWidget {
     required this.onEnter,
     required this.onExit,
   });
+  final String label;
+  final bool hovered;
+  final VoidCallback onTap;
+  final VoidCallback onEnter;
+  final VoidCallback onExit;
 
   @override
   Widget build(BuildContext context) {

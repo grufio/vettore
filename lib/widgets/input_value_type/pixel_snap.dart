@@ -2,8 +2,8 @@ import 'package:flutter/widgets.dart';
 
 /// Wraps a child and aligns it to device pixels to avoid half-pixel blurring.
 class PixelSnap extends StatelessWidget {
-  final Widget child;
   const PixelSnap({super.key, required this.child});
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {

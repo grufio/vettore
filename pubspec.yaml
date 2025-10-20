@@ -95,6 +95,8 @@ flutter:
     - assets/images/layout/
     - assets/images/test/
     - assets/icons/16/
+    - assets/icons/20/
+    - assets/icons/24/
     - assets/icons/32/
     - lib/input/norma_pro_color_codes.csv
     - scripts/quantize.py

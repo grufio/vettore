@@ -3,15 +3,6 @@ import 'package:vettore/widgets/section_sidebar.dart';
 import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 
 class InputRowFull extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode? focusNode;
-  final String? placeholder;
-  final String? suffixText;
-  final String prefixIconAsset;
-  final String? actionIconAsset;
-  final VoidCallback? onActionTap;
-  final ValueChanged<String>? onSubmitted;
-
   const InputRowFull({
     super.key,
     required this.controller,
@@ -23,6 +14,14 @@ class InputRowFull extends StatelessWidget {
     this.onActionTap,
     this.onSubmitted,
   });
+  final TextEditingController controller;
+  final FocusNode? focusNode;
+  final String? placeholder;
+  final String? suffixText;
+  final String prefixIconAsset;
+  final String? actionIconAsset;
+  final VoidCallback? onActionTap;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {

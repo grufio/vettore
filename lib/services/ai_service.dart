@@ -5,10 +5,9 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:vettore/services/settings_service.dart';
 
 class AIService {
-  final SettingsService _settingsService;
-
   AIService({required SettingsService settingsService})
       : _settingsService = settingsService;
+  final SettingsService _settingsService;
 
   Future<Map<String, dynamic>> importRecipeFromImage(
     Uint8List imageData,
@@ -41,7 +40,12 @@ class AIService {
       final String cleanedJson =
           response.text!.replaceAll('`', '').replaceAll('json', '').trim();
 
-      final Map<String, dynamic> decodedJson = jsonDecode(cleanedJson);
+      final dynamic decoded = jsonDecode(cleanedJson);
+      if (decoded is! Map<String, dynamic>) {
+        throw Exception(
+            'AI response was not a JSON object. Raw: ${response.text}');
+      }
+      final Map<String, dynamic> decodedJson = decoded;
 
       final componentsData = decodedJson['components'];
 
@@ -73,8 +77,7 @@ class AIService {
         'components': componentsData,
       };
     } catch (e) {
-      print('Error parsing recipe from image: $e');
-      // Re-throw the exception to be handled by the caller
+      // Avoid print in production; surface to caller
       rethrow;
     }
   }

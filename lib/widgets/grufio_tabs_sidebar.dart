@@ -2,23 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
 class GrufioTabs extends StatelessWidget {
-  final List<String> tabTitles;
-  final int selectedIndex;
-  final ValueChanged<int> onTabSelected;
-
   const GrufioTabs({
     super.key,
     required this.tabTitles,
     required this.selectedIndex,
     required this.onTabSelected,
   });
+  final List<String> tabTitles;
+  final int selectedIndex;
+  final ValueChanged<int> onTabSelected;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         for (int index = 0; index < tabTitles.length; index++) ...[
           GestureDetector(

@@ -3,11 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class DropdownItem extends StatefulWidget {
-  final String label;
-  final bool isSelected;
-  final bool highlighted;
-  final VoidCallback onTap;
-  final VoidCallback onHover;
   const DropdownItem({
     super.key,
     required this.label,
@@ -16,6 +11,11 @@ class DropdownItem extends StatefulWidget {
     required this.onTap,
     required this.onHover,
   });
+  final String label;
+  final bool isSelected;
+  final bool highlighted;
+  final VoidCallback onTap;
+  final VoidCallback onHover;
 
   @override
   State<DropdownItem> createState() => _DropdownItemState();

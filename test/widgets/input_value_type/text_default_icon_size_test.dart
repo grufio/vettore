@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vettore/widgets/input_value_type/text_default.dart';
 import 'package:vettore/widgets/input_value_type/prefix_icon.dart';
+import 'package:vettore/widgets/input_value_type/text_default.dart';
 
 void main() {
   Widget host(Widget child) => MaterialApp(

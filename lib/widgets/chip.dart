@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/theme/app_theme_typography.dart';
 
 /// Active filter chip
 /// Specs:
@@ -8,15 +9,12 @@ import 'package:vettore/theme/app_theme_colors.dart';
 /// - text: bold 12px black
 /// - background: kBackgroundColor
 class ContentChip extends StatelessWidget {
-  final String label;
-
   const ContentChip.active({super.key, required this.label});
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    final appText = Theme.of(context).extension<AppTextStyles>();
-    final TextStyle textStyle = (appText?.bodyM ??
-            const TextStyle(fontSize: 12.0))
+    final TextStyle textStyle = appTextStyles.bodyM
         .copyWith(fontWeight: FontWeight.bold, color: kGrey100, height: 1.0);
 
     return Container(

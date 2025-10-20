@@ -6,11 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class ImageUploadText extends StatefulWidget {
-  final Future<void> Function(Uint8List bytes)? onImageDropped;
-  final VoidCallback? onUploadTap;
-  final String? leadingIconAsset;
-  final double leadingIconSize;
-
   const ImageUploadText({
     super.key,
     this.onImageDropped,
@@ -18,6 +13,10 @@ class ImageUploadText extends StatefulWidget {
     this.leadingIconAsset,
     this.leadingIconSize = 64.0,
   });
+  final Future<void> Function(Uint8List bytes)? onImageDropped;
+  final VoidCallback? onUploadTap;
+  final String? leadingIconAsset;
+  final double leadingIconSize;
 
   @override
   State<ImageUploadText> createState() => _ImageUploadTextState();

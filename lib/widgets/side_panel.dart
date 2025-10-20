@@ -4,17 +4,6 @@ import 'package:vettore/theme/app_theme_colors.dart';
 enum SidePanelSide { left, right }
 
 class SidePanel extends StatelessWidget {
-  final SidePanelSide side;
-  final double width;
-  final double topPadding;
-  final double horizontalPadding;
-  final Widget child;
-  final bool resizable;
-  final double minWidth;
-  final double maxWidth;
-  final ValueChanged<double>? onResizeDelta;
-  final VoidCallback? onResetWidth;
-
   const SidePanel({
     super.key,
     required this.side,
@@ -28,15 +17,25 @@ class SidePanel extends StatelessWidget {
     this.onResizeDelta,
     this.onResetWidth,
   });
+  final SidePanelSide side;
+  final double width;
+  final double topPadding;
+  final double horizontalPadding;
+  final Widget child;
+  final bool resizable;
+  final double minWidth;
+  final double maxWidth;
+  final ValueChanged<double>? onResizeDelta;
+  final VoidCallback? onResetWidth;
 
   @override
   Widget build(BuildContext context) {
     final Border border = side == SidePanelSide.left
         ? const Border(
-            right: BorderSide(color: kBordersColor, width: 1.0),
+            right: BorderSide(color: kBordersColor),
           )
         : const Border(
-            left: BorderSide(color: kBordersColor, width: 1.0),
+            left: BorderSide(color: kBordersColor),
           );
 
     return SizedBox(
@@ -44,7 +43,7 @@ class SidePanel extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Container(
+          DecoratedBox(
             decoration: BoxDecoration(
               color: kWhite,
               border: border,

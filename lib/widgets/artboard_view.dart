@@ -4,15 +4,6 @@ import 'package:flutter/widgets.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class ArtboardView extends StatelessWidget {
-  final TransformationController controller;
-  final double boardW;
-  final double boardH;
-  final double canvasW;
-  final double canvasH;
-  final Uint8List? bytes;
-  final double outerPad;
-  final Key? viewportKey;
-
   const ArtboardView({
     super.key,
     required this.controller,
@@ -24,6 +15,14 @@ class ArtboardView extends StatelessWidget {
     this.outerPad = 0.0,
     this.viewportKey,
   });
+  final TransformationController controller;
+  final double boardW;
+  final double boardH;
+  final double canvasW;
+  final double canvasH;
+  final Uint8List? bytes;
+  final double outerPad;
+  final Key? viewportKey;
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +38,6 @@ class ArtboardView extends StatelessWidget {
             transformationController: controller,
             minScale: 0.25,
             maxScale: 8.0,
-            scaleEnabled: true,
-            panEnabled: true,
             constrained: false,
             boundaryMargin: margin,
             child: RepaintBoundary(
@@ -74,10 +71,7 @@ class ArtboardView extends StatelessWidget {
                                       child: Image.memory(
                                         bytes!,
                                         fit: BoxFit.none,
-                                        alignment: Alignment.center,
                                         filterQuality: FilterQuality.none,
-                                        cacheWidth: null,
-                                        cacheHeight: null,
                                         gaplessPlayback: true,
                                       ),
                                     ),
@@ -128,9 +122,9 @@ class HairlineCanvasBorderPainter extends CustomPainter {
 }
 
 class HairlineBorderPainter extends CustomPainter {
+  const HairlineBorderPainter({required this.scale, required this.dpr});
   final double scale;
   final double dpr;
-  const HairlineBorderPainter({required this.scale, required this.dpr});
 
   @override
   void paint(Canvas canvas, Size size) {

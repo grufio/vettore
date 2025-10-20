@@ -1,6 +1,6 @@
+import 'package:drift/drift.dart';
 import 'package:flutter/widgets.dart';
 import 'package:vettore/data/database.dart';
-import 'package:drift/drift.dart';
 
 // A one-time script to manually patch the weights for a few specific colors.
 //

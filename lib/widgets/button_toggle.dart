@@ -3,12 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class ButtonToggle extends StatefulWidget {
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final String onIconAsset; // shown when value == true (linked)
-  final String offIconAsset; // shown when value == false (unlinked)
-  final bool disabled;
-
   const ButtonToggle({
     super.key,
     required this.value,
@@ -17,6 +11,11 @@ class ButtonToggle extends StatefulWidget {
     this.offIconAsset = 'assets/icons/32/unlink.svg',
     this.disabled = false,
   });
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String onIconAsset; // shown when value == true (linked)
+  final String offIconAsset; // shown when value == false (unlinked)
+  final bool disabled;
 
   @override
   State<ButtonToggle> createState() => _ButtonToggleState();
@@ -49,7 +48,7 @@ class _ButtonToggleState extends State<ButtonToggle> {
               color: _hovered && !widget.disabled ? kGrey10 : kTransparent,
               borderRadius: BorderRadius.circular(4.0),
               border: widget.value && !widget.disabled
-                  ? Border.all(color: kBordersColor, width: 1.0)
+                  ? Border.all(color: kBordersColor)
                   : null,
             ),
             alignment: Alignment.center,

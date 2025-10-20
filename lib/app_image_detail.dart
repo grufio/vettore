@@ -284,13 +284,13 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
 extension on _AppImageDetailPageState {
   void _onResizeTap() async {
     if (_currentProjectId == null) return;
-    String _trimDot(String s) {
+    String trimDot(String s) {
       final String t = s.trim();
       return t.endsWith('.') ? t.substring(0, t.length - 1) : t;
     }
 
-    final String wText = _trimDot(_inputValueController.text);
-    final String hText = _trimDot(_inputValueController2.text);
+    final String wText = trimDot(_inputValueController.text);
+    final String hText = trimDot(_inputValueController2.text);
     final double? wVal = double.tryParse(wText);
     final double? hVal = double.tryParse(hText);
     // Resolve image id and DPI

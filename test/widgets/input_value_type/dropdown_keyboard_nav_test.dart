@@ -20,7 +20,6 @@ void main() {
       dropdownItems: items,
       selectedItem: 'linear',
       variant: InputVariant.dropdown,
-      readOnly: false,
       suffixKey: const ValueKey('ivt-suffix'),
     )));
 

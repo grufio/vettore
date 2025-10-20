@@ -4,8 +4,8 @@ import 'package:vettore/data/database.dart';
 
 /// ProjectService centralizes common project operations via the repository
 class ProjectService {
-  final ProjectRepository repo;
   ProjectService({required this.repo});
+  final ProjectRepository repo;
 
   Future<int> createDraft(String title, {String? author}) {
     return repo.insertDraft(title: title, author: author);

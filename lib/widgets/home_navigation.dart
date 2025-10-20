@@ -3,11 +3,6 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
 class HomeNavigation extends StatelessWidget {
-  final double rowHeight;
-  final ValueChanged<int> onTap;
-  final double horizontalPadding;
-  final int selectedIndex;
-
   const HomeNavigation({
     super.key,
     required this.onTap,
@@ -15,6 +10,10 @@ class HomeNavigation extends StatelessWidget {
     this.horizontalPadding = 16.0,
     this.selectedIndex = 1,
   });
+  final double rowHeight;
+  final ValueChanged<int> onTap;
+  final double horizontalPadding;
+  final int selectedIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -120,13 +119,6 @@ class HomeNavigation extends StatelessWidget {
 }
 
 class _NavRow extends StatefulWidget {
-  final String label;
-  final double height;
-  final double horizontalPadding;
-  final TextStyle textStyle;
-  final VoidCallback onTap;
-  final bool selected;
-
   const _NavRow({
     required this.label,
     required this.height,
@@ -135,6 +127,12 @@ class _NavRow extends StatefulWidget {
     required this.onTap,
     this.selected = false,
   });
+  final String label;
+  final double height;
+  final double horizontalPadding;
+  final TextStyle textStyle;
+  final VoidCallback onTap;
+  final bool selected;
 
   @override
   State<_NavRow> createState() => _NavRowState();

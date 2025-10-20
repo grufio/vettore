@@ -5,9 +5,9 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class PdfVectorObject {
+  PdfVectorObject({required this.x, required this.y, required this.color});
   final int x, y;
   final Color color;
-  PdfVectorObject({required this.x, required this.y, required this.color});
 }
 
 Future<Uint8List> generateVectorPdf({

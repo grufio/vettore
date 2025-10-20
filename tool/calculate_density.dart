@@ -1,6 +1,6 @@
+import 'package:drift/drift.dart';
 import 'package:flutter/widgets.dart';
 import 'package:vettore/data/database.dart';
-import 'package:drift/drift.dart';
 
 // A script to calculate the color density based on the weight and save it.
 //

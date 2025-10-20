@@ -2,11 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class ContentFilter extends StatelessWidget {
-  final List<Widget> children;
-  final double height;
-  final double horizontalPadding;
-  final double gap;
-
   const ContentFilter({
     super.key,
     required this.children,
@@ -14,6 +9,10 @@ class ContentFilter extends StatelessWidget {
     this.horizontalPadding = 24.0,
     this.gap = 4.0,
   });
+  final List<Widget> children;
+  final double height;
+  final double horizontalPadding;
+  final double gap;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +22,6 @@ class ContentFilter extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       alignment: Alignment.centerLeft,
       child: Row(
-        mainAxisSize: MainAxisSize.max,
         children: _withGaps(children, gap),
       ),
     );

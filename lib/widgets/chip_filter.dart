@@ -8,12 +8,11 @@ import 'package:vettore/theme/app_theme_typography.dart';
 /// - font: medium 12px, color kGrey90
 /// - background: kChipActiveBackground
 class ContentChip extends StatefulWidget {
-  final String label;
-  final bool isActive;
-
   const ContentChip.active({super.key, required this.label}) : isActive = true;
   const ContentChip.inactive({super.key, required this.label})
       : isActive = false;
+  final String label;
+  final bool isActive;
 
   @override
   State<ContentChip> createState() => _ContentChipState();

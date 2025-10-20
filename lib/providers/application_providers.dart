@@ -51,8 +51,6 @@ final aiServiceProvider = Provider<AIService>((ref) {
 
 // Overview menu selection (HomeNavigation) - default Projects / All
 class HomeNavIndexNotifier extends StateNotifier<int> {
-  final SettingsService _settings;
-  static const String _key = 'homeNavIndex';
   HomeNavIndexNotifier(this._settings) : super(1) {
     try {
       final cached = _settings.getInt(_key, 1);
@@ -61,6 +59,8 @@ class HomeNavIndexNotifier extends StateNotifier<int> {
       // ignore settings read errors
     }
   }
+  final SettingsService _settings;
+  static const String _key = 'homeNavIndex';
   void set(int index) {
     state = index;
     _settings.setInt(_key, index);

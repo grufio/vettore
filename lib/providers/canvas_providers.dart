@@ -1,13 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class CanvasSpec {
-  final double widthPx;
-  final double heightPx;
-
   const CanvasSpec({
     required this.widthPx,
     required this.heightPx,
   });
+  final double widthPx;
+  final double heightPx;
 
   CanvasSpec copyWith({double? widthPx, double? heightPx}) {
     return CanvasSpec(

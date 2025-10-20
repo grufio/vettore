@@ -12,17 +12,16 @@ import 'package:drift/drift.dart' as drift;
 import 'package:vettore/widgets/grufio_text_field_simple.dart';
 
 class ColorEditPage extends ConsumerStatefulWidget {
-  final PaletteColorWithComponents initialColor;
-  final Function(
-    PaletteColorsCompanion,
-    List<ColorComponentsCompanion>,
-  ) onSave;
-
   const ColorEditPage({
     super.key,
     required this.initialColor,
     required this.onSave,
   });
+  final PaletteColorWithComponents initialColor;
+  final void Function(
+    PaletteColorsCompanion,
+    List<ColorComponentsCompanion>,
+  ) onSave;
 
   @override
   ConsumerState<ColorEditPage> createState() => _ColorEditPageState();
@@ -32,7 +31,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   late TextEditingController _titleController;
   late TextEditingController _statusController;
   late Color _currentColor;
-  late List<ColorComponentsCompanion> _components;
+  // Removed unused _components field
   final _titleFocusNode = FocusNode();
   final _statusFocusNode = FocusNode();
 
@@ -44,8 +43,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
     _statusController =
         TextEditingController(text: widget.initialColor.color.status);
     _currentColor = Color(widget.initialColor.color.color);
-    _components =
-        widget.initialColor.components.map((c) => c.toCompanion(true)).toList();
+    // Components are managed via palette detail logic; no local cache needed
   }
 
   @override
@@ -80,7 +78,7 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
   }
 
   void _showImportDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => ImportRecipeDialog(
         onImageImported: (imageData) async {
@@ -331,10 +329,9 @@ class _ColorEditPageState extends ConsumerState<ColorEditPage> {
 }
 
 class _ComponentDialog extends ConsumerStatefulWidget {
-  final ColorComponentsCompanion? component;
-  final Function(ColorComponentsCompanion) onSave;
-
   const _ComponentDialog({this.component, required this.onSave});
+  final ColorComponentsCompanion? component;
+  final void Function(ColorComponentsCompanion) onSave;
 
   @override
   ConsumerState<_ComponentDialog> createState() => _ComponentDialogState();

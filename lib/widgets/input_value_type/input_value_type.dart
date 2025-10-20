@@ -39,39 +39,6 @@ enum InputVariant {
 /// - [InputVariant.dropdown] shows only a chevron.
 /// For read-only mode, selection/cursor are disabled and the caret is hidden.
 class InputValueType extends StatefulWidget {
-  static const InputVariant defaultVariant = InputVariant.regular;
-  final TextEditingController? controller;
-  final FocusNode? focusNode;
-  final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onSubmitted;
-  final TextAlign textAlign;
-  final bool autofocus;
-  final String? placeholder;
-  final String? suffixText;
-  final String? prefixIconAsset;
-  final BoxFit? prefixIconFit;
-  final AlignmentGeometry? prefixIconAlignment;
-  final double? prefixIconWidth;
-  final double? prefixIconHeight;
-  final int? maxLength;
-  final TextCapitalization? textCapitalization;
-  final bool readOnly;
-  // When false, user cannot select/mark the text (cursor hidden, no selection handles)
-  final bool enableSelection;
-  // Dropdown support (optional). If provided, tapping the field opens a dropdown.
-  final List<String>? dropdownItems;
-  // Optional input formatters for the internal TextField
-  final List<TextInputFormatter>? inputFormatters;
-  final String? selectedItem;
-  final ValueChanged<String>? onItemSelected;
-  final InputDropdownController? dropdownController;
-  final InputVariant variant;
-  final String? dropdownIconAsset;
-  // Testing/targeting aid: stable key for the tappable suffix widget
-  final Key? suffixKey;
-  // Read-only visual mode: white bg, visible border, grey70 text/icons, no interactions
-  final bool readOnlyView;
-
   const InputValueType({
     super.key,
     this.controller,
@@ -129,6 +96,38 @@ class InputValueType extends StatefulWidget {
       enableSelection: true,
     );
   }
+  static const InputVariant defaultVariant = InputVariant.regular;
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final TextAlign textAlign;
+  final bool autofocus;
+  final String? placeholder;
+  final String? suffixText;
+  final String? prefixIconAsset;
+  final BoxFit? prefixIconFit;
+  final AlignmentGeometry? prefixIconAlignment;
+  final double? prefixIconWidth;
+  final double? prefixIconHeight;
+  final int? maxLength;
+  final TextCapitalization? textCapitalization;
+  final bool readOnly;
+  // When false, user cannot select/mark the text (cursor hidden, no selection handles)
+  final bool enableSelection;
+  // Dropdown support (optional). If provided, tapping the field opens a dropdown.
+  final List<String>? dropdownItems;
+  // Optional input formatters for the internal TextField
+  final List<TextInputFormatter>? inputFormatters;
+  final String? selectedItem;
+  final ValueChanged<String>? onItemSelected;
+  final InputDropdownController? dropdownController;
+  final InputVariant variant;
+  final String? dropdownIconAsset;
+  // Testing/targeting aid: stable key for the tappable suffix widget
+  final Key? suffixKey;
+  // Read-only visual mode: white bg, visible border, grey70 text/icons, no interactions
+  final bool readOnlyView;
 
   @override
   State<InputValueType> createState() => _InputValueTypeState();
@@ -305,16 +304,14 @@ class _InputValueTypeState extends State<InputValueType> {
             color: widget.readOnlyView ? kWhite : kGrey10,
             borderRadius: BorderRadius.circular(4.0),
             border: widget.readOnlyView
-                ? Border.all(color: kBordersColor, width: 1.0)
+                ? Border.all(color: kBordersColor)
                 : Border.all(
                     color: _focusNode.hasFocus
                         ? kInputFocus
                         : (_hoverField ? kBordersColor : kTransparent),
-                    width: 1.0,
                   ),
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Always show a prefix icon; default substitutes the label
               ...[
@@ -323,7 +320,6 @@ class _InputValueTypeState extends State<InputValueType> {
                   size: widget.prefixIconWidth ?? 16.0,
                   fit: widget.prefixIconFit ?? BoxFit.none,
                   alignment: widget.prefixIconAlignment ?? Alignment.centerLeft,
-                  color: kGrey70,
                 ),
                 const SizedBox(width: 8.0),
               ],
@@ -511,7 +507,6 @@ class _InputValueTypeState extends State<InputValueType> {
         });
       },
       onDismiss: _removeDropdown,
-      panelWidth: ivt_ovl.kDropdownPanelWidth,
       highlightedIndexListenable: _highlightedIndex,
       listScrollController: _listScrollController,
       onHighlightNext: _highlightNext,
@@ -612,15 +607,15 @@ bool _listEquals<T>(List<T> a, List<T> b) {
 
 // Legacy, kept for compatibility; replaced by DropdownItem in separate file
 class _IconSuffixButton extends StatefulWidget {
-  final String iconAsset;
-  final VoidCallback onTap;
-  final void Function(TapDownDetails)? onTapDown;
   const _IconSuffixButton({
     super.key,
     required this.iconAsset,
     required this.onTap,
     this.onTapDown,
   });
+  final String iconAsset;
+  final VoidCallback onTap;
+  final void Function(TapDownDetails)? onTapDown;
 
   @override
   State<_IconSuffixButton> createState() => _IconSuffixButtonState();

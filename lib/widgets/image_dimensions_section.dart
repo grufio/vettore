@@ -8,16 +8,6 @@ import 'package:vettore/services/image_detail_controller.dart';
 import 'package:vettore/widgets/image_dimension_panel.dart';
 
 class ImageDimensionsSection extends ConsumerWidget {
-  final int projectId;
-  final TextEditingController widthTextController;
-  final TextEditingController heightTextController;
-  final ImageDetailController imgCtrl;
-  final bool linkWH;
-  final ValueChanged<bool> onLinkChanged;
-  final String interpolation;
-  final ValueChanged<String> onInterpolationChanged;
-  final VoidCallback onResizeTap;
-
   const ImageDimensionsSection({
     super.key,
     required this.projectId,
@@ -30,6 +20,15 @@ class ImageDimensionsSection extends ConsumerWidget {
     required this.onInterpolationChanged,
     required this.onResizeTap,
   });
+  final int projectId;
+  final TextEditingController widthTextController;
+  final TextEditingController heightTextController;
+  final ImageDetailController imgCtrl;
+  final bool linkWH;
+  final ValueChanged<bool> onLinkChanged;
+  final String interpolation;
+  final ValueChanged<String> onInterpolationChanged;
+  final VoidCallback onResizeTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

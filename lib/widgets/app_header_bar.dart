@@ -94,7 +94,7 @@ class _AppHeaderBarState extends State<AppHeaderBar>
       height: widget.height,
       decoration: const BoxDecoration(
         color: kHeaderBackgroundColor,
-        border: Border(bottom: BorderSide(color: kBordersColor, width: 1)),
+        border: Border(bottom: BorderSide(color: kBordersColor)),
       ),
       padding: EdgeInsets.only(left: leftPad),
       child: Row(
@@ -110,7 +110,6 @@ class _AppHeaderBarState extends State<AppHeaderBar>
                   width: t.width,
                   isActive: i == widget.activeIndex,
                   showLeftBorder: i == 0,
-                  showRightBorder: true,
                   onTap: () => widget.onTabSelected(i),
                   onClose: (widget.showCloseButtons && i > 0)
                       ? () => widget.onCloseTab?.call(i)

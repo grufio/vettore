@@ -3,8 +3,8 @@ import 'package:csv/csv.dart';
 import 'package:vettore/data/database.dart';
 
 class LegoColorsImporter {
-  final AppDatabase db;
   LegoColorsImporter(this.db);
+  final AppDatabase db;
 
   Future<int> importFromAssetsCsv(String assetPath) async {
     final csvString = await rootBundle.loadString(assetPath);

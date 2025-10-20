@@ -16,7 +16,6 @@ final canvasPreviewPxProvider =
       widthUnit: proj.canvasWidthUnit,
       heightValue: proj.canvasHeightValue,
       heightUnit: proj.canvasHeightUnit,
-      previewDpi: 96,
     );
   });
 });

@@ -6,9 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 
 class ImportRecipeDialog extends StatefulWidget {
-  final Future<void> Function(Uint8List) onImageImported;
-
   const ImportRecipeDialog({super.key, required this.onImageImported});
+  final Future<void> Function(Uint8List) onImageImported;
 
   @override
   State<ImportRecipeDialog> createState() => _ImportRecipeDialogState();
@@ -208,7 +207,7 @@ class _ImportRecipeDialogState extends State<ImportRecipeDialog> {
                 onDragDone: _onDragDone,
                 onDragEntered: _onDragEntered,
                 onDragExited: _onDragExited,
-                child: Container(
+                child: DecoratedBox(
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: _isDragging ? Colors.blue : Colors.grey,

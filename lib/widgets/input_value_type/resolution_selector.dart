@@ -3,11 +3,6 @@ import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
 import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 
 class ResolutionSelector extends StatefulWidget {
-  final int value; // dpi
-  final ValueChanged<int> onChanged;
-  final bool enabled;
-  final bool readOnlyView;
-
   const ResolutionSelector({
     super.key,
     required this.value,
@@ -15,6 +10,10 @@ class ResolutionSelector extends StatefulWidget {
     this.enabled = true,
     this.readOnlyView = false,
   });
+  final int value; // dpi
+  final ValueChanged<int> onChanged;
+  final bool enabled;
+  final bool readOnlyView;
 
   @override
   State<ResolutionSelector> createState() => _ResolutionSelectorState();
@@ -50,7 +49,6 @@ class _ResolutionSelectorState extends State<ResolutionSelector> {
     return SectionInput(
       full: InputValueType(
         controller: _controller,
-        placeholder: null,
         prefixIconAsset: 'assets/icons/16/help.svg',
         prefixIconWidth: 16.0,
         prefixIconHeight: 16.0,
@@ -63,7 +61,6 @@ class _ResolutionSelectorState extends State<ResolutionSelector> {
         variant: InputVariant.dropdown,
         readOnly: !widget.enabled,
         readOnlyView: widget.readOnlyView || !widget.enabled,
-        onChanged: null,
         suffixKey: const ValueKey('dpi-suffix'),
         onItemSelected: (label) {
           final parsed = int.tryParse(label);

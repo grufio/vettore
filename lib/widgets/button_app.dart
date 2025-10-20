@@ -4,9 +4,8 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
 class AddProjectButton extends StatefulWidget {
-  final VoidCallback onTap;
-
   const AddProjectButton({super.key, required this.onTap});
+  final VoidCallback onTap;
 
   @override
   State<AddProjectButton> createState() => _AddProjectButtonState();
@@ -38,7 +37,6 @@ class _AddProjectButtonState extends State<AddProjectButton> {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
             textBaseline: TextBaseline.alphabetic,
             children: [
               SvgPicture.asset(
@@ -63,9 +61,8 @@ class _AddProjectButtonState extends State<AddProjectButton> {
 }
 
 class DeleteProjectButton extends StatefulWidget {
-  final VoidCallback onTap;
-
   const DeleteProjectButton({super.key, required this.onTap});
+  final VoidCallback onTap;
 
   @override
   State<DeleteProjectButton> createState() => _DeleteProjectButtonState();
@@ -108,11 +105,6 @@ class _DeleteProjectButtonState extends State<DeleteProjectButton> {
 }
 
 class OutlinedActionButton extends StatefulWidget {
-  final String label;
-  final VoidCallback onTap;
-  final double? minWidth;
-  final bool enabled;
-
   const OutlinedActionButton({
     super.key,
     required this.label,
@@ -120,6 +112,10 @@ class OutlinedActionButton extends StatefulWidget {
     this.minWidth,
     this.enabled = true,
   });
+  final String label;
+  final VoidCallback onTap;
+  final double? minWidth;
+  final bool enabled;
 
   @override
   State<OutlinedActionButton> createState() => _OutlinedActionButtonState();
@@ -153,7 +149,7 @@ class _OutlinedActionButtonState extends State<OutlinedActionButton> {
           decoration: BoxDecoration(
             color: kWhite,
             borderRadius: BorderRadius.circular(6.0),
-            border: Border.all(color: borderColor, width: 1.0),
+            border: Border.all(color: borderColor),
           ),
           alignment: Alignment.center,
           child: Text(

@@ -19,15 +19,6 @@ const double _kCloseButtonBorderRadius = 4.0;
 // --- Colors directly from theme
 
 class GrufioTab extends StatefulWidget {
-  final String iconPath;
-  final String? label;
-  final bool isActive;
-  final bool showLeftBorder;
-  final bool showRightBorder;
-  final VoidCallback onTap;
-  final VoidCallback? onClose;
-  final double? width;
-
   const GrufioTab({
     super.key,
     required this.iconPath,
@@ -39,6 +30,14 @@ class GrufioTab extends StatefulWidget {
     this.showLeftBorder = false,
     this.showRightBorder = true,
   });
+  final String iconPath;
+  final String? label;
+  final bool isActive;
+  final bool showLeftBorder;
+  final bool showRightBorder;
+  final VoidCallback onTap;
+  final VoidCallback? onClose;
+  final double? width;
 
   @override
   State<GrufioTab> createState() => _GrufioTabState();
@@ -54,7 +53,7 @@ class _GrufioTabState extends State<GrufioTab> {
       onEnter: (_) => setState(() => _isCloseButtonHovered = true),
       onExit: (_) => setState(() => _isCloseButtonHovered = false),
       child: GestureDetector(
-        onTap: widget.onClose!,
+        onTap: widget.onClose,
         child: Container(
           width: _kCloseButtonSize,
           height: _kCloseButtonSize,
@@ -140,13 +139,11 @@ class _GrufioTabState extends State<GrufioTab> {
                   : (_isHovered ? kTabBackgroundHover : kTabBackgroundInactive),
               border: Border(
                 left: widget.showLeftBorder
-                    ? const BorderSide(
-                        color: kBordersColor, width: _kTabBorderWidth)
+                    ? const BorderSide(color: kBordersColor)
                     : BorderSide.none,
                 right: widget.showRightBorder
                     ? const BorderSide(
                         color: kBordersColor,
-                        width: _kTabBorderWidth,
                       )
                     : BorderSide.none,
               ),
@@ -162,9 +159,8 @@ class _GrufioTabState extends State<GrufioTab> {
 /// A plus-tab button that matches the inactive tab styling but has no borders.
 /// Fixed size: 40x40. Displays only the add icon and triggers [onTap] when pressed.
 class GrufioTabButton extends StatefulWidget {
-  final VoidCallback onTap;
-
   const GrufioTabButton({super.key, required this.onTap});
+  final VoidCallback onTap;
 
   @override
   State<GrufioTabButton> createState() => _GrufioTabButtonState();
@@ -191,7 +187,6 @@ class _GrufioTabButtonState extends State<GrufioTabButton> {
             decoration: BoxDecoration(
               color: _isHovered ? kTabBackgroundHover : kTabBackgroundInactive,
               border: const Border(
-                left: BorderSide.none,
                 right: BorderSide.none,
               ),
             ),

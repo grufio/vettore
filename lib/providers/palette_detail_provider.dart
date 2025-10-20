@@ -1,4 +1,3 @@
-
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/data/database.dart';
@@ -27,11 +26,10 @@ final paletteDetailLogicProvider =
 });
 
 class PaletteDetailLogic {
+  PaletteDetailLogic(this._ref, this.paletteId, this._paletteRepository);
   final Ref _ref;
   final int paletteId;
   final PaletteRepository _paletteRepository;
-
-  PaletteDetailLogic(this._ref, this.paletteId, this._paletteRepository);
 
   Future<void> updateDetails({
     required String name,

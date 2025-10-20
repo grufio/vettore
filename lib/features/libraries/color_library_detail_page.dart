@@ -76,7 +76,7 @@ class ColorLibraryDetailPage extends ConsumerWidget {
                                 '${variant.size}ml - Stock: ${variant.stock}',
                                 style: Theme.of(context).textTheme.bodySmall,
                               );
-                            }).toList(),
+                            }),
                           ],
                         ),
                       ),

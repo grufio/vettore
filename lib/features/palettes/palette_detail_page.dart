@@ -8,8 +8,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:vettore/repositories/palette_repository.dart';
 
 class PaletteDetailPage extends ConsumerStatefulWidget {
-  final int paletteId;
   const PaletteDetailPage({super.key, required this.paletteId});
+  final int paletteId;
 
   @override
   ConsumerState<PaletteDetailPage> createState() => _PaletteDetailPageState();
@@ -111,9 +111,9 @@ class _PaletteDetailPageState extends ConsumerState<PaletteDetailPage> {
   }
 
   void _editColor(PaletteColorWithComponents color) {
-    Navigator.push(
+    Navigator.push<void>(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (context) => ColorEditPage(
           initialColor: color,
           onSave: (newColor, newComponents) {

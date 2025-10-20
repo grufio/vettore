@@ -3,16 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/repositories/palette_repository.dart';
 
 class PaletteColorList extends ConsumerWidget {
-  final List<PaletteColorWithComponents> colors;
-  final Function(PaletteColorWithComponents) onEdit;
-  final Function(int) onDelete;
-
   const PaletteColorList({
     super.key,
     required this.colors,
     required this.onEdit,
     required this.onDelete,
   });
+  final List<PaletteColorWithComponents> colors;
+  final void Function(PaletteColorWithComponents) onEdit;
+  final void Function(int) onDelete;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

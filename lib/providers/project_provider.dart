@@ -18,12 +18,12 @@ import 'package:vettore/providers/image_providers.dart';
 
 // Image bytes provider: render converted (working) bytes when present, else original
 // Minimal one-time logging to verify source selection
-final Set<int> _loggedBytesOnce = <int>{};
+// removed one-time logs
 // moved to image_providers.dart
 
 // Image dimensions provider: show converted size when a working image exists,
 // otherwise show original size. Minimal one-time logging to verify source.
-final Set<int> _loggedDimsOnce = <int>{};
+// removed one-time logs
 // moved to image_providers.dart
 
 // Image DPI provider: returns the mutable image DPI (images.dpi)
@@ -38,11 +38,6 @@ final projectsStreamProvider =
 
 // Aggregated vendor colors with sizes as comma-separated list
 class VendorColorAggregated {
-  final VendorColor color;
-  final String sizes; // e.g., "35,120,250"
-  final String? rgbHex;
-  final int? startYear;
-  final int? endYear;
   VendorColorAggregated({
     required this.color,
     required this.sizes,
@@ -50,6 +45,11 @@ class VendorColorAggregated {
     this.startYear,
     this.endYear,
   });
+  final VendorColor color;
+  final String sizes; // e.g., "35,120,250"
+  final String? rgbHex;
+  final int? startYear;
+  final int? endYear;
 
   VendorColorAggregated copyWith({
     VendorColor? color,
@@ -138,19 +138,18 @@ final vendorColorsAggregatedProvider = StreamProvider.autoDispose
 
 // A simple data class for vector objects that can be sent to isolates.
 class IsolateVectorObject {
+  IsolateVectorObject(this.x, this.y, this.color);
   final int x, y;
   final int color;
-  IsolateVectorObject(this.x, this.y, this.color);
 
   Map<String, dynamic> toJson() => {'x': x, 'y': y, 'color': color};
 }
 
 // A state class to hold the project data and its decoded image.
 class ProjectState extends Equatable {
+  const ProjectState({required this.project, this.decodedImage});
   final DbProject project;
   final Image? decodedImage;
-
-  const ProjectState({required this.project, this.decodedImage});
 
   @override
   List<Object?> get props => [project, decodedImage];
@@ -219,10 +218,9 @@ final projectLogicProvider =
 });
 
 class ProjectLogic {
+  ProjectLogic(this.ref, this.projectId);
   final Ref ref;
   final int projectId;
-
-  ProjectLogic(this.ref, this.projectId);
 
   /// Runs the Python script to perform color quantization on the project's current image.
   /// This updates the project's image data, palette, and color count, but does not
@@ -281,8 +279,8 @@ class ProjectLogic {
           .write(ImagesCompanion(
         convSrc: Value(newImageData),
         convBytes: Value(newImageData.length),
-        convWidth: Value(decodedDims.width!),
-        convHeight: Value(decodedDims.height!),
+        convWidth: Value(decodedDims.width),
+        convHeight: Value(decodedDims.height),
         convUniqueColors: Value(paletteList.length),
       ));
       final now = DateTime.now().millisecondsSinceEpoch;
@@ -562,10 +560,7 @@ class ProjectLogic {
 
     await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
         .write(ImagesCompanion(
-      convSrc: const Value.absent(),
       convBytes: const Value.absent(),
-      convWidth: const Value.absent(),
-      convHeight: const Value.absent(),
       convUniqueColors: Value(uniqueColorCount),
     ));
     final now = DateTime.now().millisecondsSinceEpoch;
