@@ -43,9 +43,11 @@ class SidePanel extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
+          Container(
+            decoration: const BoxDecoration(
               color: kWhite,
+            ),
+            foregroundDecoration: BoxDecoration(
               border: border,
             ),
             child: Column(
