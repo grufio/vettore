@@ -4,7 +4,8 @@ import 'package:drift/drift.dart' as drift show Variable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/providers/application_providers.dart';
 
-// Image bytes provider: render converted (working) bytes when present, else original
+/// Image bytes (Uint8List?) for an image id.
+/// Source: uses converted bytes when present, otherwise original bytes.
 final imageBytesProvider =
     FutureProvider.family<Uint8List?, int>((ref, imageId) async {
   final db = ref.read(appDatabaseProvider);
@@ -16,8 +17,8 @@ final imageBytesProvider =
   return row?.origSrc;
 });
 
-// Image dimensions provider: show converted size when a working image exists,
-// otherwise show original size.
+/// Raster dimensions (w,h) in integer pixels for an image id.
+/// Source: shows converted dims when converted bytes exist; else original dims.
 final imageDimensionsProvider =
     FutureProvider.family<(int?, int?), int>((ref, imageId) async {
   final db = ref.read(appDatabaseProvider);
@@ -29,7 +30,8 @@ final imageDimensionsProvider =
   return (w, h);
 });
 
-// Image DPI provider: returns the mutable image DPI (images.dpi)
+/// DPI metadata for an image id.
+/// Source: reads `images.dpi` (mutable per-image metadata; does not affect size).
 final imageDpiProvider = FutureProvider.family<int?, int>((ref, imageId) async {
   final db = ref.read(appDatabaseProvider);
   final row = await db.customSelect(
@@ -39,7 +41,8 @@ final imageDpiProvider = FutureProvider.family<int?, int>((ref, imageId) async {
   return row.data['dpi'] as int?;
 });
 
-// Physical pixel dimensions provider (4-decimal floats) - single source of truth
+/// Physical pixel floats (w,h) with 4 decimals.
+/// Source of truth for logical image size; preview raster rounds these to ints.
 final imagePhysPixelsProvider =
     FutureProvider.family<(double?, double?), int>((ref, imageId) async {
   final db = ref.read(appDatabaseProvider);

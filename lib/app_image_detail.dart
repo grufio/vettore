@@ -35,6 +35,7 @@ import 'package:vettore/widgets/image_preview.dart';
 import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
 import 'package:vettore/widgets/side_panel.dart';
+import 'package:vettore/widgets/input_value_type/dimension_compare_utils.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
   const AppImageDetailPage({
@@ -251,17 +252,10 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                           }),
                           onResizeTap: () async {
                             if (_currentProjectId == null) return;
-                            String trimDot(String s) {
-                              final String t = s.trim();
-                              return t.endsWith('.')
-                                  ? t.substring(0, t.length - 1)
-                                  : t;
-                            }
-
                             final String wText =
-                                trimDot(_inputValueController.text);
+                                trimTrailingDot(_inputValueController.text);
                             final String hText =
-                                trimDot(_inputValueController2.text);
+                                trimTrailingDot(_inputValueController2.text);
                             final double? wVal = double.tryParse(wText);
                             final double? hVal = double.tryParse(hText);
                             final int? imgId = ref.read(
