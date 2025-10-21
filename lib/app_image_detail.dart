@@ -317,8 +317,6 @@ extension on _AppImageDetailPageState {
       linked: _linkWH,
     );
     if (targetPhysW <= 0 || targetPhysH <= 0) return;
-    // Persist phys floats regardless of raster no-op
-    await service.persistPhys(ref, imgId, targetPhysW, targetPhysH);
     // Compute raster targets by rounding phys floats
     final (int targetW, int targetH) =
         service.rasterFromPhys(targetPhysW, targetPhysH);
@@ -335,6 +333,8 @@ extension on _AppImageDetailPageState {
       debugPrint(st.toString());
       return;
     }
+    // Commit-on-resize: persist physical floats only after successful resize
+    await service.persistPhys(ref, imgId, targetPhysW, targetPhysH);
     // Refresh controllers from physical floats (maintain logical source)
     if (mounted) {
       _imgCtrl?.applyRemotePx(widthPx: targetPhysW, heightPx: targetPhysH);
@@ -387,6 +387,8 @@ extension on _AppImageDetailPageState {
       'UPDATE images SET phys_width_px4 = ?, phys_height_px4 = ? WHERE id = ?',
       [width?.toDouble(), height?.toDouble(), imageId],
     );
+    // Invalidate phys-pixels provider so any listeners refresh
+    ref.invalidate(imagePhysPixelsProvider(imageId));
     // Update controllers from physical floats
     _imgCtrl?.applyRemotePx(
         widthPx: width?.toDouble(), heightPx: height?.toDouble());
@@ -516,13 +518,9 @@ extension on _AppImageDetailPageState {
 
     final double canvasW = canvasPx.width;
     final double canvasH = canvasPx.height;
-    final dims = (imageId != null)
-        ? ref.watch(
-            imageDimensionsProvider(imageId).select((a) => a.asData?.value),
-          )
-        : null;
-    final double imgW = (dims?.$1 ?? canvasW.toInt()).toDouble();
-    final double imgH = (dims?.$2 ?? canvasH.toInt()).toDouble();
+    // Derive preview size from image bytes or fallback to canvas size
+    final double imgW = canvasW;
+    final double imgH = canvasH;
     final double maxContentW = imgW > canvasW ? imgW : canvasW;
     final double maxContentH = imgH > canvasH ? imgH : canvasH;
     final double margin = (0.1 * (maxContentW)).clamp(120.0, 480.0);

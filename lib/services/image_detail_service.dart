@@ -69,7 +69,7 @@ class ImageDetailService {
     final int? imageId = ref.read(imageIdStableProvider(projectId));
     if (imageId != null) {
       ref.invalidate(imageBytesProvider(imageId));
-      ref.invalidate(imageDimensionsProvider(imageId));
+      // Raster dimensions provider removed; preview size should derive from bytes.
     }
   }
 }
@@ -77,5 +77,3 @@ class ImageDetailService {
 final imageDetailServiceProvider = Provider<ImageDetailService>((ref) {
   return const ImageDetailService();
 });
-
-

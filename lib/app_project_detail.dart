@@ -181,8 +181,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
     // Initialize UnitValueControllers with default units and preview dpi
     _widthVC = UnitValueController(unit: _canvasWUnit);
     _heightVC = UnitValueController(unit: _canvasHUnit);
-    // Link width -> height aspect; aspect will be inferred when values arrive
-    _widthVC!.linkWith(_heightVC!);
+    // Do not link by default; linking should be enabled explicitly via UI
     _singleInputController = TextEditingController();
     _projectController = TextEditingController();
     _gridWController = TextEditingController(text: '');

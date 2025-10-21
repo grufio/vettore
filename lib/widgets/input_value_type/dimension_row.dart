@@ -67,6 +67,7 @@ class _DimensionRowState extends State<DimensionRow> {
   String _unit = 'px';
   // Preserve state only via UnitValueController; no local px cache
   VoidCallback? _vcListener;
+  FocusNode? _focusNode;
 
   @override
   void initState() {
@@ -76,6 +77,8 @@ class _DimensionRowState extends State<DimensionRow> {
     // Linking/aspect disabled; no seeding
     widget.primaryController.addListener(_onPrimaryChanged);
     widget.partnerController?.addListener(_onPartnerChanged);
+    _focusNode = FocusNode();
+    _focusNode!.addListener(_onFocusChange);
     // Initialize internal px value from current text if present
     final int? dpiOverride = widget.dpiOverride;
     final double? initial = double.tryParse(widget.primaryController.text);
@@ -149,6 +152,8 @@ class _DimensionRowState extends State<DimensionRow> {
     if (_vcListener != null && widget.valueController != null) {
       widget.valueController!.removeListener(_vcListener!);
     }
+    _focusNode?.removeListener(_onFocusChange);
+    _focusNode?.dispose();
     super.dispose();
   }
 
@@ -162,6 +167,26 @@ class _DimensionRowState extends State<DimensionRow> {
   void _onPartnerChanged() {
     // Typing-only mode: do nothing
     return;
+  }
+
+  void _onFocusChange() {
+    if (!mounted) return;
+    if (_focusNode?.hasFocus == false) {
+      // On blur, format the current text to 2 decimals without changing value unit
+      final String raw = widget.primaryController.text.trim();
+      if (raw.isEmpty) return;
+      final double? v = double.tryParse(
+          raw.endsWith('.') ? raw.substring(0, raw.length - 1) : raw);
+      if (v == null) return;
+      final String txt = formatFieldUnitValue(v, _unit);
+      if (txt != widget.primaryController.text) {
+        _echoing = true;
+        widget.primaryController.text = txt;
+        widget.primaryController.selection =
+            TextSelection.collapsed(offset: txt.length);
+        _echoing = false;
+      }
+    }
   }
 
   @override
@@ -178,6 +203,7 @@ class _DimensionRowState extends State<DimensionRow> {
     final input = InputValueType(
       key: fieldKey,
       controller: widget.primaryController,
+      focusNode: _focusNode,
       placeholder: widget.isWidth ? 'Width' : 'Height',
       prefixIconAsset: iconAsset,
       prefixIconFit: BoxFit.none,
@@ -204,17 +230,9 @@ class _DimensionRowState extends State<DimensionRow> {
       onItemSelected: (nextUnit) {
         setState(() {
           if (widget.valueController != null) {
-            // Change unit and update field text immediately to reflect unit
+            // Change unit; do not rewrite numeric text. Suffix updates via _unit.
             widget.valueController!.setUnit(nextUnit);
-            final double? v = widget.valueController!.getValueInUnit();
-            if (v != null) {
-              final String txt = formatFieldUnitValue(v, nextUnit);
-              _echoing = true;
-              widget.primaryController.text = txt;
-              widget.primaryController.selection =
-                  TextSelection.collapsed(offset: txt.length);
-              _echoing = false;
-            }
+            _unit = nextUnit;
             widget.onUnitChanged?.call(nextUnit);
           } else {
             _unit = nextUnit;

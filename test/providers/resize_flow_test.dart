@@ -26,21 +26,14 @@ void main() {
           imageDpiProvider.overrideWithProvider((imageId) {
             return FutureProvider<int?>((ref) async => null);
           }),
-          // Override dimensions provider to read from dimsMap
-          imageDimensionsProvider.overrideWithProvider((imageId) {
-            return FutureProvider<(int?, int?)>((ref) async {
-              final v = dimsMap[imageId];
-              return (v?.$1, v?.$2);
-            });
-          }),
+          // Dimensions provider removed; test uses dimsMap directly
           // Fake project logic that records targets and updates dimsMap, then invalidates
           projectLogicProvider.overrideWithProvider((projectId) {
             return AutoDisposeProvider<ProjectLogic>((ref) {
               return _FakeProjectLogic(ref, projectId, onResize: (w, h) {
                 lastTargets = (w, h);
                 dimsMap[1] = (w, h);
-                // simulate provider invalidation after DB write
-                ref.invalidate(imageDimensionsProvider(1));
+                // simulate UI refresh by updating dimsMap
               });
             });
           }),
@@ -59,7 +52,8 @@ void main() {
             targetH: raster.$2,
             interpolationName: 'nearest',
           );
-          finalDims = await ref.read(imageDimensionsProvider(1).future);
+          // Removed imageDimensionsProvider; verify via dimsMap directly
+          finalDims = (dimsMap[1]?.$1, dimsMap[1]?.$2);
         }),
       ));
 

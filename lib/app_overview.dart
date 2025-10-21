@@ -450,13 +450,9 @@ class _HomeGalleryContainer extends ConsumerWidget {
                   ? ref.watch(imageBytesProvider(p.imageId!))
                   : const AsyncValue<Uint8List?>.data(null);
               final bytes = bytesAsync.asData?.value;
-              // Image dimensions: converted if present else original
-              final dimsAsync = (p.imageId != null)
-                  ? ref.watch(imageDimensionsProvider(p.imageId!))
-                  : const AsyncValue<(int?, int?)>.data((null, null));
-              final dims = dimsAsync.asData?.value;
-              final int? w = dims?.$1;
-              final int? h = dims?.$2;
+              // Image dimensions removed from provider; preview size derives from bytes
+              final int? w = null;
+              final int? h = null;
               String baseSize = '';
               if (w != null && h != null) {
                 baseSize = '${w}px x ${h}px';
