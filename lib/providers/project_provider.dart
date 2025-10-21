@@ -380,7 +380,7 @@ class ProjectLogic {
       // Invalidate dependent providers so UI picks up updated image and dims
       if (project.imageId != null) {
         ref.invalidate(imageBytesProvider(project.imageId!));
-        // Raster dimensions provider removed
+        ref.invalidate(imageDimensionsProvider(project.imageId!));
       }
     } catch (e, st) {
       logWarn('updateImage failed for project $projectId', e, st);
@@ -449,7 +449,7 @@ class ProjectLogic {
 
     if (project.imageId != null) {
       ref.invalidate(imageBytesProvider(project.imageId!));
-      // Raster dimensions provider removed
+      ref.invalidate(imageDimensionsProvider(project.imageId!));
     }
 
     try {
@@ -528,9 +528,7 @@ class ProjectLogic {
 
     if (project.imageId != null) {
       ref.invalidate(imageBytesProvider(project.imageId!));
-    }
-    if (project.imageId != null) {
-      ref.invalidate(imageBytesProvider(project.imageId!));
+      ref.invalidate(imageDimensionsProvider(project.imageId!));
     }
 
     try {

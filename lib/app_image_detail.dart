@@ -32,6 +32,9 @@ import 'package:vettore/services/image_detail_controller.dart';
 import 'package:vettore/widgets/image_dimensions_section.dart';
 import 'package:vettore/widgets/artboard_view.dart';
 // removed unused image_resize_service import after inlining px computation
+import 'package:vettore/widgets/image_listeners.dart';
+import 'package:vettore/services/image_upload_service.dart';
+import 'package:vettore/services/image_actions.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
   const AppImageDetailPage({
@@ -157,23 +160,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     final int? imgIdForBuild = (_currentProjectId != null)
         ? ref.watch(imageIdStableProvider(_currentProjectId!))
         : null;
-    if (imgIdForBuild != null && imgIdForBuild != _lastImageId) {
-      _lastImageId = imgIdForBuild;
-      // Listen to physical pixel floats and seed controllers
-      _imgCtrl?.listenImagePhysPx(
-        ref: ref,
-        imageId: imgIdForBuild,
-        onDims: (wPx, hPx) =>
-            _imgCtrl?.applyRemotePx(widthPx: wPx, heightPx: hPx),
-      );
-      // Sync controller DPI to the image DPI on image change
-      ref.read(imageDpiProvider(imgIdForBuild).future).then((dpiVal) {
-        if (!mounted) return;
-        if (dpiVal != null && dpiVal > 0) {
-          _imgCtrl?.setUiDpi(dpiVal);
-        }
-      });
-    }
 
     // Restore per-project transform once when project id is ready
     if (!_transformAppliedForProject && _currentProjectId != null) {
@@ -190,6 +176,12 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
       color: kGrey10,
       child: Column(
         children: [
+          if (_currentProjectId != null && _imgCtrl != null)
+            ImageListeners(
+              projectId: _currentProjectId!,
+              controller: _imgCtrl!,
+              onHasImageChanged: _setHasImage,
+            ),
           // Header handled by shared shell; keep content only when embedded
           // Detail filter bar with bottom border
           DecoratedBox(
@@ -265,7 +257,55 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                           onInterpolationChanged: (v) => setState(() {
                             _interp = v;
                           }),
-                          onResizeTap: _onResizeTap,
+                          onResizeTap: () async {
+                            if (_currentProjectId == null) return;
+                            String trimDot(String s) {
+                              final String t = s.trim();
+                              return t.endsWith('.')
+                                  ? t.substring(0, t.length - 1)
+                                  : t;
+                            }
+
+                            final String wText =
+                                trimDot(_inputValueController.text);
+                            final String hText =
+                                trimDot(_inputValueController2.text);
+                            final double? wVal = double.tryParse(wText);
+                            final double? hVal = double.tryParse(hText);
+                            final int? imgId = ref.read(
+                                imageIdStableProvider(_currentProjectId!));
+                            if (imgId == null) return;
+                            final int dpi = (await ref
+                                    .read(imageDpiProvider(imgId).future)) ??
+                                96;
+                            final String wUnit = _imgCtrl?.widthVC.unit ?? 'px';
+                            final String hUnit =
+                                _imgCtrl?.heightVC.unit ?? 'px';
+                            final (double?, double?) phys = await ref
+                                .read(imagePhysPixelsProvider(imgId).future);
+                            final double curPhysW = phys.$1 ?? 0.0;
+                            final double curPhysH = phys.$2 ?? 0.0;
+                            await ref.read(imageActionsProvider).resizeCommit(
+                              ref,
+                              projectId: _currentProjectId!,
+                              imageId: imgId,
+                              interpName:
+                                  kInterpolationToCvName[_interp] ?? 'linear',
+                              curPhysW: curPhysW,
+                              curPhysH: curPhysH,
+                              typedW: wVal,
+                              wUnit: wUnit,
+                              typedH: hVal,
+                              hUnit: hUnit,
+                              dpi: dpi,
+                              onPhysCommitted: (wPx, hPx) {
+                                if (mounted) {
+                                  _imgCtrl?.applyRemotePx(
+                                      widthPx: wPx, heightPx: hPx);
+                                }
+                              },
+                            );
+                          },
                         ),
                         const Expanded(child: SizedBox.shrink()),
                       ],
@@ -530,7 +570,19 @@ extension on _AppImageDetailPageState {
     if (showUpload) {
       return Center(
         child: ImageUploadText(
-          onImageDropped: (b) => _handleImageBytes(b),
+          onImageDropped: (b) async {
+            final r = await ref
+                .read(imageUploadServiceProvider)
+                .insertImageAndMetadata(ref, b);
+            await ref.read(projectServiceProvider).batchUpdate(
+                  ref,
+                  _currentProjectId!,
+                  imageId: r.imageId,
+                );
+            _imgCtrl?.applyRemotePx(
+                widthPx: r.width?.toDouble(), heightPx: r.height?.toDouble());
+            _setHasImage(true);
+          },
           onUploadTap: _pickViaDialog,
         ),
       );
