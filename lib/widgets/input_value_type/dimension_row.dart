@@ -2,8 +2,7 @@ import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:flutter/widgets.dart';
 import 'package:vettore/widgets/button_toggle.dart';
 import 'package:vettore/widgets/constants/input_constants.dart';
-import 'package:vettore/widgets/input_value_type/input_value_type.dart';
-import 'package:vettore/widgets/input_value_type/number_utils.dart';
+import 'package:vettore/widgets/input_value_type/unit_selector_field.dart';
 import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
 import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
 import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
@@ -200,7 +199,7 @@ class _DimensionRowState extends State<DimensionRow> {
         : 'assets/icons/16/height.svg';
     final Key fieldKey = ValueKey(widget.isWidth ? 'width' : 'height');
 
-    final input = InputValueType(
+    final input = UnitSelectorField(
       key: fieldKey,
       controller: widget.primaryController,
       focusNode: _focusNode,
@@ -208,29 +207,14 @@ class _DimensionRowState extends State<DimensionRow> {
       prefixIconAsset: iconAsset,
       prefixIconFit: BoxFit.none,
       prefixIconAlignment: Alignment.centerLeft,
-      dropdownItems: units,
-      selectedItem: _unit, // strictly controlled
-      suffixText: _unit,
-      variant: InputVariant.selector,
       readOnly: readOnly,
       readOnlyView: widget.readOnlyView,
+      units: units,
+      selectedUnit: _unit,
       inputFormatters: widget.inputFormatters,
-      onChanged: (raw) {
-        // central sanitize utility
-        final String sanitized = sanitizeNumber(raw);
-        if (sanitized != raw) {
-          widget.primaryController.text = sanitized;
-          final int newOffset = sanitized.length.clamp(0, sanitized.length);
-          widget.primaryController.selection =
-              TextSelection.collapsed(offset: newOffset);
-        }
-        // No user-edit guard; model → field echo always applies on updates
-        return;
-      },
-      onItemSelected: (nextUnit) {
+      onUnitSelected: (nextUnit) {
         setState(() {
           if (widget.valueController != null) {
-            // Change unit; do not rewrite numeric text. Suffix updates via _unit.
             widget.valueController!.setUnit(nextUnit);
             _unit = nextUnit;
             widget.onUnitChanged?.call(nextUnit);

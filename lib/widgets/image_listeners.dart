@@ -10,11 +10,9 @@ class ImageListeners extends ConsumerStatefulWidget {
     super.key,
     required this.projectId,
     required this.controller,
-    required this.onHasImageChanged,
   });
   final int projectId;
   final ImageDetailController controller;
-  final ValueChanged<bool> onHasImageChanged;
 
   @override
   ConsumerState<ImageListeners> createState() => _ImageListenersState();
@@ -25,7 +23,6 @@ class _ImageListenersState extends ConsumerState<ImageListeners> {
   @override
   Widget build(BuildContext context) {
     final int? imageId = ref.watch(imageIdStableProvider(widget.projectId));
-    widget.onHasImageChanged(imageId != null);
     if (imageId != null && imageId != _lastImageId) {
       _lastImageId = imageId;
       // Seed phys px
@@ -48,4 +45,3 @@ class _ImageListenersState extends ConsumerState<ImageListeners> {
     return const SizedBox.shrink();
   }
 }
-

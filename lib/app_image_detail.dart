@@ -1,40 +1,40 @@
-import 'dart:io' show File;
-
-import 'package:flutter/cupertino.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' show Value;
-import 'dart:typed_data';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/side_panel.dart';
-import 'package:vettore/widgets/content_filter_bar.dart';
-// import 'package:vettore/widgets/image_upload_text.dart';
-import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/data/database.dart';
 import 'dart:async';
-// Replaced specific rows with unified DimensionRow (now used inside panel)
-import 'package:vettore/providers/canvas_preview_provider.dart';
+import 'dart:io' show File;
+import 'dart:typed_data';
+
+import 'package:drift/drift.dart' show Value;
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 // dimensions_guard not used here any more
 import 'package:flutter/foundation.dart'
     show compute, debugPrint, kIsWeb, defaultTargetPlatform, TargetPlatform;
-import 'package:file_picker/file_picker.dart';
-import 'package:vettore/widgets/image_upload_text.dart';
-import 'package:vettore/services/image_compute.dart' as ic;
-import 'package:vettore/services/image_detail_service.dart';
-import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vettore/data/database.dart';
+// import 'package:vettore/widgets/image_upload_text.dart';
+import 'package:vettore/providers/application_providers.dart';
+// Replaced specific rows with unified DimensionRow (now used inside panel)
+import 'package:vettore/providers/canvas_preview_provider.dart';
+import 'package:vettore/providers/image_providers.dart';
 import 'package:vettore/providers/navigation_providers.dart';
+import 'package:vettore/providers/project_provider.dart';
+import 'package:vettore/services/image_actions.dart';
+import 'package:vettore/services/image_compute.dart' as ic;
+import 'package:vettore/services/image_detail_controller.dart';
+// import 'package:vettore/services/image_detail_service.dart';
+import 'package:vettore/services/image_upload_service.dart';
+import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/widgets/artboard_view.dart';
+import 'package:vettore/widgets/content_filter_bar.dart';
+// Dimension panel now wrapped by ImageDimensionsSection
+import 'package:vettore/widgets/image_dimensions_section.dart';
+// removed unused image_resize_service import after inlining px computation
+import 'package:vettore/widgets/image_listeners.dart';
 // PhotoView removed in favor of InteractiveViewer for infinite pasteboard
 
 import 'package:vettore/widgets/image_preview.dart';
-import 'package:vettore/services/image_detail_controller.dart';
-// Dimension panel now wrapped by ImageDimensionsSection
-import 'package:vettore/widgets/image_dimensions_section.dart';
-import 'package:vettore/widgets/artboard_view.dart';
-// removed unused image_resize_service import after inlining px computation
-import 'package:vettore/widgets/image_listeners.dart';
-import 'package:vettore/services/image_upload_service.dart';
-import 'package:vettore/services/image_actions.dart';
+import 'package:vettore/widgets/image_upload_text.dart';
+import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
+import 'package:vettore/widgets/side_panel.dart';
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
   const AppImageDetailPage({
@@ -68,7 +68,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   String _interp = 'nearest';
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
-  bool _hasImage = false;
   StreamSubscription<DbProject?>? _projectSub;
   // Link/unlink width/height
   bool _linkWH = false;
@@ -80,7 +79,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   // Removed fallback image bytes; we render directly from provider for stability
   int? _requestedDimsForImageId;
   int? _lastProjectId;
-  int? _lastImageId;
+  // int? _lastImageId; // not used
   // moved to controller
   // InteractiveViewer transform controller for pan/zoom
   final TransformationController _ivController = TransformationController();
@@ -93,11 +92,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   bool get wantKeepAlive => true;
   // Apply 48px padding only on first open of the Image tab
   // Removed first-frame padding; use initial matrix translation instead
-
-  void _setHasImage(bool value) {
-    if (!mounted) return;
-    setState(() => _hasImage = value);
-  }
 
   // Linking logic is handled inside DimensionsRow
 
@@ -157,9 +151,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
       // No longer listen here; controller will listen to image dimensions when we know imageId
     }
 
-    final int? imgIdForBuild = (_currentProjectId != null)
-        ? ref.watch(imageIdStableProvider(_currentProjectId!))
-        : null;
+    // Trigger provider resolution (unused local)
+    ref.watch(imageIdStableProvider(_currentProjectId ?? -1));
 
     // Restore per-project transform once when project id is ready
     if (!_transformAppliedForProject && _currentProjectId != null) {
@@ -180,7 +173,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
             ImageListeners(
               projectId: _currentProjectId!,
               controller: _imgCtrl!,
-              onHasImageChanged: _setHasImage,
             ),
           // Header handled by shared shell; keep content only when embedded
           // Detail filter bar with bottom border
@@ -322,65 +314,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
 }
 
 extension on _AppImageDetailPageState {
-  void _onResizeTap() async {
-    if (_currentProjectId == null) return;
-    String trimDot(String s) {
-      final String t = s.trim();
-      return t.endsWith('.') ? t.substring(0, t.length - 1) : t;
-    }
-
-    final String wText = trimDot(_inputValueController.text);
-    final String hText = trimDot(_inputValueController2.text);
-    final double? wVal = double.tryParse(wText);
-    final double? hVal = double.tryParse(hText);
-    // Resolve image id and DPI
-    final int? imgId = ref.read(imageIdStableProvider(_currentProjectId!));
-    if (imgId == null) return;
-    final int dpi = (await ref.read(imageDpiProvider(imgId).future)) ?? 96;
-    final String wUnit = _imgCtrl?.widthVC.unit ?? 'px';
-    final String hUnit = _imgCtrl?.heightVC.unit ?? 'px';
-    final service = ref.read(imageDetailServiceProvider);
-    // Load current physical float dims (single source of truth for size)
-    final (double?, double?) phys =
-        await ref.read(imagePhysPixelsProvider(imgId).future);
-    final double curPhysW = phys.$1 ?? 0.0;
-    final double curPhysH = phys.$2 ?? 0.0;
-    // Compute target physical floats via service
-    final (double targetPhysW, double targetPhysH) = service.computeTargetPhys(
-      typedW: wVal,
-      wUnit: wUnit,
-      typedH: hVal,
-      hUnit: hUnit,
-      dpi: dpi,
-      curPhysW: curPhysW,
-      curPhysH: curPhysH,
-      linked: _linkWH,
-    );
-    if (targetPhysW <= 0 || targetPhysH <= 0) return;
-    // Compute raster targets by rounding phys floats
-    final (int targetW, int targetH) =
-        service.rasterFromPhys(targetPhysW, targetPhysH);
-    // Always perform raster resize (no no-op skip)
-    // Perform resize directly via project logic
-    try {
-      await service.performResize(ref,
-          projectId: _currentProjectId!,
-          targetW: targetW,
-          targetH: targetH,
-          interpolationName: kInterpolationToCvName[_interp] ?? 'linear');
-    } catch (e, st) {
-      debugPrint('[ImageDetail] Resize failed: $e');
-      debugPrint(st.toString());
-      return;
-    }
-    // Commit-on-resize: persist physical floats only after successful resize
-    await service.persistPhys(ref, imgId, targetPhysW, targetPhysH);
-    // Refresh controllers from physical floats (maintain logical source)
-    if (mounted) {
-      _imgCtrl?.applyRemotePx(widthPx: targetPhysW, heightPx: targetPhysH);
-    }
-  }
-
   Future<void> _handleImageBytes(Uint8List bytes) async {
     if (_currentProjectId == null) return;
     assert(() {
@@ -432,7 +365,6 @@ extension on _AppImageDetailPageState {
     // Update controllers from physical floats
     _imgCtrl?.applyRemotePx(
         widthPx: width?.toDouble(), heightPx: height?.toDouble());
-    _setHasImage(true);
   }
 
   Future<void> _pickViaDialog() async {
@@ -455,8 +387,6 @@ extension on _AppImageDetailPageState {
         _currentProjectId = widget.projectId;
         final p = await repo.getById(widget.projectId!);
         _projectController.text = p.title;
-        _hasImage = p.imageId != null;
-        _subscribeToProject(_currentProjectId!);
         return;
       }
       final all = await repo.getAll();
@@ -464,26 +394,10 @@ extension on _AppImageDetailPageState {
         final p = all.first;
         _currentProjectId = p.id;
         _projectController.text = p.title;
-        _hasImage = p.imageId != null;
-        _subscribeToProject(_currentProjectId!);
       }
     } catch (_) {
       // Ignore load errors for now; keep empty controller
     }
-  }
-
-  void _subscribeToProject(int projectId) {
-    _projectSub?.cancel();
-    _projectSub =
-        ref.read(projectRepositoryProvider).watchById(projectId).listen((p) {
-      if (!mounted) return;
-      if (p == null) {
-        _setHasImage(false);
-        return;
-      }
-      final nextHasImage = p.imageId != null;
-      if (nextHasImage != _hasImage) _setHasImage(nextHasImage);
-    });
   }
 
   Widget _buildDetailBody() {
@@ -581,7 +495,6 @@ extension on _AppImageDetailPageState {
                 );
             _imgCtrl?.applyRemotePx(
                 widthPx: r.width?.toDouble(), heightPx: r.height?.toDouble());
-            _setHasImage(true);
           },
           onUploadTap: _pickViaDialog,
         ),

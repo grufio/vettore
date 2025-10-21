@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
 import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
 
 /// Controller to centralize image detail state: units, DPI, and dimension seeding.
@@ -47,16 +46,6 @@ class ImageDetailController extends ChangeNotifier {
     onHeightUnitChanged?.call(unit);
   }
 
-  /// Seed controllers from remote pixel dimensions without touching text fields.
-  void applyRemoteDims({int? width, int? height}) {
-    if (width != null) _widthVC.setValuePx(width.toDouble());
-    if (height != null) _heightVC.setValuePx(height.toDouble());
-    // Establish aspect ratio for linking once both dims are known
-    if (width != null && height != null && width > 0) {
-      _widthVC.setAspect(height / width);
-    }
-  }
-
   /// Apply remote physical pixel values (4-dec floats)
   void applyRemotePx({double? widthPx, double? heightPx}) {
     if (widthPx != null) _widthVC.setValuePx(widthPx);
@@ -68,60 +57,6 @@ class ImageDetailController extends ChangeNotifier {
 
   // Listening plumbing
   int? _lastDimsImageId;
-  (int?, int?)? _lastAppliedDims;
-  void disposeListeners() {}
-
-  void listenImageDimensions({
-    required WidgetRef ref,
-    required int imageId,
-    required void Function(int? width, int? height) onDims,
-  }) {
-    if (_lastDimsImageId == imageId) return;
-    _lastDimsImageId = imageId;
-    ref.listen<AsyncValue<(int?, int?)>>(
-      imageDimensionsProvider(imageId),
-      (prev, next) {
-        final (int?, int?)? dims = next.asData?.value;
-        if (dims != null) {
-          final last = _lastAppliedDims;
-          final changed =
-              last == null || last.$1 != dims.$1 || last.$2 != dims.$2;
-          if (changed) {
-            onDims(dims.$1, dims.$2);
-            _lastAppliedDims = dims;
-          }
-        }
-      },
-    );
-    // Seed immediately
-    final (int?, int?)? seed =
-        ref.read(imageDimensionsProvider(imageId)).asData?.value;
-    if (seed != null) {
-      onDims(seed.$1, seed.$2);
-      _lastAppliedDims = seed;
-    }
-  }
-
-  /// Compute pixel targets from typed values and current units/dpi.
-  /// Returns a tuple (wPx, hPx).
-  (int, int) computeTargetsPx({
-    required double widthValue,
-    required double heightValue,
-  }) {
-    final int wPx = convertUnit(
-      value: widthValue,
-      fromUnit: _widthVC.unit,
-      toUnit: 'px',
-      dpi: _widthVC.dpi,
-    ).round();
-    final int hPx = convertUnit(
-      value: heightValue,
-      fromUnit: _heightVC.unit,
-      toUnit: 'px',
-      dpi: _heightVC.dpi,
-    ).round();
-    return (wPx, hPx);
-  }
 
   // Listen to physical pixel values and seed controllers with floats
   void listenImagePhysPx({
