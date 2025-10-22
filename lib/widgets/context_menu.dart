@@ -117,8 +117,8 @@ class _ContextMenuPanelState extends State<_ContextMenuPanel> {
         onFocusChange: (hasFocus) {
           if (!hasFocus) widget.onDismiss();
         },
-        onKey: (node, RawKeyEvent event) {
-          if (event is RawKeyDownEvent &&
+        onKeyEvent: (node, KeyEvent event) {
+          if (event is KeyDownEvent &&
               event.logicalKey == LogicalKeyboardKey.escape) {
             widget.onDismiss();
             return KeyEventResult.handled;
