@@ -87,6 +87,9 @@ melos.yaml
 melos.lock
 melos_local.yaml
 
+# Flutter generated plugin dependency file(s)
+.flutter-plugins-dependencies*
+
 # SQLite databases
 *.sqlite
 *.sqlite3
