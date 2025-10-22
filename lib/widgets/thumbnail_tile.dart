@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
 class ThumbnailTile extends StatelessWidget {
@@ -34,18 +34,13 @@ class ThumbnailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Keep inner clip radius aligned to the inner edge of the stroke so
-    // the thumbnail edge and the border edge visually match for any border width.
-    final double outerRadius = borderRadius.topLeft.x;
-    final double innerRadius =
-        (outerRadius - borderWidth).clamp(0.0, outerRadius);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: borderColor, width: borderWidth),
-        borderRadius: borderRadius,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.all(Radius.circular(innerRadius)),
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: Container(
+        foregroundDecoration: BoxDecoration(
+          border: Border.all(color: borderColor, width: borderWidth),
+          borderRadius: borderRadius,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

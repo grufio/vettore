@@ -13,7 +13,11 @@ import 'package:path/path.dart' as p;
 Future<int> main(List<String> args) async {
   final parser = ArgParser()
     ..addOption('entry', help: 'Entry point path (e.g., lib/main.dart)')
-    ..addOption('format', allowed: ['text', 'json'], defaultsTo: 'text');
+    ..addOption('format', allowed: ['text', 'json'], defaultsTo: 'text')
+    ..addFlag('widgets-unused',
+        defaultsTo: false,
+        help:
+            'Additionally report lib/widgets/*.dart whose top-level class names are never referenced across lib');
 
   final results = parser.parse(args);
   final entryArg = results['entry'] as String?;
@@ -118,16 +122,70 @@ Future<int> main(List<String> args) async {
 
   candidates.sort();
 
+  final output = <String, Object>{
+    'entry': p.relative(entryPath, from: repoRoot),
+    'unreachable': candidates,
+  };
+
+  if (results['widgets-unused'] == true) {
+    final widgetDir = p.join(libDir, 'widgets');
+    final widgetFiles = allLibDartFiles
+        .where((f) => p.isWithin(widgetDir, f))
+        .where((f) => !isGenerated(f) && !partOfFiles.contains(f))
+        .toList();
+
+    final libFilesForScan =
+        allLibDartFiles.where((f) => !isGenerated(f)).toList(growable: false);
+
+    final neverReferenced = <String>[];
+    // Preload contents for simple word-boundary scans.
+    final fileContents = <String, String>{
+      for (final f in libFilesForScan) f: File(f).readAsStringSync()
+    };
+
+    for (final wf in widgetFiles) {
+      final unit = _safeParse(wf);
+      if (unit == null) continue;
+      final names = _topLevelClassishNames(unit);
+      if (names.isEmpty) continue;
+
+      var referenced = false;
+      for (final entry in fileContents.entries) {
+        final otherPath = entry.key;
+        if (otherPath == wf) continue;
+        final content = entry.value;
+        for (final name in names) {
+          final pattern = RegExp('\\b' + RegExp.escape(name) + '\\b');
+          if (pattern.hasMatch(content)) {
+            referenced = true;
+            break;
+          }
+        }
+        if (referenced) break;
+      }
+      if (!referenced) {
+        neverReferenced.add(p.relative(wf, from: repoRoot));
+      }
+    }
+
+    neverReferenced.sort();
+    output['widgets_never_referenced'] = neverReferenced;
+  }
+
   if (format == 'json') {
-    stdout.writeln(jsonEncode({
-      'entry': p.relative(entryPath, from: repoRoot),
-      'unreachable': candidates,
-    }));
+    stdout.writeln(jsonEncode(output));
   } else {
-    stdout.writeln('Entry: ${p.relative(entryPath, from: repoRoot)}');
+    stdout.writeln('Entry: ${output['entry']}');
     stdout.writeln('Unreachable files (excluding generated and part-of):');
-    for (final c in candidates) {
+    for (final c in (output['unreachable'] as List)) {
       stdout.writeln(' - $c');
+    }
+    if (output.containsKey('widgets_never_referenced')) {
+      stdout.writeln(
+          'Widgets whose top-level class names are never referenced across lib:');
+      for (final c in (output['widgets_never_referenced'] as List)) {
+        stdout.writeln(' - $c');
+      }
     }
   }
 
@@ -154,6 +212,24 @@ CompilationUnit? _safeParse(String filePath) {
   } catch (_) {
     return null;
   }
+}
+
+List<String> _topLevelClassishNames(CompilationUnit unit) {
+  final names = <String>[];
+  for (final decl in unit.declarations) {
+    if (decl is ClassDeclaration) {
+      names.add(decl.name.lexeme);
+    } else if (decl is EnumDeclaration) {
+      names.add(decl.name.lexeme);
+    } else if (decl is MixinDeclaration) {
+      names.add(decl.name.lexeme);
+    } else if (decl is FunctionDeclaration) {
+      if (decl.name.lexeme.isNotEmpty) names.add(decl.name.lexeme);
+    } else if (decl is TypeAlias) {
+      names.add(decl.name.lexeme);
+    }
+  }
+  return names;
 }
 
 String _toAbsoluteFromLibOrRelative(String libDir, String input) {

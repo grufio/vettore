@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'dart:io' show Platform;
 
 import 'package:vettore/models/grufio_tab_data.dart';
-import 'package:vettore/widgets/grufio_tabs_app.dart' show GrufioTab;
+import 'package:vettore/widgets/tabs_main.dart' show GrufioTab;
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/home_navigation.dart';
 import 'package:vettore/widgets/content_toolbar.dart';
