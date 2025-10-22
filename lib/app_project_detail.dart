@@ -1,35 +1,36 @@
 // Platform check should be web-safe; avoid dart:io on web
 
+import 'dart:async';
+
+import 'package:drift/drift.dart' show Variable;
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, TextInputFormatter;
-import 'package:drift/drift.dart' show Variable;
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/side_panel.dart';
-import 'package:vettore/widgets/content_filter_bar.dart';
-import 'package:vettore/widgets/section_sidebar.dart';
-import 'package:vettore/widgets/button_app.dart';
-// import 'package:vettore/widgets/image_upload_text.dart';
-// import 'package:vettore/widgets/image_upload_area.dart';
-import 'package:vettore/widgets/input_value_type/text_default.dart';
-import 'package:vettore/widgets/input_value_type/input_value_type.dart';
-import 'package:vettore/providers/application_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/data/database.dart';
-import 'dart:async';
-import 'package:vettore/widgets/input_value_type/dimension_row.dart';
-import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
-import 'package:vettore/widgets/constants/input_constants.dart';
-import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
+import 'package:vettore/providers/application_providers.dart';
+// import removed: DPI control moved to Image Detail
+import 'package:vettore/providers/canvas_providers.dart';
 // import 'package:vettore/services/dimensions_guard.dart';
 // import 'package:flutter/foundation.dart' show compute;
 // import 'package:vettore/services/image_compute.dart' as ic;
 
 import 'package:vettore/providers/navigation_providers.dart';
-// import removed: DPI control moved to Image Detail
-import 'package:vettore/providers/canvas_providers.dart';
+import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/widgets/button_app.dart';
+import 'package:vettore/widgets/constants/input_constants.dart';
+import 'package:vettore/widgets/content_filter_bar.dart';
+import 'package:vettore/widgets/input_value_type/dimension_row.dart';
+import 'package:vettore/widgets/input_value_type/input_value_type.dart';
+// import 'package:vettore/widgets/image_upload_text.dart';
+// import 'package:vettore/widgets/image_upload_area.dart';
+import 'package:vettore/widgets/input_value_type/text_default.dart';
+import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
+import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
+import 'package:vettore/widgets/section_sidebar.dart';
+import 'package:vettore/widgets/side_panel.dart';
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
   const AppProjectDetailPage({

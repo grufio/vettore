@@ -17,18 +17,7 @@ final imageBytesProvider =
   return row?.origSrc;
 });
 
-/// Raster dimensions (w,h) in integer pixels for an image id.
-/// Source: shows converted dims when converted bytes exist; else original dims.
-final imageDimensionsProvider =
-    FutureProvider.family<(int?, int?), int>((ref, imageId) async {
-  final db = ref.read(appDatabaseProvider);
-  final row = await (db.select(db.images)..where((t) => t.id.equals(imageId)))
-      .getSingleOrNull();
-  final hasConv = (row?.convSrc != null && (row?.convBytes ?? 0) > 0);
-  final w = hasConv ? row?.convWidth : row?.origWidth;
-  final h = hasConv ? row?.convHeight : row?.origHeight;
-  return (w, h);
-});
+// (Removed) Raster dimensions legacy provider. Use bytes or phys pixels providers instead.
 
 /// DPI metadata for an image id.
 /// Source: reads `images.dpi` (mutable per-image metadata; does not affect size).

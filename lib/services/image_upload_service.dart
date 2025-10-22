@@ -3,9 +3,9 @@ import 'dart:typed_data';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart' show compute, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/services/image_compute.dart' as ic;
-import 'package:vettore/data/database.dart';
 
 class UploadedImageResult {
   const UploadedImageResult({
