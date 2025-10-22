@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/image_providers.dart';
@@ -39,8 +38,38 @@ class HomeGallery extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double width = constraints.maxWidth;
-        final int columns =
+        // Choose columns so tile widths are whole logical pixels after padding/gaps
+        const double horizontalPadding = 24.0 * 2; // left + right
+        const double crossAxisSpacing = 16.0;
+        int approxColumns =
             width.isFinite ? (width / 280.0).floor().clamp(1, 12) : 3;
+        double tileWidthFor(int c) {
+          final totalGaps = crossAxisSpacing * (c - 1);
+          final availableWidth =
+              (width - horizontalPadding - totalGaps).clamp(0.0, width);
+          return c > 0 ? (availableWidth / c) : availableWidth;
+        }
+
+        bool isWhole(double v) => (v - v.roundToDouble()).abs() < 0.001;
+        int columns = approxColumns;
+        int? found;
+        for (int c = approxColumns; c >= 1; c--) {
+          if (isWhole(tileWidthFor(c))) {
+            found = c;
+            break;
+          }
+        }
+        if (found == null) {
+          for (int c = approxColumns + 1; c <= 12; c++) {
+            if (isWhole(tileWidthFor(c))) {
+              found = c;
+              break;
+            }
+          }
+        }
+        if (found != null) {
+          columns = found;
+        }
         final items = <Widget>[];
         if (showVendors) {
           for (final v in vendors) {
@@ -87,10 +116,20 @@ class HomeGallery extends ConsumerWidget {
             }));
           }
         }
-        return MasonryGridView.count(
-          crossAxisCount: columns,
-          mainAxisSpacing: 16.0,
-          crossAxisSpacing: 16.0,
+        // Compute grid child aspect ratio to match ThumbnailTile layout:
+        // height = image (width * 3/4) + footer (72)
+        final double colWidth = tileWidthFor(columns).roundToDouble();
+        const double footerHeight = 72.0;
+        final double childAspectRatio =
+            colWidth > 0 ? colWidth / (colWidth * 0.75 + footerHeight) : 1.0;
+
+        return GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisSpacing: 16.0,
+            crossAxisSpacing: crossAxisSpacing,
+            childAspectRatio: childAspectRatio,
+          ),
           padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
           itemCount: items.length,
           itemBuilder: (context, index) => items[index],
