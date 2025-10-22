@@ -1,13 +1,12 @@
 import 'dart:io' show Platform;
 
-import 'package:flutter/widgets.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
-import 'package:window_manager/window_manager.dart';
-
+import 'package:flutter/widgets.dart';
 import 'package:vettore/models/grufio_tab_data.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/grufio_tabs_app.dart';
 import 'package:vettore/services/logger.dart';
+import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/widgets/tabs_main.dart';
+import 'package:window_manager/window_manager.dart';
 
 class AppHeaderBar extends StatefulWidget {
   const AppHeaderBar({
