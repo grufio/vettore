@@ -570,13 +570,13 @@ extension on _AppProjectDetailPageState {
     if (_currentProjectId != null) {
       try {
         final svc = ref.read(projectServiceProvider);
-        await svc.updateCanvasSpec(
+        await svc.batchUpdate(
           ref,
           _currentProjectId!,
-          widthValue: wVal,
-          widthUnit: _canvasWUnit,
-          heightValue: hVal,
-          heightUnit: _canvasHUnit,
+          canvasWidthValue: wVal,
+          canvasWidthUnit: _canvasWUnit,
+          canvasHeightValue: hVal,
+          canvasHeightUnit: _canvasHUnit,
         );
         // Update persisted spec baselines so dirty check resets
         _persistWVal = wVal;
@@ -650,7 +650,7 @@ extension on _AppProjectDetailPageState {
     final text = _projectController.text.trim();
     if (text == _lastSavedTitle) return;
     final svc = ref.read(projectServiceProvider);
-    await svc.updateTitle(ref, _currentProjectId!, text);
+    await svc.batchUpdate(ref, _currentProjectId!, title: text);
     _lastSavedTitle = text;
     widget.onProjectTitleSaved?.call(text);
   }
@@ -823,13 +823,13 @@ extension on _AppProjectDetailPageState {
     if (_currentProjectId == null) return;
     try {
       final svc = ref.read(projectServiceProvider);
-      await svc.updateGridSpec(
+      await svc.batchUpdate(
         ref,
         _currentProjectId!,
-        cellWidthValue: gwVal,
-        cellWidthUnit: _gridWUnitE.asDbString,
-        cellHeightValue: ghVal,
-        cellHeightUnit: _gridHUnitE.asDbString,
+        gridCellWidthValue: gwVal,
+        gridCellWidthUnit: _gridWUnitE.asDbString,
+        gridCellHeightValue: ghVal,
+        gridCellHeightUnit: _gridHUnitE.asDbString,
       );
     } catch (_) {
       // ignore persistence errors in UI
