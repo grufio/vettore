@@ -37,12 +37,10 @@ class ProjectService {
           id: drift.Value(projectId),
           title:
               title != null ? drift.Value(title) : const drift.Value.absent(),
-          author: author != null
-              ? drift.Value(author)
-              : const drift.Value.absent(),
-          status: status != null
-              ? drift.Value(status)
-              : const drift.Value.absent(),
+          author:
+              author != null ? drift.Value(author) : const drift.Value.absent(),
+          status:
+              status != null ? drift.Value(status) : const drift.Value.absent(),
           imageId: imageId != null
               ? drift.Value(imageId)
               : const drift.Value.absent(),
@@ -80,55 +78,5 @@ class ProjectService {
         ),
       );
     });
-  }
-
-  Future<void> updateTitle(dynamic ref, int projectId, String title) async {
-    await repo.update(
-      ProjectsCompanion(
-        id: drift.Value(projectId),
-        title: drift.Value(title),
-        updatedAt: drift.Value(DateTime.now().millisecondsSinceEpoch),
-      ),
-    );
-  }
-
-  Future<void> updateCanvasSpec(
-    dynamic ref,
-    int projectId, {
-    required double widthValue,
-    required String widthUnit,
-    required double heightValue,
-    required String heightUnit,
-  }) async {
-    await repo.update(
-      ProjectsCompanion(
-        id: drift.Value(projectId),
-        canvasWidthValue: drift.Value(widthValue),
-        canvasWidthUnit: drift.Value(widthUnit),
-        canvasHeightValue: drift.Value(heightValue),
-        canvasHeightUnit: drift.Value(heightUnit),
-        updatedAt: drift.Value(DateTime.now().millisecondsSinceEpoch),
-      ),
-    );
-  }
-
-  Future<void> updateGridSpec(
-    dynamic ref,
-    int projectId, {
-    required double cellWidthValue,
-    required String cellWidthUnit,
-    required double cellHeightValue,
-    required String cellHeightUnit,
-  }) async {
-    await repo.update(
-      ProjectsCompanion(
-        id: drift.Value(projectId),
-        gridCellWidthValue: drift.Value(cellWidthValue),
-        gridCellWidthUnit: drift.Value(cellWidthUnit),
-        gridCellHeightValue: drift.Value(cellHeightValue),
-        gridCellHeightUnit: drift.Value(cellHeightUnit),
-        updatedAt: drift.Value(DateTime.now().millisecondsSinceEpoch),
-      ),
-    );
   }
 }
