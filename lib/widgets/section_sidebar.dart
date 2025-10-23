@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:vettore/widgets/input_value_type/input_value_type.dart';
+import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
+import 'package:vettore/widgets/input_value_type/input_value_type.dart';
 
 class SectionSidebar extends StatelessWidget {
   const SectionSidebar({

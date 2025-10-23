@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/widgets.dart';
 import 'package:vettore/data/database.dart';
+import 'package:vettore/services/logger.dart';
 
 // A one-time script to manually patch the weights for a few specific colors.
 //
@@ -22,13 +23,13 @@ Future<void> main() async {
   };
 
   try {
-    print('Starting to patch ${colorsToUpdate.length} missing weights...');
+    logWarn('Starting to patch ${colorsToUpdate.length} missing weights...');
 
     for (final entry in colorsToUpdate.entries) {
       final colorName = entry.key;
       final weightInGrams = entry.value;
 
-      print('  Updating "$colorName"...');
+      logWarn('  Updating "$colorName"...');
 
       final updatedRows = await (db.update(db.vendorColors)
             ..where((c) => c.name.equals(colorName)))
@@ -39,13 +40,13 @@ Future<void> main() async {
       );
 
       if (updatedRows > 0) {
-        print('    Success! Set weight to ${weightInGrams}g.');
+        logWarn('    Success! Set weight to ${weightInGrams}g.');
       } else {
-        print('    Warning: Could not find a color named "$colorName".');
+        logWarn('    Warning: Could not find a color named "$colorName".');
       }
     }
 
-    print('\nPatching complete.');
+    logWarn('Patching complete.');
   } finally {
     await db.close();
   }

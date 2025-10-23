@@ -1,12 +1,11 @@
 import 'package:flutter/widgets.dart';
-import 'package:vettore/widgets/section_sidebar.dart';
+import 'package:vettore/widgets/button_app.dart' show OutlinedActionButton;
+import 'package:vettore/widgets/input_value_type/dimension_compare_utils.dart';
 import 'package:vettore/widgets/input_value_type/dimension_row.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_selector.dart';
 import 'package:vettore/widgets/input_value_type/resolution_selector.dart';
 import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
-import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
-import 'package:vettore/widgets/input_value_type/dimension_compare_utils.dart';
-import 'package:vettore/widgets/button_app.dart' show OutlinedActionButton;
+import 'package:vettore/widgets/section_sidebar.dart';
 
 class ImageDimensionPanel extends StatefulWidget {
   const ImageDimensionPanel({

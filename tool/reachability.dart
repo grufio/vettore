@@ -15,7 +15,6 @@ Future<int> main(List<String> args) async {
     ..addOption('entry', help: 'Entry point path (e.g., lib/main.dart)')
     ..addOption('format', allowed: ['text', 'json'], defaultsTo: 'text')
     ..addFlag('widgets-unused',
-        defaultsTo: false,
         help:
             'Additionally report lib/widgets/*.dart whose top-level class names are never referenced across lib');
 
@@ -155,7 +154,7 @@ Future<int> main(List<String> args) async {
         if (otherPath == wf) continue;
         final content = entry.value;
         for (final name in names) {
-          final pattern = RegExp('\\b' + RegExp.escape(name) + '\\b');
+          final pattern = RegExp('\\b${RegExp.escape(name)}\\b');
           if (pattern.hasMatch(content)) {
             referenced = true;
             break;

@@ -4,6 +4,7 @@ import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html;
 import 'package:http/http.dart' as http;
 import 'package:vettore/data/database.dart';
+import 'package:vettore/services/logger.dart';
 
 // A simple script to fetch color weights from an external website
 // and update the local database.
@@ -18,23 +19,23 @@ Future<void> main() async {
   final db = AppDatabase();
 
   try {
-    print('Fetching all vendor colors from the database...');
+    logWarn('Fetching all vendor colors from the database...');
     final allColors = await db.select(db.vendorColors).get();
 
     if (allColors.isEmpty) {
-      print(
+      logWarn(
           'No vendor colors found in the database. Please run the main app once to seed the data.');
       return;
     }
 
-    print('Found ${allColors.length} colors to process.');
+    logWarn('Found ${allColors.length} colors to process.');
 
     for (final color in allColors) {
       final colorNameForUrl = color.name.replaceAll(' ', '-').toLowerCase();
       final url =
           'https://www.jacksonsart.com/en-us/schmincke-norma-professional-artists-oil-35ml-$colorNameForUrl';
 
-      print('Processing ${color.name} from $url');
+      logWarn('Processing ${color.name} from $url');
 
       try {
         final response = await http.get(Uri.parse(url));
@@ -56,7 +57,7 @@ Future<void> main() async {
             final weightInKg = double.tryParse(weightElement.text.trim());
             if (weightInKg != null) {
               final weightInGrams = weightInKg * 1000;
-              print(
+              logWarn(
                   '  Found weight: ${weightInKg}kg -> ${weightInGrams.toStringAsFixed(2)}g');
 
               await (db.update(db.vendorColors)
@@ -66,24 +67,25 @@ Future<void> main() async {
                   weightInGrams: Value(weightInGrams),
                 ),
               );
-              print('  Updated database for ${color.name}.');
+              logWarn('  Updated database for ${color.name}.');
             } else {
-              print('  Could not parse weight from: ${weightElement.text}');
+              logWarn('  Could not parse weight from: ${weightElement.text}');
             }
           } else {
-            print('  Weight information not found on page.');
+            logWarn('  Weight information not found on page.');
           }
         } else {
-          print('  Failed to fetch page, status code: ${response.statusCode}');
+          logWarn(
+              '  Failed to fetch page, status code: ${response.statusCode}');
         }
       } catch (e) {
-        print('  An error occurred while processing ${color.name}: $e');
+        logWarn('  An error occurred while processing ${color.name}: $e');
       }
       // Add a small delay to avoid overwhelming the server
       await Future.delayed(const Duration(milliseconds: 500));
     }
 
-    print('\nScript finished.');
+    logWarn('Script finished.');
   } finally {
     await db.close();
   }

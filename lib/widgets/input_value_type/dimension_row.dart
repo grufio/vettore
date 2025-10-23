@@ -2,8 +2,8 @@ import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:flutter/widgets.dart';
 import 'package:vettore/widgets/button_toggle.dart';
 import 'package:vettore/widgets/constants/input_constants.dart';
-import 'package:vettore/widgets/input_value_type/unit_selector_field.dart';
 import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
+import 'package:vettore/widgets/input_value_type/unit_selector_field.dart';
 import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
 import 'package:vettore/widgets/section_sidebar.dart' show SectionInput;
 

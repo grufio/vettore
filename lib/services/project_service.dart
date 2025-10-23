@@ -1,6 +1,6 @@
-import 'package:vettore/repositories/project_repository.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:vettore/data/database.dart';
+import 'package:vettore/repositories/project_repository.dart';
 
 /// ProjectService centralizes common project operations via the repository
 class ProjectService {

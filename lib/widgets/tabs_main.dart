@@ -187,7 +187,7 @@ class _GrufioTabButtonState extends State<GrufioTabButton> {
             decoration: BoxDecoration(
               color: _isHovered ? kTabBackgroundHover : kTabBackgroundInactive,
               border: const Border(
-                right: BorderSide.none,
+                
               ),
             ),
             alignment: Alignment.center,

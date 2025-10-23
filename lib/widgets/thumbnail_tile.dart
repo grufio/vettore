@@ -47,32 +47,48 @@ class ThumbnailTile extends StatelessWidget {
             // Image preview uses available space above; ratio for consistent height
             AspectRatio(
               aspectRatio: 4 / 3,
-              child: (assetPath != null)
-                  ? Image.asset(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final double logicalWidth = constraints.maxWidth;
+                  final double logicalHeight = logicalWidth * 0.75;
+                  final double dpr = MediaQuery.of(context).devicePixelRatio;
+                  final int cacheW = (logicalWidth * dpr).round();
+                  final int cacheH = (logicalHeight * dpr).round();
+
+                  if (assetPath != null) {
+                    return Image.asset(
                       assetPath!,
                       fit: BoxFit.cover,
                       filterQuality: FilterQuality.none,
-                    )
-                  : (imageBytes != null && imageBytes!.isNotEmpty)
-                      ? Image.memory(
-                          imageBytes!,
-                          fit: BoxFit.cover, // fill area (cover)
-                          filterQuality: FilterQuality.none,
-                        )
-                      : (backgroundFill != null)
-                          ? Container(color: backgroundFill)
-                          : ColoredBox(
-                              color: kGrey20,
-                              child: Center(
-                                child: SvgPicture.asset(
-                                  'assets/icons/32/no-image.svg',
-                                  width: 24,
-                                  height: 24,
-                                  colorFilter: const ColorFilter.mode(
-                                      kGrey70, BlendMode.srcIn),
-                                ),
-                              ),
-                            ),
+                      cacheWidth: cacheW,
+                      cacheHeight: cacheH,
+                    );
+                  }
+                  if (imageBytes != null && imageBytes!.isNotEmpty) {
+                    return Image.memory(
+                      imageBytes!,
+                      fit: BoxFit.cover, // fill area (cover)
+                      filterQuality: FilterQuality.none,
+                      cacheWidth: cacheW,
+                      cacheHeight: cacheH,
+                    );
+                  }
+                  if (backgroundFill != null) {
+                    return Container(color: backgroundFill);
+                  }
+                  return ColoredBox(
+                    color: kGrey20,
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/icons/32/no-image.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: ColorFilter.mode(kGrey70, BlendMode.srcIn),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
             _Footer(
               height: footerHeight,

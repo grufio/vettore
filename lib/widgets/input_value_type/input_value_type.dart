@@ -1,5 +1,3 @@
-import 'package:flutter/widgets.dart';
-import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:flutter/material.dart'
     show
         Material,
@@ -9,16 +7,18 @@ import 'package:flutter/material.dart'
         InputBorder,
         materialTextSelectionControls,
         TextCapitalization;
+import 'package:flutter/services.dart' show TextInputFormatter;
+import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 // Removed: keyboard services, handled by RawAutocomplete and TextField
 // Removed: async utilities
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
-import 'package:vettore/widgets/input_value_type/suffix.dart' as ivt_sfx;
 import 'package:vettore/widgets/input_value_type/controller.dart';
 import 'package:vettore/widgets/input_value_type/dropdown_overlay.dart'
     as ivt_ovl;
 import 'package:vettore/widgets/input_value_type/prefix_icon.dart';
+import 'package:vettore/widgets/input_value_type/suffix.dart' as ivt_sfx;
 
 /// Visual/behavior variants for the right-side affordance.
 /// - regular: fixed suffix text (if provided), no dropdown.
@@ -92,8 +92,6 @@ class InputValueType extends StatefulWidget {
       placeholder: placeholder,
       suffixText: suffixText,
       prefixIconAsset: prefixIconAsset,
-      readOnly: false,
-      enableSelection: true,
     );
   }
   static const InputVariant defaultVariant = InputVariant.regular;

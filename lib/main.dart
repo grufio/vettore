@@ -1,23 +1,23 @@
-import 'package:flutter/widgets.dart';
-import 'package:macos_ui/macos_ui.dart';
 import 'dart:io' show Platform;
-import 'package:window_manager/window_manager.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 
+import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:macos_ui/macos_ui.dart';
+import 'package:vettore/app_image_detail.dart';
 import 'package:vettore/app_overview.dart';
 import 'package:vettore/app_project_detail.dart';
-import 'package:vettore/app_image_detail.dart';
-import 'package:vettore/widgets/app_header_bar.dart';
-import 'package:vettore/models/grufio_tab_data.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/data/database.dart';
-import 'package:drift/drift.dart' show Value;
+import 'package:vettore/models/grufio_tab_data.dart';
+import 'package:vettore/providers/application_providers.dart';
 // Legacy VendorColorsOverviewPage removed with projects feature cleanup
 import 'package:vettore/providers/navigation_providers.dart';
 import 'package:vettore/services/lego_colors_importer.dart';
 import 'package:vettore/services/settings_service.dart';
+import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/widgets/app_header_bar.dart';
+import 'package:window_manager/window_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

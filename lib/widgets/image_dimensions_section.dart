@@ -1,9 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/providers/image_providers.dart';
 import 'package:vettore/providers/image_spec_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/providers/application_providers.dart';
 import 'package:vettore/services/image_detail_controller.dart';
 import 'package:vettore/widgets/image_dimension_panel.dart';
 

@@ -1,7 +1,7 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart' show TextCapitalization;
-import 'package:vettore/widgets/section_sidebar.dart';
+import 'package:flutter/widgets.dart';
 import 'package:vettore/widgets/input_value_type/input_value_type.dart';
+import 'package:vettore/widgets/section_sidebar.dart';
 
 /// Reusable text input (standalone IVT) used for the Title field and similar cases.
 /// - Renders within a `SectionInput` row

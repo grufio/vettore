@@ -25,6 +25,8 @@ import 'package:vettore/services/image_upload_service.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/artboard_view.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
+import 'package:vettore/widgets/image_detail/image_detail_header_bar.dart';
+import 'package:vettore/widgets/image_detail/image_detail_right_panel.dart';
 // Dimension panel now wrapped by ImageDimensionsSection
 import 'package:vettore/widgets/image_dimensions_section.dart';
 // removed unused image_resize_service import after inlining px computation
@@ -33,9 +35,9 @@ import 'package:vettore/widgets/image_listeners.dart';
 
 import 'package:vettore/widgets/image_preview.dart';
 import 'package:vettore/widgets/image_upload_text.dart';
-import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
-import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/input_value_type/dimension_compare_utils.dart';
+import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
+// side_panel moved into ImageDetailRightPanel
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
   const AppImageDetailPage({
@@ -177,36 +179,21 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
             ),
           // Header handled by shared shell; keep content only when embedded
           // Detail filter bar with bottom border
-          DecoratedBox(
-            decoration: const BoxDecoration(
-              color: kWhite,
-              border: Border(
-                bottom: BorderSide(color: kBordersColor),
-              ),
-            ),
-            child: ContentFilterBar(
-              items: const [
-                FilterItem(id: 'project', label: 'Project'),
-                FilterItem(id: 'image', label: 'Image'),
-                FilterItem(id: 'conversion', label: 'Conversion'),
-                FilterItem(id: 'grid', label: 'Grid'),
-                FilterItem(id: 'output', label: 'Output'),
-              ],
-              activeId: (() {
-                final page = ref.watch(currentPageProvider);
-                if (page == PageId.image) return 'image';
-                if (page == PageId.project) return 'project';
-                return _detailFilterId;
-              })(),
-              onChanged: (id) {
-                setState(() => _detailFilterId = id);
-                if (id == 'project') {
-                  ref.read(currentPageProvider.notifier).state = PageId.project;
-                } else if (id == 'image') {
-                  ref.read(currentPageProvider.notifier).state = PageId.image;
-                }
-              },
-            ),
+          ImageDetailHeaderBar(
+            activeId: (() {
+              final page = ref.watch(currentPageProvider);
+              if (page == PageId.image) return 'image';
+              if (page == PageId.project) return 'project';
+              return _detailFilterId;
+            })(),
+            onChanged: (id) {
+              setState(() => _detailFilterId = id);
+              if (id == 'project') {
+                ref.read(currentPageProvider.notifier).state = PageId.project;
+              } else if (id == 'image') {
+                ref.read(currentPageProvider.notifier).state = PageId.image;
+              }
+            },
           ),
           Expanded(
             child: ColoredBox(
@@ -219,82 +206,71 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                     child: _buildDetailBody(),
                   ),
                   // Right side panel (empty for now)
-                  SidePanel(
-                    side: SidePanelSide.right,
+                  ImageDetailRightPanel(
                     width: _rightPanelWidth,
-                    topPadding: 0.0,
-                    resizable: true,
-                    minWidth: 200.0,
-                    onResizeDelta: (delta) {
+                    onResize: (delta) {
                       setState(() {
                         _rightPanelWidth =
                             (_rightPanelWidth + delta).clamp(200.0, 400.0);
                       });
                     },
-                    onResetWidth: () {
+                    onReset: () {
                       setState(() {
                         _rightPanelWidth = 320.0;
                       });
                     },
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ImageDimensionsSection(
-                          projectId: _currentProjectId!,
-                          widthTextController: _inputValueController,
-                          heightTextController: _inputValueController2,
-                          imgCtrl: _imgCtrl!,
-                          linkWH: _linkWH,
-                          onLinkChanged: (v) => setState(() => _linkWH = v),
-                          interpolation: _interp,
-                          onInterpolationChanged: (v) => setState(() {
-                            _interp = v;
-                          }),
-                          onResizeTap: () async {
-                            if (_currentProjectId == null) return;
-                            final String wText =
-                                trimTrailingDot(_inputValueController.text);
-                            final String hText =
-                                trimTrailingDot(_inputValueController2.text);
-                            final double? wVal = double.tryParse(wText);
-                            final double? hVal = double.tryParse(hText);
-                            final int? imgId = ref.read(
-                                imageIdStableProvider(_currentProjectId!));
-                            if (imgId == null) return;
-                            final int dpi = (await ref
-                                    .read(imageDpiProvider(imgId).future)) ??
+                    child: ImageDetailDimensions(
+                      projectId: _currentProjectId!,
+                      widthController: _inputValueController,
+                      heightController: _inputValueController2,
+                      controller: _imgCtrl!,
+                      linkWH: _linkWH,
+                      onLinkChanged: (v) => setState(() => _linkWH = v),
+                      interpolation: _interp,
+                      onInterpolationChanged: (v) => setState(() {
+                        _interp = v;
+                      }),
+                      onResizeTap: () async {
+                        if (_currentProjectId == null) return;
+                        final String wText =
+                            trimTrailingDot(_inputValueController.text);
+                        final String hText =
+                            trimTrailingDot(_inputValueController2.text);
+                        final double? wVal = double.tryParse(wText);
+                        final double? hVal = double.tryParse(hText);
+                        final int? imgId =
+                            ref.read(imageIdStableProvider(_currentProjectId!));
+                        if (imgId == null) return;
+                        final int dpi =
+                            (await ref.read(imageDpiProvider(imgId).future)) ??
                                 96;
-                            final String wUnit = _imgCtrl?.widthVC.unit ?? 'px';
-                            final String hUnit =
-                                _imgCtrl?.heightVC.unit ?? 'px';
-                            final (double?, double?) phys = await ref
-                                .read(imagePhysPixelsProvider(imgId).future);
-                            final double curPhysW = phys.$1 ?? 0.0;
-                            final double curPhysH = phys.$2 ?? 0.0;
-                            await ref.read(imageActionsProvider).resizeCommit(
-                              ref,
-                              projectId: _currentProjectId!,
-                              imageId: imgId,
-                              interpName:
-                                  kInterpolationToCvName[_interp] ?? 'linear',
-                              curPhysW: curPhysW,
-                              curPhysH: curPhysH,
-                              typedW: wVal,
-                              wUnit: wUnit,
-                              typedH: hVal,
-                              hUnit: hUnit,
-                              dpi: dpi,
-                              onPhysCommitted: (wPx, hPx) {
-                                if (mounted) {
-                                  _imgCtrl?.applyRemotePx(
-                                      widthPx: wPx, heightPx: hPx);
-                                }
-                              },
-                            );
+                        final String wUnit = _imgCtrl?.widthVC.unit ?? 'px';
+                        final String hUnit = _imgCtrl?.heightVC.unit ?? 'px';
+                        final (double?, double?) phys = await ref
+                            .read(imagePhysPixelsProvider(imgId).future);
+                        final double curPhysW = phys.$1 ?? 0.0;
+                        final double curPhysH = phys.$2 ?? 0.0;
+                        await ref.read(imageActionsProvider).resizeCommit(
+                          ref,
+                          projectId: _currentProjectId!,
+                          imageId: imgId,
+                          interpName:
+                              kInterpolationToCvName[_interp] ?? 'linear',
+                          curPhysW: curPhysW,
+                          curPhysH: curPhysH,
+                          typedW: wVal,
+                          wUnit: wUnit,
+                          typedH: hVal,
+                          hUnit: hUnit,
+                          dpi: dpi,
+                          onPhysCommitted: (wPx, hPx) {
+                            if (mounted) {
+                              _imgCtrl?.applyRemotePx(
+                                  widthPx: wPx, heightPx: hPx);
+                            }
                           },
-                        ),
-                        const Expanded(child: SizedBox.shrink()),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ],

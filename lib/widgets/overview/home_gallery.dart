@@ -41,7 +41,7 @@ class HomeGallery extends ConsumerWidget {
         // Choose columns so tile widths are whole logical pixels after padding/gaps
         const double horizontalPadding = 24.0 * 2; // left + right
         const double crossAxisSpacing = 16.0;
-        int approxColumns =
+        final int approxColumns =
             width.isFinite ? (width / 280.0).floor().clamp(1, 12) : 3;
         double tileWidthFor(int c) {
           final totalGaps = crossAxisSpacing * (c - 1);
@@ -77,43 +77,49 @@ class HomeGallery extends ConsumerWidget {
             String two(int n) => n.toString().padLeft(2, '0');
             final formatted =
                 '${two(now.day)}.${two(now.month)}.${now.year}, ${two(now.hour)}:${two(now.minute)}';
-            items.add(GestureDetector(
+            items.add(RepaintBoundary(
+                child: GestureDetector(
+              key: ValueKey('vendor:${v.id}'),
               onTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
               onDoubleTap: () => onOpenVendor?.call(v.id, v.vendorBrand),
               child: ThumbnailTile(
                 lines: [v.vendorName, v.vendorBrand, formatted],
               ),
-            ));
+            )));
           }
         }
         if (showProjects) {
           for (final p in projects) {
-            items.add(Consumer(builder: (context, ref, _) {
-              final bytesAsync = (p.imageId != null)
-                  ? ref.watch(imageBytesProvider(p.imageId!))
-                  : const AsyncValue<Uint8List?>.data(null);
-              final bytes = bytesAsync.asData?.value;
-              String two(int n) => n.toString().padLeft(2, '0');
-              final dt = DateTime.fromMillisecondsSinceEpoch(p.createdAt);
-              final line3 =
-                  '${two(dt.day)}.${two(dt.month)}.${dt.year}, ${two(dt.hour)}:${two(dt.minute)}';
+            items.add(KeyedSubtree(
+                key: ValueKey('project:${p.id}'),
+                child:
+                    RepaintBoundary(child: Consumer(builder: (context, ref, _) {
+                  final Uint8List? bytes = (p.imageId != null)
+                      ? ref.watch(imageBytesProvider(p.imageId!)
+                          .select((av) => av.asData?.value))
+                      : null;
+                  String two(int n) => n.toString().padLeft(2, '0');
+                  final dt = DateTime.fromMillisecondsSinceEpoch(p.createdAt);
+                  final line3 =
+                      '${two(dt.day)}.${two(dt.month)}.${dt.year}, ${two(dt.hour)}:${two(dt.minute)}';
 
-              final dpiAsync = (p.imageId != null)
-                  ? ref.watch(imageDpiProvider(p.imageId!))
-                  : const AsyncValue<int?>.data(null);
-              final int? dpi = dpiAsync.asData?.value;
-              final String line2 = (dpi == null || dpi == 0) ? '' : '$dpi dpi';
-              return _ProjectThumbnail(
-                bytes: bytes,
-                title: p.title,
-                lines: [p.title, line2, line3],
-                onOpen: () => onOpenProject?.call(p.id),
-                onDelete: () async {
-                  final repo = ref.read(projectRepositoryProvider);
-                  await repo.delete(p.id);
-                },
-              );
-            }));
+                  final int? dpi = (p.imageId != null)
+                      ? ref.watch(imageDpiProvider(p.imageId!)
+                          .select((av) => av.asData?.value))
+                      : null;
+                  final String line2 =
+                      (dpi == null || dpi == 0) ? '' : '$dpi dpi';
+                  return _ProjectThumbnail(
+                    bytes: bytes,
+                    title: p.title,
+                    lines: [p.title, line2, line3],
+                    onOpen: () => onOpenProject?.call(p.id),
+                    onDelete: () async {
+                      final repo = ref.read(projectRepositoryProvider);
+                      await repo.delete(p.id);
+                    },
+                  );
+                }))));
           }
         }
         // Compute grid child aspect ratio to match ThumbnailTile layout:

@@ -1,21 +1,22 @@
-import 'dart:ui';
 // import 'dart:convert';
 // import 'dart:io';
 import 'dart:async';
+import 'dart:ui';
+
+import 'package:drift/drift.dart' hide Column;
 import 'package:equatable/equatable.dart';
 // import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' hide Column;
 // import 'package:image/image.dart' as img;
 // import 'package:flutter/foundation.dart' show compute;
 // import 'package:vettore/services/image_compute.dart' as ic;
 // import 'package:path_provider/path_provider.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/application_providers.dart';
-// import 'package:vettore/services/settings_service.dart';
-import 'package:vettore/services/logger.dart';
 // import 'package:vettore/providers/image_providers.dart';
 import 'package:vettore/services/image_processing_service.dart';
+// import 'package:vettore/services/settings_service.dart';
+import 'package:vettore/services/logger.dart';
 
 // Image bytes provider: render converted (working) bytes when present, else original
 // Minimal one-time logging to verify source selection

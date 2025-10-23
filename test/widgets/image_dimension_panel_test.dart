@@ -13,8 +13,8 @@ void main() {
       (tester) async {
     final widthTC = TextEditingController(text: '120.00');
     final heightTC = TextEditingController(text: '80.00');
-    final wVC = UnitValueController(unit: 'px', dpi: 96);
-    final hVC = UnitValueController(unit: 'px', dpi: 96);
+    final wVC = UnitValueController();
+    final hVC = UnitValueController();
 
     await tester.pumpWidget(_wrap(ImageDimensionPanel(
       widthTextController: widthTC,

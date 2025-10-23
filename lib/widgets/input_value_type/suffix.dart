@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:vettore/theme/app_theme_typography.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/theme/app_theme_typography.dart';
 
 class HoverSelectorSuffix extends StatefulWidget {
   const HoverSelectorSuffix({

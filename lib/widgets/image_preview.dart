@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:vettore/widgets/artboard_view.dart';
 import 'package:vettore/widgets/snackbar_image.dart';

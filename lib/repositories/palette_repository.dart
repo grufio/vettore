@@ -1,7 +1,7 @@
-import 'package:vettore/data/database.dart';
-import 'package:drift/drift.dart';
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
+import 'package:vettore/data/database.dart';
 
 // A data class to hold a palette and its colors
 class FullPalette extends Equatable {

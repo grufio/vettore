@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:vettore/data/database.dart';
+import 'package:vettore/services/logger.dart';
 
 // A simple script to verify the color weights in the database.
 //
@@ -13,11 +14,11 @@ Future<void> main() async {
   final db = AppDatabase();
 
   try {
-    print('Reading vendor colors from the database...\n');
+    logWarn('Reading vendor colors from the database...');
     final allColors = await db.select(db.vendorColors).get();
 
     if (allColors.isEmpty) {
-      print('No vendor colors found in the database.');
+      logWarn('No vendor colors found in the database.');
       return;
     }
 
@@ -28,10 +29,10 @@ Future<void> main() async {
     for (final color in allColors) {
       final name = color.name.padRight(longestName);
       final weight = color.weightInGrams?.toStringAsFixed(2) ?? 'N/A';
-      print('  $name  |  Weight: ${weight}g');
+      logWarn('  $name  |  Weight: ${weight}g');
     }
 
-    print('\nVerification complete.');
+    logWarn('Verification complete.');
   } finally {
     await db.close();
   }

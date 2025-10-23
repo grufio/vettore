@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/widgets.dart';
 import 'package:vettore/data/database.dart';
+import 'package:vettore/services/logger.dart';
 
 // A script to calculate the color density based on the weight and save it.
 //
@@ -16,22 +17,23 @@ Future<void> main() async {
   final db = AppDatabase();
 
   try {
-    print('Reading vendor colors from the database...');
+    logWarn('Reading vendor colors from the database...');
     final allColors = await db.select(db.vendorColors).get();
 
     if (allColors.isEmpty) {
-      print('No vendor colors found in the database.');
+      logWarn('No vendor colors found in the database.');
       return;
     }
 
-    print('Calculating and updating density for ${allColors.length} colors...');
+    logWarn(
+        'Calculating and updating density for ${allColors.length} colors...');
 
     for (final color in allColors) {
       if (color.weightInGrams != null) {
         final rawWeight = color.weightInGrams! - 4.0;
         final density = rawWeight / 35.0;
 
-        print(
+        logWarn(
             '  ${color.name}: ${density.toStringAsFixed(4)} g/ml (from ${color.weightInGrams}g)');
 
         await (db.update(db.vendorColors)..where((c) => c.id.equals(color.id)))
@@ -41,11 +43,11 @@ Future<void> main() async {
           ),
         );
       } else {
-        print('  Skipping ${color.name} (no weight data).');
+        logWarn('  Skipping ${color.name} (no weight data).');
       }
     }
 
-    print('\nCalculation complete.');
+    logWarn('Calculation complete.');
   } finally {
     await db.close();
   }

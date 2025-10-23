@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/repositories/palette_repository.dart';
 import 'package:vettore/repositories/project_repository.dart';
+import 'package:vettore/services/ai_service.dart';
 import 'package:vettore/services/project_service.dart';
 import 'package:vettore/services/settings_service.dart';
-import 'package:vettore/services/ai_service.dart';
 // duplicate imports removed
 
 //-
