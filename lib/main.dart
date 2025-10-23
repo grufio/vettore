@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'dart:async' show unawaited;
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:drift/drift.dart' show Value;
@@ -14,6 +15,7 @@ import 'package:vettore/providers/application_providers.dart';
 // Legacy VendorColorsOverviewPage removed with projects feature cleanup
 import 'package:vettore/providers/navigation_providers.dart';
 import 'package:vettore/services/lego_colors_importer.dart';
+import 'package:vettore/services/init_service.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
@@ -31,6 +33,8 @@ Future<void> main() async {
   final db = AppDatabase();
   final settings = SettingsService(db);
   await settings.init();
+  // Run one-time background tasks (import, cleanup) guarded by settings flags
+  unawaited(InitService(db: db, settings: settings).run());
 
   runApp(ProviderScope(
     overrides: [
