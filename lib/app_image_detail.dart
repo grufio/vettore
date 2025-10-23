@@ -24,11 +24,9 @@ import 'package:vettore/services/image_detail_controller.dart';
 import 'package:vettore/services/image_upload_service.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/artboard_view.dart';
-import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/image_detail/image_detail_header_bar.dart';
 import 'package:vettore/widgets/image_detail/image_detail_right_panel.dart';
 // Dimension panel now wrapped by ImageDimensionsSection
-import 'package:vettore/widgets/image_dimensions_section.dart';
 // removed unused image_resize_service import after inlining px computation
 import 'package:vettore/widgets/image_listeners.dart';
 // PhotoView removed in favor of InteractiveViewer for infinite pasteboard
@@ -419,10 +417,7 @@ extension on _AppImageDetailPageState {
         ),
       );
     }
-    final Size canvasPx = ref.watch(
-          canvasPreviewPxProvider(pid).select((a) => a.asData?.value),
-        ) ??
-        const Size(100.0, 100.0);
+    final Size canvasPx = ref.watch(canvasPreviewPxProvider(pid));
     if (canvasPx.width <= 0 || canvasPx.height <= 0) {
       const double placeholderW = 100.0;
       const double placeholderH = 100.0;

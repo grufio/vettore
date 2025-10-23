@@ -51,3 +51,64 @@ samples, guidance on mobile development, and a full API reference.
 - Backfill: initialize phys from converted dims when present; else from original dims.
 - Providers:
   - `imagePhysPixelsProvider` returns physical floats; `imageDimensionsProvider` returns raster ints for preview.
+
+## Tooling scripts (tool/)
+
+These Dart scripts support data verification and maintenance. Run them with Flutter's Dart VM:
+
+```bash
+flutter pub get
+```
+
+### verify_density.dart
+- Purpose: Verifies that vendor color density values are within expected bounds or populated where required.
+- Run:
+```bash
+flutter run -t tool/verify_density.dart
+```
+
+### verify_weights.dart
+- Purpose: Checks and validates color weights; reports missing or anomalous data.
+- Run:
+```bash
+flutter run -t tool/verify_weights.dart
+```
+
+### fetch_color_weights.dart
+- Purpose: Scrapes weight info from vendor pages and updates the local DB (`vendor_colors.weight_in_grams`).
+- Notes:
+  - Requires network access; be considerate with frequency.
+  - Uses a short delay between requests (500ms) to avoid hammering.
+- Run:
+```bash
+flutter run -t tool/fetch_color_weights.dart
+```
+
+### calculate_density.dart
+- Purpose: Calculates color density using available weight/volume information and writes results back.
+- Run:
+```bash
+flutter run -t tool/calculate_density.dart
+```
+
+### patch_missing_weights.dart
+- Purpose: Fills missing weight entries using heuristics or derived values; intended for cleanup passes.
+- Run:
+```bash
+flutter run -t tool/patch_missing_weights.dart
+```
+
+### reachability.dart (custom analyzer)
+- Purpose: Detects unreachable/unused Dart files via static import/export/part traversal.
+- CI: `./.github/workflows/reachability.yml` fails PRs with unreachable files.
+- Local run:
+```bash
+flutter run -t tool/reachability.dart -- <options>
+```
+- Common flags:
+  - `--entry lib/main.dart` to set a specific entrypoint
+  - `--delete` to remove files after confirmation (use with caution)
+
+## CI
+
+- PRs run `flutter analyze` and `flutter test` via `.github/workflows/flutter_ci.yml`.

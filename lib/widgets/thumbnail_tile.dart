@@ -83,7 +83,8 @@ class ThumbnailTile extends StatelessWidget {
                         'assets/icons/32/no-image.svg',
                         width: 24,
                         height: 24,
-                        colorFilter: ColorFilter.mode(kGrey70, BlendMode.srcIn),
+                        colorFilter:
+                            const ColorFilter.mode(kGrey70, BlendMode.srcIn),
                       ),
                     ),
                   );

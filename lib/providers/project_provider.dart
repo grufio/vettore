@@ -164,11 +164,13 @@ final projectStreamProvider =
   final db = ref.watch(appDatabaseProvider);
 
   // Return a new stream that transforms the DbProject stream into a ProjectState stream
-  return projectRepository
-      .watchById(projectId)
-      .where((p) => p != null)
-      .cast<DbProject>()
-      .asyncMap((project) async {
+  return projectRepository.watchById(projectId).asyncMap((project) async {
+    if (project == null) {
+      return ProjectState(
+        project: await projectRepository.getById(projectId),
+        decodedImage: null,
+      );
+    }
     Image? decodedImage;
     if (project.imageId != null) {
       try {

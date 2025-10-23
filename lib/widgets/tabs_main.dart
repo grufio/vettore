@@ -9,7 +9,7 @@ const double _kTabHorizontalPadding = 8.0;
 const double _kTabSpacing = 8.0;
 const double _kTabFontSize = 12.0;
 const String _kTabFontFamily = 'Inter';
-const double _kTabBorderWidth = 1.0;
+// const double _kTabBorderWidth = 1.0; // unused
 
 // --- Constants for Close Button ---
 const double _kCloseButtonSize = 20.0;
@@ -186,9 +186,7 @@ class _GrufioTabButtonState extends State<GrufioTabButton> {
             height: _kTabHeight,
             decoration: BoxDecoration(
               color: _isHovered ? kTabBackgroundHover : kTabBackgroundInactive,
-              border: const Border(
-                
-              ),
+              border: const Border(),
             ),
             alignment: Alignment.center,
             child: SvgPicture.asset(

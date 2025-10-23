@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
+import 'package:vettore/services/image_detail_controller.dart';
 import 'package:vettore/widgets/image_dimensions_section.dart';
 import 'package:vettore/widgets/side_panel.dart';
-import 'package:vettore/services/image_detail_controller.dart';
 
 class ImageDetailRightPanel extends StatelessWidget {
   const ImageDetailRightPanel({

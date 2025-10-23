@@ -49,7 +49,7 @@ class ImagePreview extends StatelessWidget {
                   final double factor = next / cur;
                   final RenderBox? box = viewportKey.currentContext
                       ?.findRenderObject() as RenderBox?;
-                  final Size vp = box?.size ?? const Size(0, 0);
+                  final Size vp = box?.size ?? Size.zero;
                   if (vp.width == 0 || vp.height == 0) {
                     final Matrix4 m = controller.value.clone();
                     controller.value = m..scale(factor);
@@ -73,7 +73,7 @@ class ImagePreview extends StatelessWidget {
                   final double factor = next / cur;
                   final RenderBox? box = viewportKey.currentContext
                       ?.findRenderObject() as RenderBox?;
-                  final Size vp = box?.size ?? const Size(0, 0);
+                  final Size vp = box?.size ?? Size.zero;
                   if (vp.width == 0 || vp.height == 0) {
                     final Matrix4 m = controller.value.clone();
                     controller.value = m..scale(factor);

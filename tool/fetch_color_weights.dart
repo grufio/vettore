@@ -82,7 +82,7 @@ Future<void> main() async {
         logWarn('  An error occurred while processing ${color.name}: $e');
       }
       // Add a small delay to avoid overwhelming the server
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future<void>.delayed(const Duration(milliseconds: 500));
     }
 
     logWarn('Script finished.');
