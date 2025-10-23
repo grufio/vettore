@@ -55,4 +55,7 @@ class ProjectRepository {
 
   Future<void> delete(int id) =>
       (_db.delete(_db.projects)..where((p) => p.id.equals(id))).go();
+
+  Future<T> runInTransaction<T>(Future<T> Function() action) =>
+      _db.transaction(action);
 }
