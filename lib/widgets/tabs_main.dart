@@ -1,10 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 // --- Constants for Tab Dimensions and Styles ---
 const double _kTabHeight = 40.0;
-const double _kTabIconSize = 20.0;
+const double _kTabIconSize = 24.0;
 const double _kTabHorizontalPadding = 8.0;
 const double _kTabSpacing = 8.0;
 const double _kTabFontSize = 12.0;
@@ -13,7 +14,7 @@ const String _kTabFontFamily = 'Inter';
 
 // --- Constants for Close Button ---
 const double _kCloseButtonSize = 20.0;
-const double _kCloseButtonIconSize = 20.0;
+const double _kCloseButtonIconSize = 16.0;
 const double _kCloseButtonBorderRadius = 4.0;
 
 // --- Colors directly from theme
@@ -46,6 +47,24 @@ class GrufioTab extends StatefulWidget {
 class _GrufioTabState extends State<GrufioTab> {
   bool _isHovered = false;
   bool _isCloseButtonHovered = false;
+  final GlobalKey _tabIconKey = GlobalKey(debugLabel: 'tabIcon');
+  final GlobalKey _closeIconKey = GlobalKey(debugLabel: 'closeIcon');
+
+  void _logIconSizesOnce(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final double dpr = MediaQuery.of(context).devicePixelRatio;
+      final RenderBox? rTab =
+          _tabIconKey.currentContext?.findRenderObject() as RenderBox?;
+      final RenderBox? rClose =
+          _closeIconKey.currentContext?.findRenderObject() as RenderBox?;
+      if (rTab != null) {
+        debugPrint('[tabs] DPR=$dpr tabIcon size=${rTab.size}');
+      }
+      if (rClose != null) {
+        debugPrint('[tabs] DPR=$dpr closeIcon size=${rClose.size}');
+      }
+    });
+  }
 
   Widget _buildCloseButton() {
     return MouseRegion(
@@ -63,13 +82,17 @@ class _GrufioTabState extends State<GrufioTab> {
             borderRadius: BorderRadius.circular(_kCloseButtonBorderRadius),
           ),
           child: Center(
-            child: SvgPicture.asset(
-              'assets/icons/32/close.svg',
+            child: SizedBox(
               width: _kCloseButtonIconSize,
               height: _kCloseButtonIconSize,
-              colorFilter: ColorFilter.mode(
-                _isCloseButtonHovered ? kGrey100 : kTabTextColorInactive,
-                BlendMode.srcIn,
+              child: Center(
+                child: Icon(
+                  Grufio.close,
+                  key: _closeIconKey,
+                  size: _kCloseButtonIconSize,
+                  color:
+                      _isCloseButtonHovered ? kGrey100 : kTabTextColorInactive,
+                ),
               ),
             ),
           ),
@@ -80,17 +103,54 @@ class _GrufioTabState extends State<GrufioTab> {
 
   @override
   Widget build(BuildContext context) {
+    _logIconSizesOnce(context);
     final bool isClosable = widget.onClose != null;
     final Color contentColor = widget.isActive
         ? kGrey90
         : (_isHovered ? kGrey100 : kTabTextColorInactive);
 
-    final iconWidget = SvgPicture.asset(
-      widget.iconPath,
-      width: _kTabIconSize,
-      height: _kTabIconSize,
-      colorFilter: ColorFilter.mode(contentColor, BlendMode.srcIn),
-    );
+    final Widget iconWidget = (() {
+      final String p = widget.iconPath;
+      if (p.endsWith('/home.svg') || p.endsWith('home.svg')) {
+        return SizedBox(
+          width: 20.0,
+          height: 20.0,
+          child: Center(
+            child: Icon(
+              Grufio.home,
+              key: _tabIconKey,
+              size: 20.0,
+              color: contentColor,
+            ),
+          ),
+        );
+      }
+      if (p.endsWith('/color-palette.svg') || p.endsWith('color-palette.svg')) {
+        return SizedBox(
+          width: 20.0,
+          height: 20.0,
+          child: Center(
+            child: Icon(
+              Grufio.colorPalette,
+              key: _tabIconKey,
+              size: 20.0,
+              color: contentColor,
+            ),
+          ),
+        );
+      }
+      return SizedBox(
+        width: _kTabIconSize,
+        height: _kTabIconSize,
+        child: SvgPicture.asset(
+          widget.iconPath,
+          key: _tabIconKey,
+          width: _kTabIconSize,
+          height: _kTabIconSize,
+          colorFilter: ColorFilter.mode(contentColor, BlendMode.srcIn),
+        ),
+      );
+    })();
 
     final child = widget.label == null
         ? Center(child: iconWidget)
@@ -189,11 +249,12 @@ class _GrufioTabButtonState extends State<GrufioTabButton> {
               border: const Border(),
             ),
             alignment: Alignment.center,
-            child: SvgPicture.asset(
-              'assets/icons/32/add.svg',
+            child: SizedBox(
               width: 20.0,
               height: 20.0,
-              colorFilter: ColorFilter.mode(contentColor, BlendMode.srcIn),
+              child: Center(
+                child: Icon(Grufio.add, size: 20.0, color: contentColor),
+              ),
             ),
           ),
         ),
