@@ -112,3 +112,53 @@ flutter run -t tool/reachability.dart -- <options>
 ## CI
 
 - PRs run `flutter analyze` and `flutter test` via `.github/workflows/flutter_ci.yml`.
+
+## Icon font and size guidelines
+
+This app uses a custom icon font (`Grufio`) for crisp, consistent icons in the main tabs.
+
+- Usage
+  - Import once where needed:
+    ```dart
+    import 'package:vettore/icons/grufio_icons.dart';
+    ```
+  - Render icons at their final size (avoid runtime scaling):
+    ```dart
+    Icon(Grufio.home, size: 20.0, color: myColor)
+    ```
+  - Prefer solid `color:` on `Icon`; avoid filters that can trigger resampling.
+
+- Tab sizes
+  - Home: 20x20 (font)
+  - Palette: 20x20 (font)
+  - Add: 20x20 (font)
+  - Close: 16 icon inside 20x20 hit area (font)
+
+- Alignment for sharpness
+  - Wrap icons in fixed boxes and center them to ensure whole‑pixel alignment:
+    ```dart
+    SizedBox(
+      width: 20, height: 20,
+      child: Center(child: Icon(Grufio.home, size: 20, color: color)),
+    )
+    ```
+  - Keep sizes as integers (16/20/24). Avoid fractional paddings/margins.
+
+- Device Pixel Ratio (DPR)
+  - DPR≥2 (retina/high‑dpi) renders noticeably crisper. On macOS without a retina display DPR=1 is expected.
+  - For local checks, use iOS Simulator (retina devices) or Android emulators with xhdpi/xxhdpi.
+
+- Golden tests (tabs)
+  - Goldens are authored at DPR2.
+  - Run tests:
+    ```bash
+    flutter test test/widgets/tab_icon_ab_test.dart -r expanded
+    ```
+  - Update goldens:
+    ```bash
+    flutter test test/widgets/tab_icon_ab_test.dart --update-goldens -r expanded
+    ```
+
+- Finding icon names
+  - See `assets/fonts/Grufio/style.css` or `assets/fonts/Grufio/demo.html` for glyph names.
+  - Constants are exposed via `Grufio.<iconName>` in `lib/icons/grufio_icons.dart`.
