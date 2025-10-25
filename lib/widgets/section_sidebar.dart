@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 import 'package:vettore/widgets/input_value_type/input_value_type.dart';
@@ -192,9 +193,7 @@ class _TitleToggleState extends State<_TitleToggle> {
   bool _hover = false;
   @override
   Widget build(BuildContext context) {
-    final String asset = widget.on
-        ? 'assets/icons/32/view.svg'
-        : 'assets/icons/32/view--off.svg';
+    final IconData glyph = widget.on ? Grufio.view : Grufio.viewOff;
     final Widget box = MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
@@ -207,11 +206,10 @@ class _TitleToggleState extends State<_TitleToggle> {
           borderRadius: BorderRadius.circular(4.0),
         ),
         alignment: Alignment.center,
-        child: SvgPicture.asset(
-          asset,
-          width: 16,
-          height: 16,
-          colorFilter: const ColorFilter.mode(kGrey70, BlendMode.srcIn),
+        child: Icon(
+          glyph,
+          size: 16.0,
+          color: kGrey70,
         ),
       ),
     );

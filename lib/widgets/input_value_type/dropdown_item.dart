@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class DropdownItem extends StatefulWidget {
@@ -47,13 +48,8 @@ class _DropdownItemState extends State<DropdownItem> {
                 width: 16.0,
                 height: 16.0,
                 child: widget.isSelected
-                    ? SvgPicture.asset(
-                        'assets/icons/32/checkmark.svg',
-                        width: 16.0,
-                        height: 16.0,
-                        colorFilter:
-                            const ColorFilter.mode(kWhite, BlendMode.srcIn),
-                      )
+                    ? const Icon(Grufio.checkmark,
+                        size: 16.0, color: kWhite)
                     : const SizedBox.shrink(),
               ),
               const SizedBox(width: 8.0),

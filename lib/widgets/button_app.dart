@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
@@ -39,12 +40,7 @@ class _AddProjectButtonState extends State<AddProjectButton> {
             mainAxisSize: MainAxisSize.min,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              SvgPicture.asset(
-                'assets/icons/32/add.svg',
-                width: 20.0,
-                height: 20.0,
-                colorFilter: const ColorFilter.mode(kWhite, BlendMode.srcIn),
-              ),
+              const Icon(Grufio.add, size: 20.0, color: kWhite),
               const SizedBox(width: 4.0),
               const SizedBox(width: 4.0),
               Text(

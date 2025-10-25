@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
@@ -43,13 +44,20 @@ class _HoverSelectorSuffixState extends State<HoverSelectorSuffix> {
               SizedBox(
                 width: 12.0,
                 height: 12.0,
-                child: SvgPicture.asset(
-                  widget.iconAsset,
-                  width: 12.0,
-                  height: 12.0,
-                  colorFilter:
-                      const ColorFilter.mode(kGrey100, BlendMode.srcIn),
-                ),
+                child: () {
+                  if (widget.iconAsset.endsWith('/chevron--down.svg') ||
+                      widget.iconAsset.endsWith('chevron--down.svg')) {
+                    return const Icon(Grufio.chevronDown,
+                        size: 12.0, color: kGrey100);
+                  }
+                  return SvgPicture.asset(
+                    widget.iconAsset,
+                    width: 12.0,
+                    height: 12.0,
+                    colorFilter:
+                        const ColorFilter.mode(kGrey100, BlendMode.srcIn),
+                  );
+                }(),
               )
             else
               ConstrainedBox(

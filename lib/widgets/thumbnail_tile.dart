@@ -1,7 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
@@ -76,16 +77,10 @@ class ThumbnailTile extends StatelessWidget {
                   if (backgroundFill != null) {
                     return Container(color: backgroundFill);
                   }
-                  return ColoredBox(
+                  return const ColoredBox(
                     color: kGrey20,
                     child: Center(
-                      child: SvgPicture.asset(
-                        'assets/icons/32/no-image.svg',
-                        width: 24,
-                        height: 24,
-                        colorFilter:
-                            const ColorFilter.mode(kGrey70, BlendMode.srcIn),
-                      ),
+                      child: Icon(Grufio.noImage, size: 24, color: kGrey70),
                     ),
                   );
                 },
@@ -138,13 +133,7 @@ class _Footer extends StatelessWidget {
               width: 20.0,
               child: Center(
                 child: leading ??
-                    SvgPicture.asset(
-                      'assets/icons/32/image.svg',
-                      width: 20,
-                      height: 20,
-                      colorFilter:
-                          const ColorFilter.mode(kGrey100, BlendMode.srcIn),
-                    ),
+                    const Icon(Grufio.image, size: 20, color: kGrey100),
               ),
             ),
             const SizedBox(width: 12.0),

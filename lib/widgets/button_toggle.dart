@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class ButtonToggle extends StatefulWidget {
@@ -30,6 +31,8 @@ class _ButtonToggleState extends State<ButtonToggle> {
   Widget build(BuildContext context) {
     final String asset =
         widget.value ? widget.onIconAsset : widget.offIconAsset;
+    final Color iconColor =
+        widget.disabled ? kGrey70 : (_hovered ? kGrey100 : kGrey70);
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = widget.disabled ? false : true),
       onExit: (_) => setState(() => _hovered = false),
@@ -52,15 +55,22 @@ class _ButtonToggleState extends State<ButtonToggle> {
                   : null,
             ),
             alignment: Alignment.center,
-            child: SvgPicture.asset(
-              asset,
-              width: 16.0,
-              height: 16.0,
-              colorFilter: ColorFilter.mode(
-                widget.disabled ? kGrey70 : (_hovered ? kGrey100 : kGrey70),
-                BlendMode.srcIn,
-              ),
-            ),
+            child: () {
+              // Prefer font icons for standard link/unlink; fallback to SVG for custom assets
+              if (asset.endsWith('/link.svg') || asset.endsWith('link.svg')) {
+                return Icon(Grufio.link, size: 16.0, color: iconColor);
+              }
+              if (asset.endsWith('/unlink.svg') ||
+                  asset.endsWith('unlink.svg')) {
+                return Icon(Grufio.unlink, size: 16.0, color: iconColor);
+              }
+              return SvgPicture.asset(
+                asset,
+                width: 16.0,
+                height: 16.0,
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              );
+            }(),
           ),
         ),
       ),

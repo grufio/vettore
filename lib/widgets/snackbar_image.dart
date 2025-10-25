@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class SnackbarImage extends StatelessWidget {
@@ -87,13 +88,28 @@ class _IconButtonInnerState extends State<_IconButtonInner> {
           width: SnackbarImage._iconSize,
           height: SnackbarImage._iconSize,
           child: Center(
-            child: SvgPicture.asset(
-              widget.asset,
-              width: SnackbarImage._iconSize,
-              height: SnackbarImage._iconSize,
-              colorFilter: ColorFilter.mode(
-                  _hovered ? kGrey100 : kGrey70, BlendMode.srcIn),
-            ),
+            child: () {
+              final Color color = _hovered ? kGrey100 : kGrey70;
+              final double size = SnackbarImage._iconSize;
+              if (widget.asset.endsWith('/zoom--in.svg') ||
+                  widget.asset.endsWith('zoom--in.svg')) {
+                return Icon(Grufio.zoomIn, size: size, color: color);
+              }
+              if (widget.asset.endsWith('/zoom--out.svg') ||
+                  widget.asset.endsWith('zoom--out.svg')) {
+                return Icon(Grufio.zoomOut, size: size, color: color);
+              }
+              if (widget.asset.endsWith('/fit-to-screen.svg') ||
+                  widget.asset.endsWith('fit-to-screen.svg')) {
+                return Icon(Grufio.zoomFit, size: size, color: color);
+              }
+              return SvgPicture.asset(
+                widget.asset,
+                width: size,
+                height: size,
+                colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+              );
+            }(),
           ),
         ),
       ),
