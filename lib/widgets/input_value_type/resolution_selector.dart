@@ -49,7 +49,7 @@ class _ResolutionSelectorState extends State<ResolutionSelector> {
     return SectionInput(
       full: InputValueType(
         controller: _controller,
-        prefixIconAsset: 'assets/icons/16/help.svg',
+        prefixIconAsset: 'help',
         prefixIconWidth: 16.0,
         prefixIconHeight: 16.0,
         prefixIconFit: BoxFit.none,

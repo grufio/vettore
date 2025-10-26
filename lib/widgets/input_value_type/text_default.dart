@@ -14,7 +14,7 @@ class TextDefaultInput extends StatelessWidget {
     this.focusNode,
     this.placeholder,
     this.suffixText,
-    this.prefixIconAsset = 'assets/icons/32/document--blank.svg',
+    this.prefixIconAsset = 'document-blank',
     this.actionIconAsset,
     this.onActionTap,
     this.onSubmitted,

@@ -1,5 +1,5 @@
-import 'dart:io' show Platform;
 import 'dart:async' show unawaited;
+import 'dart:io' show Platform;
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:drift/drift.dart' show Value;
@@ -14,8 +14,8 @@ import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/providers/application_providers.dart';
 // Legacy VendorColorsOverviewPage removed with projects feature cleanup
 import 'package:vettore/providers/navigation_providers.dart';
-import 'package:vettore/services/lego_colors_importer.dart';
 import 'package:vettore/services/init_service.dart';
+import 'package:vettore/services/lego_colors_importer.dart';
 import 'package:vettore/services/settings_service.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
@@ -83,7 +83,7 @@ class _AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<_AppShell> {
   int _activeIndex = 0;
   final List<GrufioTabData> _tabs = [
-    const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
+    const GrufioTabData(iconId: 'home', width: 40),
   ];
   int? _currentProjectId;
   bool _adding = false;
@@ -137,10 +137,14 @@ class _AppShellState extends ConsumerState<_AppShell> {
     ));
     setState(() {
       _currentProjectId = id;
-      _tabs.add(const GrufioTabData(
-          iconPath: 'assets/icons/32/color-palette.svg', label: 'Untitled'));
+      _tabs
+          .add(const GrufioTabData(iconId: 'color-palette', label: 'Untitled'));
+      _tabs[_tabs.length - 1] = const GrufioTabData(
+        iconId: 'color-palette',
+        label: 'Untitled',
+      );
       _tabs[_tabs.length - 1] = GrufioTabData(
-        iconPath: 'assets/icons/32/color-palette.svg',
+        iconId: 'color-palette',
         label: 'Untitled',
         projectId: id,
       );
@@ -216,7 +220,7 @@ class _AppShellState extends ConsumerState<_AppShell> {
                         setState(() {
                           _currentProjectId = projectId;
                           _tabs.add(GrufioTabData(
-                            iconPath: 'assets/icons/32/color-palette.svg',
+                            iconId: 'color-palette',
                             label: tabLabel,
                             projectId: projectId,
                           ));
@@ -232,7 +236,7 @@ class _AppShellState extends ConsumerState<_AppShell> {
                       } else {
                         setState(() {
                           _tabs.add(GrufioTabData(
-                            iconPath: 'assets/icons/32/color-palette.svg',
+                            iconId: 'color-palette',
                             label: vendorBrand,
                             vendorId: vendorId,
                           ));
@@ -256,7 +260,7 @@ class _AppShellState extends ConsumerState<_AppShell> {
                                 _activeIndex < _tabs.length) {
                               final current = _tabs[_activeIndex];
                               _tabs[_activeIndex] = GrufioTabData(
-                                iconPath: current.iconPath,
+                                iconId: current.iconId,
                                 label: newTitle.isEmpty ? 'Untitled' : newTitle,
                                 width: current.width,
                                 projectId: current.projectId,

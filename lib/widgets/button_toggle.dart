@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
@@ -8,8 +7,8 @@ class ButtonToggle extends StatefulWidget {
     super.key,
     required this.value,
     required this.onChanged,
-    this.onIconAsset = 'assets/icons/32/link.svg',
-    this.offIconAsset = 'assets/icons/32/unlink.svg',
+    this.onIconAsset = 'link',
+    this.offIconAsset = 'unlink',
     this.disabled = false,
   });
   final bool value;
@@ -56,20 +55,14 @@ class _ButtonToggleState extends State<ButtonToggle> {
             ),
             alignment: Alignment.center,
             child: () {
-              // Prefer font icons for standard link/unlink; fallback to SVG for custom assets
-              if (asset.endsWith('/link.svg') || asset.endsWith('link.svg')) {
+              // Deterministic icon IDs
+              if (asset == 'link') {
                 return Icon(Grufio.link, size: 16.0, color: iconColor);
               }
-              if (asset.endsWith('/unlink.svg') ||
-                  asset.endsWith('unlink.svg')) {
+              if (asset == 'unlink') {
                 return Icon(Grufio.unlink, size: 16.0, color: iconColor);
               }
-              return SvgPicture.asset(
-                asset,
-                width: 16.0,
-                height: 16.0,
-                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-              );
+              return const SizedBox(width: 16.0, height: 16.0);
             }(),
           ),
         ),

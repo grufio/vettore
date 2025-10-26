@@ -194,9 +194,7 @@ class _DimensionRowState extends State<DimensionRow> {
     // DPI sync is handled in didUpdateWidget via post-frame callback
     final bool readOnly = !widget.enabled;
     final List<String> units = widget.units ?? _defaultUnits;
-    final String iconAsset = widget.isWidth
-        ? 'assets/icons/16/width.svg'
-        : 'assets/icons/16/height.svg';
+    final String iconAsset = widget.isWidth ? 'width' : 'height';
     final Key fieldKey = ValueKey(widget.isWidth ? 'width' : 'height');
 
     final input = UnitSelectorField(

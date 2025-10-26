@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
@@ -32,17 +31,17 @@ class SnackbarImage extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _IconButton(
-            asset: 'assets/icons/32/zoom--in.svg',
+            asset: 'zoom-in',
             onTap: onZoomIn,
           ),
           const SizedBox(width: _gap),
           _IconButton(
-            asset: 'assets/icons/32/zoom--out.svg',
+            asset: 'zoom-out',
             onTap: onZoomOut,
           ),
           const SizedBox(width: _gap),
           _IconButton(
-            asset: 'assets/icons/32/fit-to-screen.svg',
+            asset: 'zoom-fit',
             onTap: onFitToScreen,
           ),
         ],
@@ -91,24 +90,16 @@ class _IconButtonInnerState extends State<_IconButtonInner> {
             child: () {
               final Color color = _hovered ? kGrey100 : kGrey70;
               final double size = SnackbarImage._iconSize;
-              if (widget.asset.endsWith('/zoom--in.svg') ||
-                  widget.asset.endsWith('zoom--in.svg')) {
+              if (widget.asset == 'zoom-in') {
                 return Icon(Grufio.zoomIn, size: size, color: color);
               }
-              if (widget.asset.endsWith('/zoom--out.svg') ||
-                  widget.asset.endsWith('zoom--out.svg')) {
+              if (widget.asset == 'zoom-out') {
                 return Icon(Grufio.zoomOut, size: size, color: color);
               }
-              if (widget.asset.endsWith('/fit-to-screen.svg') ||
-                  widget.asset.endsWith('fit-to-screen.svg')) {
+              if (widget.asset == 'zoom-fit') {
                 return Icon(Grufio.zoomFit, size: size, color: color);
               }
-              return SvgPicture.asset(
-                widget.asset,
-                width: size,
-                height: size,
-                colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-              );
+              return SizedBox(width: size, height: size);
             }(),
           ),
         ),

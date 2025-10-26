@@ -50,7 +50,7 @@ class _InterpolationSelectorState extends State<InterpolationSelector> {
     return SectionInput(
       full: InputValueType(
         controller: _controller,
-        prefixIconAsset: 'assets/icons/16/help.svg',
+        prefixIconAsset: 'help',
         prefixIconFit: BoxFit.none,
         prefixIconAlignment: Alignment.centerLeft,
         prefixIconWidth: 16.0,

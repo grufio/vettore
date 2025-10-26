@@ -1,11 +1,10 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:vettore/icons/grufio_registry.dart';
 
 // --- Constants for Tab Dimensions and Styles ---
 const double _kTabHeight = 40.0;
-const double _kTabIconSize = 24.0;
 const double _kTabHorizontalPadding = 8.0;
 const double _kTabSpacing = 8.0;
 const double _kTabFontSize = 12.0;
@@ -22,7 +21,7 @@ const double _kCloseButtonBorderRadius = 4.0;
 class GrufioTab extends StatefulWidget {
   const GrufioTab({
     super.key,
-    required this.iconPath,
+    required this.iconId,
     required this.isActive,
     required this.onTap,
     this.label,
@@ -31,7 +30,7 @@ class GrufioTab extends StatefulWidget {
     this.showLeftBorder = false,
     this.showRightBorder = true,
   });
-  final String iconPath;
+  final String iconId;
   final String? label;
   final bool isActive;
   final bool showLeftBorder;
@@ -109,48 +108,18 @@ class _GrufioTabState extends State<GrufioTab> {
         ? kGrey90
         : (_isHovered ? kGrey100 : kTabTextColorInactive);
 
-    final Widget iconWidget = (() {
-      final String p = widget.iconPath;
-      if (p.endsWith('/home.svg') || p.endsWith('home.svg')) {
-        return SizedBox(
-          width: 20.0,
-          height: 20.0,
-          child: Center(
-            child: Icon(
-              Grufio.home,
-              key: _tabIconKey,
-              size: 20.0,
-              color: contentColor,
-            ),
-          ),
-        );
-      }
-      if (p.endsWith('/color-palette.svg') || p.endsWith('color-palette.svg')) {
-        return SizedBox(
-          width: 20.0,
-          height: 20.0,
-          child: Center(
-            child: Icon(
-              Grufio.colorPalette,
-              key: _tabIconKey,
-              size: 20.0,
-              color: contentColor,
-            ),
-          ),
-        );
-      }
-      return SizedBox(
-        width: _kTabIconSize,
-        height: _kTabIconSize,
-        child: SvgPicture.asset(
-          widget.iconPath,
+    final Widget iconWidget = SizedBox(
+      width: 20.0,
+      height: 20.0,
+      child: Center(
+        child: Icon(
+          grufioById[widget.iconId] ?? Grufio.home,
           key: _tabIconKey,
-          width: _kTabIconSize,
-          height: _kTabIconSize,
-          colorFilter: ColorFilter.mode(contentColor, BlendMode.srcIn),
+          size: 20.0,
+          color: contentColor,
         ),
-      );
-    })();
+      ),
+    );
 
     final child = widget.label == null
         ? Center(child: iconWidget)

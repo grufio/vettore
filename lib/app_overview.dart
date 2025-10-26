@@ -46,7 +46,7 @@ class GrufioTabsApp extends StatelessWidget {
       children: List.generate(tabs.length, (i) {
         final t = tabs[i];
         return GrufioTab(
-          iconPath: t.iconPath,
+          iconId: t.iconId,
           label: t.label,
           width: t.width,
           isActive: i == activeIndex,
@@ -81,11 +81,9 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
   // int? _newProjectIdForDetail; // removed
   // Persistent index now handled by provider
   final _tabs = <GrufioTabData>[
-    const GrufioTabData(iconPath: 'assets/icons/32/home.svg', width: 40),
-    const GrufioTabData(
-        iconPath: 'assets/icons/32/color-palette.svg', label: 'Palette'),
-    const GrufioTabData(
-        iconPath: 'assets/icons/32/color-palette.svg', label: 'Example'),
+    const GrufioTabData(iconId: 'home', width: 40),
+    const GrufioTabData(iconId: 'color-palette', label: 'Palette'),
+    const GrufioTabData(iconId: 'color-palette', label: 'Example'),
   ];
 
   void _onTabSelected(int i) => setState(() {
@@ -149,7 +147,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
           _tabs.insert(
             insertIndex,
             const GrufioTabData(
-              iconPath: 'assets/icons/32/color-palette.svg',
+              iconId: 'color-palette',
               label: 'Untitled',
             ),
           );

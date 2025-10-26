@@ -9,7 +9,6 @@ import 'package:flutter/material.dart'
         TextCapitalization;
 import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/icons/grufio_icons.dart';
 // Removed: keyboard services, handled by RawAutocomplete and TextField
 // Removed: async utilities
@@ -80,7 +79,7 @@ class InputValueType extends StatefulWidget {
     bool autofocus = false,
     String? placeholder,
     String? suffixText,
-    String prefixIconAsset = 'assets/icons/32/document--blank.svg',
+    String prefixIconAsset = 'document-blank',
   }) {
     return InputValueType(
       key: key,
@@ -315,7 +314,7 @@ class _InputValueTypeState extends State<InputValueType> {
               // Always show a prefix icon; default substitutes the label
               ...[
                 PrefixIcon(
-                  asset: widget.prefixIconAsset ?? 'assets/icons/16/help.svg',
+                  asset: widget.prefixIconAsset ?? 'help',
                   size: widget.prefixIconWidth ?? 16.0,
                   fit: widget.prefixIconFit ?? BoxFit.none,
                   alignment: widget.prefixIconAlignment ?? Alignment.centerLeft,
@@ -422,8 +421,7 @@ class _InputValueTypeState extends State<InputValueType> {
       );
     }
 
-    final String iconAsset =
-        widget.dropdownIconAsset ?? 'assets/icons/32/chevron--down.svg';
+    final String iconAsset = widget.dropdownIconAsset ?? 'chevron-down';
 
     switch (widget.variant) {
       case InputVariant.regular:
@@ -641,16 +639,10 @@ class _IconSuffixButtonState extends State<_IconSuffixButton> {
           alignment: Alignment.center,
           child: () {
             final Color color = _hover ? kGrey100 : kGrey70;
-            if (widget.iconAsset.endsWith('/chevron--down.svg') ||
-                widget.iconAsset.endsWith('chevron--down.svg')) {
+            if (widget.iconAsset == 'chevron-down') {
               return Icon(Grufio.chevronDown, size: 12.0, color: color);
             }
-            return SvgPicture.asset(
-              widget.iconAsset,
-              width: 12.0,
-              height: 12.0,
-              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-            );
+            return const SizedBox(width: 12.0, height: 12.0);
           }(),
         ),
       ),

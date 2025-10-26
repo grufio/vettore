@@ -104,7 +104,7 @@ class _AppHeaderBarState extends State<AppHeaderBar>
               children: List.generate(widget.tabs.length, (i) {
                 final t = widget.tabs[i];
                 return GrufioTab(
-                  iconPath: t.iconPath,
+                  iconId: t.iconId,
                   label: t.label,
                   width: t.width,
                   isActive: i == widget.activeIndex,

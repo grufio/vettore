@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 
 class ImageUploadText extends StatefulWidget {
@@ -53,12 +52,9 @@ class _ImageUploadTextState extends State<ImageUploadText> {
               children: [
                 if (widget.leadingIconAsset != null) ...[
                   Center(
-                    child: SvgPicture.asset(
-                      widget.leadingIconAsset!,
+                    child: SizedBox(
                       width: widget.leadingIconSize,
                       height: widget.leadingIconSize,
-                      colorFilter:
-                          const ColorFilter.mode(kGrey70, BlendMode.srcIn),
                     ),
                   ),
                   const SizedBox(height: _lineHeightPx),

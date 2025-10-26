@@ -122,13 +122,14 @@ This app uses a custom icon font (`Grufio`) for crisp, consistent icons in the m
     ```dart
     import 'package:vettore/icons/grufio_icons.dart';
     ```
-  - Render icons at their final size (avoid runtime scaling):
+  - Render icons at their intended size for that usage (avoid runtime scaling). Sizes are not fixed to 20x20; preserve each icon’s existing size and its container/hit area:
     ```dart
     Icon(Grufio.home, size: 20.0, color: myColor)
     ```
+  - Example above uses 20.0 for the Home tab; use the current size in other contexts.
   - Prefer solid `color:` on `Icon`; avoid filters that can trigger resampling.
 
-- Tab sizes
+- Current tab examples (not global defaults)
   - Home: 20x20 (font)
   - Palette: 20x20 (font)
   - Add: 20x20 (font)

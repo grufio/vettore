@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
@@ -161,16 +160,7 @@ class _ReservedActionIconState extends State<_ReservedActionIcon> {
           borderRadius: BorderRadius.circular(4.0),
         ),
         alignment: Alignment.center,
-        child: hasAsset
-            ? SvgPicture.asset(
-                widget.asset!,
-                width: 16.0,
-                height: 16.0,
-                colorFilter: ColorFilter.mode(
-                    widget.disabled ? kGrey70 : (_hovered ? kGrey100 : kGrey70),
-                    BlendMode.srcIn),
-              )
-            : null,
+        child: hasAsset ? const SizedBox(width: 16.0, height: 16.0) : null,
       ),
     );
 
