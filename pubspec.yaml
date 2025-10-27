@@ -52,7 +52,7 @@ dependencies:
   collection: ^1.18.0
   equatable: ^2.0.7
   syncfusion_flutter_pdfviewer: ^31.1.19
-  vector_graphics: ^1.1.11+1
+  # vector_graphics removed (migrated to icon font)
   flutter_svg: ^2.2.0
   macos_ui: ^2.2.0
   macos_window_utils: ^1.8.4
@@ -79,7 +79,7 @@ dev_dependencies:
   custom_lint: ^0.8.1
   drift_dev: ^2.28.2
   build_runner: ^2.4.10
-  vector_graphics_compiler: ^1.1.11+1
+  # vector_graphics_compiler removed
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -101,7 +101,7 @@ flutter:
     - assets/icons/20/
     - assets/icons/24/
     - assets/icons/32/
-    - assets_gen/icons/32/
+    # assets_gen/icons/32/ removed (no .vec assets anymore)
     - lib/input/norma_pro_color_codes.csv
     - scripts/quantize.py
     - scripts/resize.py

@@ -1,14 +1,9 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:vettore/icons/grufio_icons.dart';
+import 'package:vettore/icons/grufio_registry.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vector_graphics/vector_graphics.dart';
 
-// Precompiled vector loaders (const) for main tab icons
-const _kHomeLoader = AssetBytesLoader('assets_gen/icons/32/home.svg.vec');
-const _kPaletteLoader =
-    AssetBytesLoader('assets_gen/icons/32/color-palette.svg.vec');
-const _kAddLoader = AssetBytesLoader('assets_gen/icons/32/add.svg.vec');
+// Vector loaders removed; using font icons
 
 // --- Constants for Tab Dimensions and Styles ---
 const double _kTabHeight = 40.0;
@@ -55,7 +50,6 @@ class _GrufioTabState extends State<GrufioTab> {
   bool _isCloseButtonHovered = false;
   final GlobalKey _tabIconKey = GlobalKey(debugLabel: 'tabIcon');
   final GlobalKey _closeIconKey = GlobalKey(debugLabel: 'closeIcon');
-  static bool _assetCheckDone = false;
 
   void _logIconSizesOnce(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -76,25 +70,6 @@ class _GrufioTabState extends State<GrufioTab> {
   @override
   void initState() {
     super.initState();
-    if (!_assetCheckDone) {
-      _assetCheckDone = true;
-      // Quick asset presence check once per run
-      Future(() async {
-        for (final p in const [
-          'assets/icons/32/home.svg',
-          'assets/icons/32/color-palette.svg',
-          'assets/icons/32/add.svg',
-        ]) {
-          try {
-            await rootBundle.load(p);
-            // ignore: avoid_print
-            debugPrint('[tabs] OK asset found: ' + p);
-          } catch (e) {
-            debugPrint('[tabs] MISSING asset: ' + p + ' → ' + e.toString());
-          }
-        }
-      });
-    }
   }
 
   Widget _buildCloseButton() {
@@ -141,28 +116,16 @@ class _GrufioTabState extends State<GrufioTab> {
         : (_isHovered ? kGrey100 : kTabTextColorInactive);
 
     final Widget iconWidget = (() {
-      // Use vector_graphics with const loaders for crisp rendering at 20px
-      final AssetBytesLoader? loader = switch (widget.iconId) {
-        'home' => _kHomeLoader,
-        'color-palette' => _kPaletteLoader,
-        'add' => _kAddLoader,
-        _ => null,
-      };
-      if (loader == null) {
-        debugPrint('[tabs] iconId=${widget.iconId} → no vector loader');
-        // No fallback: reserve space only
-        return const SizedBox(width: 20.0, height: 20.0);
-      }
-      debugPrint('[tabs] iconId=${widget.iconId} → vector loader active');
+      final IconData iconData = grufioById[widget.iconId] ?? Grufio.home;
       return SizedBox(
         width: 20.0,
         height: 20.0,
         child: Center(
-          child: VectorGraphic(
-            loader: loader,
+          child: Icon(
+            iconData,
             key: _tabIconKey,
-            width: 20.0,
-            height: 20.0,
+            size: 20.0,
+            color: contentColor,
           ),
         ),
       );

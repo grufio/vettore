@@ -320,7 +320,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\ncd \"$FLUTTER_APPLICATION_PATH\"\nmkdir -p assets_gen/icons/32\n\"$FLUTTER_ROOT/bin/flutter\" pub run vector_graphics_compiler:cli \\\n  --input assets/icons/32 \\\n  --output assets_gen/icons/32\n  /bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build\n";
+			shellScript = "set -euo pipefail\n/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build\n";
 		};
 		C00F503A74F432C8F1D7D578 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
