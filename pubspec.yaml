@@ -125,7 +125,7 @@ flutter:
         - asset: assets/fonts/Inter/Inter-VariableFont_opsz,wght.ttf
     - family: Grufio
       fonts:
-        - asset: assets/fonts/Grufio/fonts/Grufio.ttf
+        - asset: assets/fonts/Grufio/fonts/Grufio-hinted.ttf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
