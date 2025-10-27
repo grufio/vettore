@@ -240,6 +240,7 @@
 				33CC10EA2044A3C60003C045 /* Frameworks */,
 				33CC10EB2044A3C60003C045 /* Resources */,
 				33CC110E2044A8840003C045 /* Bundle Framework */,
+                AAAAAAAA0000000000000001 /* SVG Vector Compile */,
 				3399D490228B24CF009A79C7 /* ShellScript */,
 				DDA8B6C51BADDA02764D4F8B /* [CP] Embed Pods Frameworks */,
 			);
@@ -324,6 +325,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+        AAAAAAAA0000000000000001 /* SVG Vector Compile */ = {
+            isa = PBXShellScriptBuildPhase;
+            buildActionMask = 2147483647;
+            files = (
+            );
+            inputFileListPaths = (
+            );
+            inputPaths = (
+            );
+            name = "SVG Vector Compile";
+            outputFileListPaths = (
+            );
+            outputPaths = (
+                "$(PROJECT_DIR)/Flutter/ephemeral/svg_compile.stamp",
+            );
+            runOnlyForDeploymentPostprocessing = 0;
+            shellPath = /bin/sh;
+            shellScript = "set -eo pipefail\nAPP_DIR=\"${PROJECT_DIR}/..\"\ncd \"$APP_DIR\"\n\nOUT_DIR=\"assets_gen/icons/32\"\n\n# Hard check: fail if no .vec files are present\nif ! compgen -G \"$OUT_DIR/*.svg.vec\" > /dev/null; then\n  echo \"error: No .svg.vec found in $OUT_DIR. Run: bash tool/compile_vectors.sh\" >&2\n  exit 1\nfi\n\n# Write stamp so Xcode can cache this phase\nSTAMP=\"${PROJECT_DIR}/Flutter/ephemeral/svg_compile.stamp\"\nmkdir -p \"$(dirname \"$STAMP\")\"\ndate +%s > \"$STAMP\"\necho \"Vectors present. (No compile in Xcode)\"\n";
+        };
 		3399D490228B24CF009A79C7 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;

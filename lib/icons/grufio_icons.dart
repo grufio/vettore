@@ -10,6 +10,15 @@ import 'package:flutter/widgets.dart' show IconData;
 class Grufio {
   Grufio._();
 
+  // Deterministic registry: map stable IDs to IconData used across the app.
+  // Only include IDs that are actually referenced by widgets.
+  static const Map<String, IconData> byId = <String, IconData>{
+    'home': Grufio.home,
+    'color-palette': Grufio.colorPalette,
+    'add': Grufio.add,
+    'close': Grufio.close,
+  };
+
   static const IconData kFilled = IconData(0xe900, fontFamily: 'Grufio');
   static const IconData k = IconData(0xe901, fontFamily: 'Grufio');
   static const IconData acceptActionUsage =

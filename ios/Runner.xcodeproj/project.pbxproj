@@ -105,7 +105,6 @@
 				139D92E1F2E179CDF9C65544 /* Pods-RunnerTests.release.xcconfig */,
 				E19C8416089FC67A6975A3D6 /* Pods-RunnerTests.profile.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -321,7 +320,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+			shellScript = "set -euo pipefail\ncd \"$FLUTTER_APPLICATION_PATH\"\nmkdir -p assets_gen/icons/32\n\"$FLUTTER_ROOT/bin/flutter\" pub run vector_graphics_compiler:cli \\\n  --input assets/icons/32 \\\n  --output assets_gen/icons/32\n  /bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build\n";
 		};
 		C00F503A74F432C8F1D7D578 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -353,9 +352,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
