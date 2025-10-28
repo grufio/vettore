@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:vettore/icons/grufio_icons.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
+// Context menus not used here; revert to simple tap only
 
 /// 33px full-height side menu with spec styles (external widget).
 class SideMenu33 extends StatelessWidget {
@@ -73,18 +74,76 @@ class _MenuIconButton extends StatelessWidget {
       onTap: onTap,
       child: DecoratedBox(
         decoration: deco,
-        child: SizedBox(
-          width: 33.0,
-          height: 32.0,
-          child: Center(
-            child: Icon(
-              icon,
-              size: 20.0,
-              color: iconColor,
-            ),
+        child: _CrispBox(
+          w: 33.0,
+          h: 32.0,
+          childW: 20.0,
+          childH: 20.0,
+          child: Icon(
+            icon,
+            size: 20.0,
+            color: iconColor,
           ),
         ),
       ),
     );
   }
+}
+
+class _CrispBox extends StatelessWidget {
+  const _CrispBox({
+    required this.child,
+    required this.w,
+    required this.h,
+    required this.childW,
+    required this.childH,
+  });
+  final Widget child;
+  final double w;
+  final double h;
+  final double childW;
+  final double childH;
+
+  double _snap(BuildContext context, double logical) {
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    return (logical * dpr).round() / dpr;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sw = _snap(context, w);
+    final sh = _snap(context, h);
+    return SizedBox(
+      width: sw,
+      height: sh,
+      child: CustomSingleChildLayout(
+        delegate: _SnapCenterDelegate(
+          MediaQuery.of(context).devicePixelRatio,
+          childW,
+          childH,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _SnapCenterDelegate extends SingleChildLayoutDelegate {
+  const _SnapCenterDelegate(this.dpr, this.childW, this.childH);
+  final double dpr;
+  final double childW;
+  final double childH;
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints.tightFor(width: childW, height: childH);
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final dx = ((size.width - childSize.width) / 2 * dpr).round() / dpr;
+    final dy = ((size.height - childSize.height) / 2 * dpr).round() / dpr;
+    return Offset(dx, dy);
+  }
+
+  @override
+  bool shouldRelayout(covariant _SnapCenterDelegate oldDelegate) =>
+      oldDelegate.dpr != dpr;
 }

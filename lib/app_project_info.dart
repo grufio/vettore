@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/side_menu_33.dart';
+import 'package:vettore/widgets/side_menu_left.dart';
 
 /// Project Info page shell: renders top tabs, a 33px side menu, and a side filters panel.
 class AppProjectInfoPage extends StatefulWidget {
@@ -15,6 +15,7 @@ class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
   int _menuIndex = 0;
   bool _menuOn =
       true; // when false → off style (black bg, white icons, no border)
+  // No embedded context menu state here
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +34,7 @@ class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
             width: 240.0,
             child: DecoratedBox(
               decoration: const BoxDecoration(
-                color: kGrey10,
+                color: kWhite,
                 border: Border(
                   right: BorderSide(color: kBordersColor),
                 ),
@@ -53,6 +54,10 @@ class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
     );
   }
 }
+
+// Filters now use MenuSection (ContextMenu style)
+
+// _BorderLine not used anymore
 
 /// 33px full-height side menu with spec styles.
 // SideMenu33 now extracted to widgets/side_menu_33.dart

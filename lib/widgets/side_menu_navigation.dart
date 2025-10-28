@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/theme/app_theme_typography.dart';
 
-class HomeNavigation extends StatelessWidget {
-  const HomeNavigation({
+class ProjectNavigation extends StatelessWidget {
+  const ProjectNavigation({
     super.key,
     required this.onTap,
     this.rowHeight = 24.0,

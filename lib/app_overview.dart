@@ -17,7 +17,7 @@ import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/button_app.dart';
 import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/content_toolbar.dart';
-import 'package:vettore/widgets/home_navigation.dart';
+import 'package:vettore/widgets/side_menu_navigation.dart';
 // import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:vettore/widgets/overview/home_gallery.dart';
 import 'package:vettore/widgets/overview/overview_header.dart';
@@ -184,7 +184,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                 }),
                 child: Consumer(builder: (context, ref, _) {
                   final navIndex = ref.watch(homeNavSelectedIndexProvider);
-                  return HomeNavigation(
+                  return ProjectNavigation(
                     selectedIndex: navIndex,
                     onTap: (i) {
                       ref.read(homeNavSelectedIndexProvider.notifier).set(i);
@@ -268,7 +268,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                         child: Consumer(builder: (context, ref, _) {
                           final navIndex =
                               ref.watch(homeNavSelectedIndexProvider);
-                          return HomeNavigation(
+                          return ProjectNavigation(
                             selectedIndex: navIndex,
                             onTap: (i) {
                               ref

@@ -3,13 +3,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/home_navigation.dart';
+import 'package:vettore/widgets/side_menu_navigation.dart';
 
 void main() {
-  testWidgets('HomeNavigation: selected uses kSelected', (tester) async {
+  testWidgets('ProjectNavigation: selected uses kSelected', (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: Scaffold(
-        body: HomeNavigation(
+        body: ProjectNavigation(
           onTap: _noop,
         ),
       ),
@@ -25,10 +25,10 @@ void main() {
     expect(deco?.color, kSelected);
   });
 
-  testWidgets('HomeNavigation: hover uses kGrey10', (tester) async {
+  testWidgets('ProjectNavigation: hover uses kGrey10', (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: Scaffold(
-        body: HomeNavigation(
+        body: ProjectNavigation(
           onTap: _noop,
         ),
       ),
