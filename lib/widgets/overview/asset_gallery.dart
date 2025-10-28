@@ -15,8 +15,8 @@ final vendorsStreamProvider = StreamProvider<List<Vendor>>((ref) {
   return db.select(db.vendors).watch();
 });
 
-class HomeGallery extends ConsumerWidget {
-  const HomeGallery({
+class AssetGallery extends ConsumerWidget {
+  const AssetGallery({
     super.key,
     this.onOpenProject,
     this.onOpenVendor,

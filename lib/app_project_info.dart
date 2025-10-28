@@ -5,7 +5,9 @@ import 'package:vettore/widgets/side_menu_navigation.dart'
     show ProjectNavigation;
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/content_toolbar.dart';
+import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/button_app.dart';
+import 'package:vettore/widgets/overview/asset_gallery.dart';
 
 /// Project Info page shell: renders top tabs, a 33px side menu, and a side filters panel.
 class AppProjectInfoPage extends StatefulWidget {
@@ -24,6 +26,7 @@ class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
       true; // when false → off style (black bg, white icons, no border)
   // No embedded context menu state here
   double _leftPanelWidth = 240.0;
+  String _activeFilterId = 'completed';
 
   @override
   Widget build(BuildContext context) {
@@ -66,8 +69,21 @@ class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
                     AddProjectButton(onTap: () {}),
                   ],
                 ),
+                ContentFilterBar(
+                  items: const [
+                    FilterItem(id: 'completed', label: 'Completed'),
+                    FilterItem(id: 'all', label: 'All'),
+                  ],
+                  activeId: _activeFilterId,
+                  onChanged: (id) => setState(() => _activeFilterId = id),
+                ),
                 const Expanded(
-                  child: ColoredBox(color: kWhite, child: SizedBox.expand()),
+                  child: ColoredBox(
+                    color: kWhite,
+                    child: AssetGallery(
+                      showVendors: false,
+                    ),
+                  ),
                 ),
               ],
             ),

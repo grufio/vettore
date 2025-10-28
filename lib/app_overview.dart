@@ -19,14 +19,14 @@ import 'package:vettore/widgets/content_filter_bar.dart';
 import 'package:vettore/widgets/content_toolbar.dart';
 import 'package:vettore/widgets/side_menu_navigation.dart';
 // import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:vettore/widgets/overview/home_gallery.dart';
+import 'package:vettore/widgets/overview/asset_gallery.dart';
 import 'package:vettore/widgets/overview/overview_header.dart';
 import 'package:vettore/widgets/side_panel.dart';
 import 'package:vettore/widgets/tabs_main.dart' show GrufioTab;
 
 const double _kToolbarHeight = 40.0;
 
-// Vendors stream moved to widgets/overview/home_gallery.dart
+// Vendors stream moved to widgets/overview/asset_gallery.dart
 
 /// A lightweight wrapper that connects all tabs into a scrollable Row:
 class GrufioTabsApp extends StatelessWidget {
@@ -216,7 +216,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                         onChanged: (id) => setState(() => _activeFilterId = id),
                       ),
                       Expanded(
-                          child: HomeGallery(
+                          child: AssetGallery(
                         onOpenProject: widget.onOpenProject ??
                             (int projId) {
                               if (mounted) {
@@ -311,7 +311,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                             child: Consumer(builder: (context, ref2, _) {
                               final navIndex =
                                   ref2.watch(homeNavSelectedIndexProvider);
-                              return HomeGallery(
+                              return AssetGallery(
                                 onOpenProject: widget.onOpenProject ??
                                     (int projId) {
                                       if (mounted) {

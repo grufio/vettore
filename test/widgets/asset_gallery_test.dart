@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/widgets/overview/home_gallery.dart'
+import 'package:vettore/widgets/overview/asset_gallery.dart'
     as hg; // providers + widget
 import 'package:vettore/widgets/thumbnail_tile.dart';
 
@@ -40,7 +40,7 @@ void main() {
         ],
         child: const Directionality(
           textDirection: TextDirection.ltr,
-          child: SizedBox(width: 1000, height: 800, child: hg.HomeGallery()),
+          child: SizedBox(width: 1000, height: 800, child: hg.AssetGallery()),
         ),
       ));
 
@@ -84,7 +84,7 @@ void main() {
         ],
         child: const Directionality(
           textDirection: TextDirection.ltr,
-          child: SizedBox(width: 1000, height: 800, child: hg.HomeGallery()),
+          child: SizedBox(width: 1000, height: 800, child: hg.AssetGallery()),
         ),
       ));
 

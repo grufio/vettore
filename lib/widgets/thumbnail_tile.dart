@@ -12,6 +12,7 @@ class ThumbnailTile extends StatelessWidget {
     this.imageBytes,
     this.assetPath,
     this.backgroundFill,
+    this.imageAspectRatio = 4 / 3,
     this.footerHeight = 72.0,
     this.lines = const ['', '', ''],
     this.textPadding = 12.0,
@@ -24,6 +25,7 @@ class ThumbnailTile extends StatelessWidget {
   final Uint8List? imageBytes;
   final String? assetPath; // optional asset image path
   final Color? backgroundFill; // when no image, fill with solid color
+  final double imageAspectRatio; // width / height for the preview area
   final double footerHeight;
   final List<String> lines; // expect up to 3 lines
   final double textPadding; // padding inside text area
@@ -47,11 +49,13 @@ class ThumbnailTile extends StatelessWidget {
           children: [
             // Image preview uses available space above; ratio for consistent height
             AspectRatio(
-              aspectRatio: 4 / 3,
+              aspectRatio: imageAspectRatio,
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final double logicalWidth = constraints.maxWidth;
-                  final double logicalHeight = logicalWidth * 0.75;
+                  final double logicalHeight = imageAspectRatio == 0
+                      ? 0
+                      : (logicalWidth / imageAspectRatio);
                   final double dpr = MediaQuery.of(context).devicePixelRatio;
                   final int cacheW = (logicalWidth * dpr).round();
                   final int cacheH = (logicalHeight * dpr).round();
@@ -86,13 +90,14 @@ class ThumbnailTile extends StatelessWidget {
                 },
               ),
             ),
-            _Footer(
-              height: footerHeight,
-              lines: lines,
-              padding: textPadding,
-              spacing: lineSpacing,
-              leading: leading,
-            ),
+            if (footerHeight > 0.0)
+              _Footer(
+                height: footerHeight,
+                lines: lines,
+                padding: textPadding,
+                spacing: lineSpacing,
+                leading: leading,
+              ),
           ],
         ),
       ),
