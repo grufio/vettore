@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:vettore/app_image_detail.dart';
+import 'package:vettore/app_project_info.dart';
 import 'package:vettore/app_icon_detail.dart';
 import 'package:vettore/app_overview.dart';
 import 'package:vettore/app_project_detail.dart';
@@ -250,43 +251,7 @@ class _AppShellState extends ConsumerState<_AppShell> {
                     final page = ref.watch(currentPageProvider);
                     switch (page) {
                       case PageId.project:
-                        return AppProjectDetailPage(
-                          initialActiveIndex: _activeIndex,
-                          onNavigateTab: (i) {
-                            if (i == 0) setState(() => _activeIndex = 0);
-                          },
-                          projectId: _currentProjectId,
-                          onProjectTitleSaved: (newTitle) {
-                            if (_activeIndex > 0 &&
-                                _activeIndex < _tabs.length) {
-                              final current = _tabs[_activeIndex];
-                              _tabs[_activeIndex] = GrufioTabData(
-                                iconId: current.iconId,
-                                label: newTitle.isEmpty ? 'Untitled' : newTitle,
-                                width: current.width,
-                                projectId: current.projectId,
-                              );
-                              setState(() {});
-                            }
-                          },
-                          onDeleteProject: (deletedId) {
-                            final idx = _tabs.indexWhere((t) =>
-                                t.projectId != null &&
-                                t.projectId == deletedId);
-                            if (idx != -1) {
-                              setState(() {
-                                _tabs.removeAt(idx);
-                                _currentProjectId = null;
-                                _activeIndex = 0;
-                              });
-                            } else {
-                              setState(() {
-                                _currentProjectId = null;
-                                _activeIndex = 0;
-                              });
-                            }
-                          },
-                        );
+                        return const AppProjectInfoPage();
                       case PageId.image:
                         return AppImageDetailPage(projectId: _currentProjectId);
                       case PageId.icon:
