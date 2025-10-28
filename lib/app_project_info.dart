@@ -4,6 +4,8 @@ import 'package:vettore/widgets/side_menu_left.dart';
 import 'package:vettore/widgets/side_menu_navigation.dart'
     show ProjectNavigation;
 import 'package:vettore/widgets/side_panel.dart';
+import 'package:vettore/widgets/content_toolbar.dart';
+import 'package:vettore/widgets/button_app.dart';
 
 /// Project Info page shell: renders top tabs, a 33px side menu, and a side filters panel.
 class AppProjectInfoPage extends StatefulWidget {
@@ -53,9 +55,22 @@ class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
               onTap: (_) {},
             ),
           ),
-          // Main content placeholder
-          const Expanded(
-            child: ColoredBox(color: kWhite, child: SizedBox.expand()),
+          // Main content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ContentToolbar(
+                  title: 'Project Info',
+                  trailing: [
+                    AddProjectButton(onTap: () {}),
+                  ],
+                ),
+                const Expanded(
+                  child: ColoredBox(color: kWhite, child: SizedBox.expand()),
+                ),
+              ],
+            ),
           ),
         ],
       ),

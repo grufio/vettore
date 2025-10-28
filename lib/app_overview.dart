@@ -202,7 +202,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ContentToolbar(
-                        children: [
+                        trailing: [
                           AddProjectButton(
                               onTap: widget.onAddProject ?? _onAddTab),
                         ],
@@ -292,7 +292,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                         children: [
                           if (_activeIndex == 0)
                             ContentToolbar(
-                              children: [
+                              trailing: [
                                 AddProjectButton(
                                     onTap: widget.onAddProject ?? _onAddTab),
                               ],

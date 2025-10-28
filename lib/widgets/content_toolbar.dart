@@ -5,18 +5,28 @@ import 'package:vettore/theme/app_theme_typography.dart';
 class ContentToolbar extends StatelessWidget {
   const ContentToolbar({
     super.key,
-    required this.children,
+    this.title,
+    this.trailing = const <Widget>[],
     this.height = 48.0,
     this.horizontalPadding = 24.0,
     this.gap = 8.0,
   });
-  final List<Widget> children;
+
+  final String? title;
+  final List<Widget> trailing;
   final double height;
   final double horizontalPadding;
   final double gap;
 
   @override
   Widget build(BuildContext context) {
+    final TextStyle titleStyle = appTextStyles.bodyM.copyWith(
+      fontSize: 14.0,
+      fontWeight: FontWeight.w500,
+      color: kGrey100,
+      height: 1.0,
+    );
+
     return Container(
       height: height,
       decoration: const BoxDecoration(
@@ -26,9 +36,25 @@ class ContentToolbar extends StatelessWidget {
         ),
       ),
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      alignment: Alignment.centerLeft,
       child: Row(
-        children: _withGaps(children, gap),
+        children: [
+          if (title != null)
+            Flexible(
+              fit: FlexFit.tight,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title!,
+                  style: titleStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            )
+          else
+            const Spacer(),
+          Row(children: _withGaps(trailing, gap)),
+        ],
       ),
     );
   }
@@ -46,40 +72,4 @@ class ContentToolbar extends StatelessWidget {
   }
 }
 
-class ContentToolbarTitle extends StatelessWidget {
-  const ContentToolbarTitle({
-    super.key,
-    required this.title,
-    this.height = 48.0,
-    this.horizontalPadding = 24.0,
-  });
-  final String title;
-  final double height;
-  final double horizontalPadding;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      decoration: const BoxDecoration(
-        color: kWhite,
-        border: Border(
-          bottom: BorderSide(color: kBordersColor),
-        ),
-      ),
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      alignment: Alignment.centerLeft,
-      child: Text(
-        title,
-        style: appTextStyles.bodyM.copyWith(
-          fontSize: 14.0,
-          fontWeight: FontWeight.w500,
-          color: kGrey100,
-          height: 1.0,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-}
+// ContentToolbarTitle merged into ContentToolbar via the `title` property.
