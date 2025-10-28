@@ -186,6 +186,7 @@ class _ProjectThumbnailState extends State<_ProjectThumbnail> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onTap: widget.onOpen,
       onDoubleTap: widget.onOpen,
       onSecondaryTapDown: (d) => _showMenu(d.globalPosition),
       onTapDown: (_) => setState(() => _focused = false),

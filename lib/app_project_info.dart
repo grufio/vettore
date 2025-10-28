@@ -7,7 +7,9 @@ import 'package:vettore/widgets/side_panel.dart';
 
 /// Project Info page shell: renders top tabs, a 33px side menu, and a side filters panel.
 class AppProjectInfoPage extends StatefulWidget {
-  const AppProjectInfoPage({super.key});
+  const AppProjectInfoPage({super.key, this.projectId});
+
+  final int? projectId;
 
   @override
   State<AppProjectInfoPage> createState() => _AppProjectInfoPageState();

@@ -5,13 +5,13 @@ import 'dart:io' show Platform;
 import 'package:drift/drift.dart' as drift show Value;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/app_image_detail.dart';
-import 'package:vettore/app_project_detail.dart';
+import 'package:go_router/go_router.dart';
+// Removed inline detail pages; routing handles project pages
 import 'package:vettore/data/database.dart';
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/providers/application_providers.dart';
+import 'package:vettore/providers/tabs_providers.dart';
 // import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/providers/navigation_providers.dart';
 // import 'package:vettore/widgets/app_header_bar.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/button_app.dart';
@@ -75,7 +75,6 @@ class AppOverviewPage extends ConsumerStatefulWidget {
 
 class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
   int _activeIndex = 0;
-  bool _showDetail = false;
   String _activeFilterId = 'completed';
   double _sidePanelWidth = 260.0;
   // int? _newProjectIdForDetail; // removed
@@ -87,7 +86,6 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
 
   void _onTabSelected(int i) => setState(() {
         _activeIndex = i;
-        _showDetail = i != 0;
       });
 
   @override
@@ -95,7 +93,6 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
     super.initState();
     // Force initial view to Home (gallery)
     _activeIndex = 0;
-    _showDetail = false;
   }
 
   void _onCloseTab(int index) {
@@ -151,11 +148,17 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
             ),
           );
           _activeIndex = insertIndex;
-          _showDetail = true;
         });
-        // Set providers for new project and default page
-        ref.read(currentProjectIdProvider.notifier).state = id;
-        ref.read(currentPageProvider.notifier).state = PageId.project;
+        // Navigate to project page via router
+        if (mounted) {
+          // Ensure header tab exists/selects
+          ref.read(tabsServiceProvider).addOrSelectProjectTab(
+                projectId: id,
+                label: 'Untitled',
+              );
+          // ignore: use_build_context_synchronously
+          context.push('/project/$id');
+        }
       }
     });
   }
@@ -214,7 +217,12 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                       ),
                       Expanded(
                           child: HomeGallery(
-                        onOpenProject: widget.onOpenProject,
+                        onOpenProject: widget.onOpenProject ??
+                            (int projId) {
+                              if (mounted) {
+                                context.push('/project/$projId');
+                              }
+                            },
                         onOpenVendor: widget.onOpenVendor,
                         showProjects: (navIndex >= 0 && navIndex <= 7)
                             ? true
@@ -300,57 +308,25 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                                   setState(() => _activeFilterId = id),
                             ),
                           Expanded(
-                            child: _showDetail
-                                ? Consumer(builder: (context, ref, _) {
-                                    final page = ref.watch(currentPageProvider);
-                                    switch (page) {
-                                      case PageId.project:
-                                        return const AppProjectDetailPage();
-                                      case PageId.image:
-                                        return const AppImageDetailPage();
-                                      case PageId.icon:
-                                        return const AppImageDetailPage();
-                                      case PageId.conversion:
-                                      case PageId.grid:
-                                      case PageId.output:
-                                        return const AppProjectDetailPage();
-                                    }
-                                  })
-                                : (_activeIndex == 0
-                                    ? Consumer(builder: (context, ref2, _) {
-                                        final navIndex = ref2.watch(
-                                            homeNavSelectedIndexProvider);
-                                        return HomeGallery(
-                                          onOpenProject: widget.onOpenProject ??
-                                              (projId) {
-                                                ref
-                                                    .read(
-                                                        currentProjectIdProvider
-                                                            .notifier)
-                                                    .state = projId;
-                                                ref
-                                                    .read(currentPageProvider
-                                                        .notifier)
-                                                    .state = PageId.project;
-                                                setState(() {
-                                                  _showDetail = true;
-                                                });
-                                              },
-                                          onOpenVendor: widget.onOpenVendor,
-                                          showProjects:
-                                              (navIndex >= 0 && navIndex <= 7)
-                                                  ? true
-                                                  : (navIndex == 1),
-                                          showVendors:
-                                              (navIndex >= 8 && navIndex <= 11)
-                                                  ? true
-                                                  : (navIndex == 9),
-                                        );
-                                      })
-                                    : Center(
-                                        child: Text(
-                                            'Content for Tab ${_activeIndex + 1}'),
-                                      )),
+                            child: Consumer(builder: (context, ref2, _) {
+                              final navIndex =
+                                  ref2.watch(homeNavSelectedIndexProvider);
+                              return HomeGallery(
+                                onOpenProject: widget.onOpenProject ??
+                                    (int projId) {
+                                      if (mounted) {
+                                        context.push('/project/$projId');
+                                      }
+                                    },
+                                onOpenVendor: widget.onOpenVendor,
+                                showProjects: (navIndex >= 0 && navIndex <= 7)
+                                    ? true
+                                    : (navIndex == 1),
+                                showVendors: (navIndex >= 8 && navIndex <= 11)
+                                    ? true
+                                    : (navIndex == 9),
+                              );
+                            }),
                           ),
                         ],
                       ),

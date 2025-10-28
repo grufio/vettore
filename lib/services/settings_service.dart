@@ -50,6 +50,9 @@ class SettingsService extends ChangeNotifier {
       _getParsedValue<int>(key, defaultValue);
   Future<void> setInt(String key, int value) => _setSetting(key, value);
 
+  String? getStringOrNull(String key) => _cache[key];
+  Future<void> setString(String key, String value) => _setSetting(key, value);
+
   Future<void> _setSetting(String key, dynamic value) async {
     final stringValue = value.toString();
     await (_db.into(_db.settings).insertOnConflictUpdate(

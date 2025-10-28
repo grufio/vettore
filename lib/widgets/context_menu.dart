@@ -43,45 +43,57 @@ class ContextMenu {
 
     final controller = ContextMenuController();
 
-    // Convert global position to a RelativeRect for showMenu
+    // Use a custom overlay panel to avoid requiring MaterialLocalizations
     final RenderBox overlayBox =
         Overlay.of(context).context.findRenderObject() as RenderBox;
-    final RelativeRect position = RelativeRect.fromRect(
-      Rect.fromLTWH(globalPosition.dx, globalPosition.dy, 0, 0),
-      Offset.zero & overlayBox.size,
-    );
+    final Offset local = overlayBox.globalToLocal(globalPosition);
 
-    // Custom-styled Material menu entries (match dropdown visuals)
-    final List<PopupMenuEntry<int>> entries = List.generate(
-      items.length,
-      (i) => PopupMenuItem<int>(
-        value: i,
-        padding: EdgeInsets.zero,
-        height: kDropdownItemHeight,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: _MenuRow(label: items[i].label),
-        ),
-      ),
-    );
-
-    showMenu<int>(
-      context: context,
-      position: position,
-      items: entries,
-      color: kGrey100,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8.0))),
-      elevation: 4.0,
-      constraints: const BoxConstraints(minWidth: kDropdownPanelWidth),
-    ).then((int? value) {
+    void dismiss() {
       onClose?.call();
+      controller.close();
       _clearActive();
-      if (value != null && value >= 0 && value < items.length) {
-        items[value].onTap();
-      }
-    });
+    }
 
+    final FocusNode _rootFocus = FocusNode();
+    final OverlayEntry entry = OverlayEntry(
+      builder: (BuildContext context) {
+        return RawKeyboardListener(
+          focusNode: _rootFocus,
+          autofocus: true,
+          onKey: (RawKeyEvent e) {
+            if (e is RawKeyDownEvent &&
+                e.logicalKey == LogicalKeyboardKey.escape) {
+              dismiss();
+            }
+          },
+          child: Stack(
+            children: [
+              // Dismiss on outside tap
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: dismiss,
+                ),
+              ),
+              Positioned(
+                left: local.dx,
+                top: local.dy,
+                child: _ContextMenuPanel(
+                  items: items,
+                  onDismiss: dismiss,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    controller._entry = entry;
+    Overlay.of(context).insert(entry);
+    // Ensure keyboard focus for ESC handling
+    // ignore: discarded_futures
+    Future<void>.delayed(Duration.zero).then((_) => _rootFocus.requestFocus());
     _activeController = controller;
     _activeOnClose = onClose;
     return controller;
