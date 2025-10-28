@@ -1,6 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/side_menu_left.dart';
+import 'package:vettore/widgets/side_menu_navigation.dart'
+    show ProjectNavigation;
+import 'package:vettore/widgets/side_panel.dart';
 
 /// Project Info page shell: renders top tabs, a 33px side menu, and a side filters panel.
 class AppProjectInfoPage extends StatefulWidget {
@@ -16,6 +19,7 @@ class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
   bool _menuOn =
       true; // when false → off style (black bg, white icons, no border)
   // No embedded context menu state here
+  double _leftPanelWidth = 240.0;
 
   @override
   Widget build(BuildContext context) {
@@ -30,24 +34,26 @@ class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
             onSelect: (i) => setState(() => _menuIndex = i),
           ),
           // Side filters placeholder (width adjustable later)
-          SizedBox(
-            width: 240.0,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                color: kWhite,
-                border: Border(
-                  right: BorderSide(color: kBordersColor),
-                ),
-              ),
-              child: const SizedBox.expand(),
+          SidePanel(
+            side: SidePanelSide.left,
+            width: _leftPanelWidth,
+            resizable: true,
+            minWidth: 200.0,
+            maxWidth: 400.0,
+            onResizeDelta: (dx) => setState(() {
+              _leftPanelWidth = (_leftPanelWidth + dx).clamp(200.0, 400.0);
+            }),
+            onResetWidth: () => setState(() {
+              _leftPanelWidth = 240.0;
+            }),
+            child: ProjectNavigation(
+              selectedIndex: 1,
+              onTap: (_) {},
             ),
           ),
-          // Content placeholder area
+          // Main content placeholder
           const Expanded(
-            child: ColoredBox(
-              color: kWhite,
-              child: SizedBox.expand(),
-            ),
+            child: ColoredBox(color: kWhite, child: SizedBox.expand()),
           ),
         ],
       ),
