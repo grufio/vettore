@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum PageId { project, image, conversion, grid, output }
+enum PageId { project, image, icon, conversion, grid, output }
 
 final currentPageProvider = StateProvider<PageId>((ref) => PageId.project);
 
@@ -14,6 +14,8 @@ PageId? pageIdFromString(String s) {
       return PageId.project;
     case 'image':
       return PageId.image;
+    case 'icon':
+      return PageId.icon;
     case 'conversion':
       return PageId.conversion;
     case 'grid':
@@ -31,6 +33,8 @@ String pageIdToString(PageId id) {
       return 'project';
     case PageId.image:
       return 'image';
+    case PageId.icon:
+      return 'icon';
     case PageId.conversion:
       return 'conversion';
     case PageId.grid:

@@ -11,11 +11,15 @@ class ImageUploadText extends StatefulWidget {
     this.onUploadTap,
     this.leadingIconAsset,
     this.leadingIconSize = 64.0,
+    this.uploadLabel = 'Upload image',
+    this.formatsText = 'Allowed formats are .png and .jpg',
   });
   final Future<void> Function(Uint8List bytes)? onImageDropped;
   final VoidCallback? onUploadTap;
   final String? leadingIconAsset;
   final double leadingIconSize;
+  final String uploadLabel;
+  final String formatsText;
 
   @override
   State<ImageUploadText> createState() => _ImageUploadTextState();
@@ -86,7 +90,7 @@ class _ImageUploadTextState extends State<ImageUploadText> {
                     onTap: widget.onUploadTap,
                     behavior: HitTestBehavior.opaque,
                     child: Text(
-                      'Upload image',
+                      widget.uploadLabel,
                       style: TextStyle(
                         fontSize: _fontSize,
                         fontWeight: FontWeight.w400,
@@ -100,9 +104,9 @@ class _ImageUploadTextState extends State<ImageUploadText> {
                   ),
                 ),
                 const SizedBox(height: _lineHeightPx),
-                const Text(
-                  'Allowed formats are .png and .jpg',
-                  style: TextStyle(
+                Text(
+                  widget.formatsText,
+                  style: const TextStyle(
                     fontSize: _fontSize,
                     fontWeight: FontWeight.w400,
                     color: kGrey90,

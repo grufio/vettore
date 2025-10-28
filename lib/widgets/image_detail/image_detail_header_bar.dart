@@ -25,6 +25,7 @@ class ImageDetailHeaderBar extends StatelessWidget {
         items: const [
           FilterItem(id: 'project', label: 'Project'),
           FilterItem(id: 'image', label: 'Image'),
+          FilterItem(id: 'icon', label: 'Icon Detail'),
           FilterItem(id: 'conversion', label: 'Conversion'),
           FilterItem(id: 'grid', label: 'Grid'),
           FilterItem(id: 'output', label: 'Output'),

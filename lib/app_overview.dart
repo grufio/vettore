@@ -83,7 +83,6 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
   final _tabs = <GrufioTabData>[
     const GrufioTabData(iconId: 'home', width: 40),
     const GrufioTabData(iconId: 'color-palette', label: 'Palette'),
-    const GrufioTabData(iconId: 'color-palette', label: 'Example'),
   ];
 
   void _onTabSelected(int i) => setState(() {
@@ -308,6 +307,8 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                                       case PageId.project:
                                         return const AppProjectDetailPage();
                                       case PageId.image:
+                                        return const AppImageDetailPage();
+                                      case PageId.icon:
                                         return const AppImageDetailPage();
                                       case PageId.conversion:
                                       case PageId.grid:

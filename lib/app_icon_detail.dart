@@ -1,3 +1,6 @@
+// This page mirrors AppImageDetailPage functionality and layout.
+// It intentionally reuses the same services and widgets to remain identical.
+
 import 'dart:async';
 import 'dart:io' show File;
 import 'dart:typed_data';
@@ -5,64 +8,42 @@ import 'dart:typed_data';
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
-// dimensions_guard not used here any more
 import 'package:flutter/foundation.dart'
-    show compute, debugPrint, kIsWeb, defaultTargetPlatform, TargetPlatform;
+    show debugPrint, kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/data/database.dart';
-// import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/providers/application_providers.dart';
-// Replaced specific rows with unified DimensionRow (now used inside panel)
 import 'package:vettore/providers/canvas_preview_provider.dart';
 import 'package:vettore/providers/image_providers.dart';
 import 'package:vettore/providers/navigation_providers.dart';
 import 'package:vettore/providers/project_provider.dart';
 import 'package:vettore/services/image_actions.dart';
-import 'package:vettore/services/image_compute.dart' as ic;
+// import 'package:vettore/services/image_compute.dart' as ic; // not used for SVG
 import 'package:vettore/services/image_detail_controller.dart';
-// import 'package:vettore/services/image_detail_service.dart';
 import 'package:vettore/services/image_upload_service.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/artboard_view.dart';
 import 'package:vettore/widgets/image_detail/image_detail_header_bar.dart';
 import 'package:vettore/widgets/image_detail/image_detail_right_panel.dart';
-// Dimension panel now wrapped by ImageDimensionsSection
-// removed unused image_resize_service import after inlining px computation
 import 'package:vettore/widgets/image_listeners.dart';
-// PhotoView removed in favor of InteractiveViewer for infinite pasteboard
-
 import 'package:vettore/widgets/image_preview.dart';
 import 'package:vettore/widgets/image_upload_text.dart';
 import 'package:vettore/widgets/input_value_type/dimension_compare_utils.dart';
 import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
-// side_panel moved into ImageDetailRightPanel
 
-class AppImageDetailPage extends ConsumerStatefulWidget {
-  const AppImageDetailPage({
-    super.key,
-    this.initialActiveIndex = 1,
-    this.onNavigateTab,
-    this.projectId,
-    this.onProjectTitleSaved,
-    this.onDeleteProject,
-  });
-  final int initialActiveIndex;
-  final ValueChanged<int>? onNavigateTab;
-  final int? projectId; // optional for now; when null we load/create first
-  final ValueChanged<String>? onProjectTitleSaved;
-  final ValueChanged<int>? onDeleteProject;
+class AppIconDetailPage extends ConsumerStatefulWidget {
+  const AppIconDetailPage({super.key, this.projectId});
+  final int? projectId;
 
   @override
-  ConsumerState<AppImageDetailPage> createState() => _AppImageDetailPageState();
+  ConsumerState<AppIconDetailPage> createState() => _AppIconDetailPageState();
 }
 
-class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
+class _AppIconDetailPageState extends ConsumerState<AppIconDetailPage>
     with AutomaticKeepAliveClientMixin {
   static final Map<int, Matrix4> _savedTransforms = <int, Matrix4>{};
   bool _transformAppliedForProject = false;
-  // Header handled by shell; these are no longer needed
   String _detailFilterId = 'project';
-  // Photo viewer removed for empty state; controllers retained for later usage
   late final TextEditingController _inputValueController;
   late final TextEditingController _inputValueController2;
   late final TextEditingController _projectController;
@@ -70,31 +51,15 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
   StreamSubscription<DbProject?>? _projectSub;
-  // Link/unlink width/height
   bool _linkWH = false;
-  // Units are controlled by ImageDetailController
-  // Original dimensions no longer tracked here; DimensionsRow manages aspect
-  // Guard to avoid re-initializing dimensions on stream rebuilds
-  // moved to controller
-  // Removed one-time init gate; we now apply dims whenever they change
-  // Removed fallback image bytes; we render directly from provider for stability
   int? _requestedDimsForImageId;
   int? _lastProjectId;
-  // int? _lastImageId; // not used
-  // moved to controller
-  // InteractiveViewer transform controller for pan/zoom
   final TransformationController _ivController = TransformationController();
-  // Viewport key to compute center for zoom focus
   final GlobalKey _viewportKey = GlobalKey();
-  // Central controller (wraps UnitValueControllers)
   ImageDetailController? _imgCtrl;
-  // Removed last-phys trackers; commit-on-resize policy
+
   @override
   bool get wantKeepAlive => true;
-  // Apply 48px padding only on first open of the Image tab
-  // Removed first-frame padding; use initial matrix translation instead
-
-  // Linking logic is handled inside DimensionsRow
 
   @override
   void initState() {
@@ -102,18 +67,12 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     _inputValueController = TextEditingController();
     _inputValueController2 = TextEditingController();
     _projectController = TextEditingController();
-    // Transform will be restored once when project id is known
     _initProject();
-    // Initialize controller and link internal VCs
     _imgCtrl = ImageDetailController();
-    // Commit-on-resize policy: do not persist phys during typing
   }
-
-  // didChangeDependencies no longer hosts ref.listen; listeners are set in build
 
   @override
   void dispose() {
-    // Persist current transform to survive tab switches
     if (_currentProjectId != null) {
       _savedTransforms[_currentProjectId!] = _ivController.value.clone();
     }
@@ -125,20 +84,17 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     super.dispose();
   }
 
-  // Image viewer actions will be re-enabled once an image is present.
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final bool isMac = !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
     if (!isMac) {
       return const CupertinoPageScaffold(
-        navigationBar: CupertinoNavigationBar(middle: Text('Project Detail')),
-        child: Center(child: Text('Project Detail')),
+        navigationBar: CupertinoNavigationBar(middle: Text('Icon Detail')),
+        child: Center(child: Text('Icon Detail')),
       );
     }
 
-    // Ensure current project id provider is set for this view
     final projectIdFromProvider = ref.watch(currentProjectIdProvider);
     if (projectIdFromProvider != null &&
         projectIdFromProvider != _currentProjectId) {
@@ -146,16 +102,12 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
       _transformAppliedForProject = false;
     }
 
-    // Guarded listeners (allowed in build)
     if (_currentProjectId != null && _currentProjectId != _lastProjectId) {
       _lastProjectId = _currentProjectId;
-      // No longer listen here; controller will listen to image dimensions when we know imageId
     }
 
-    // Trigger provider resolution (unused local)
     ref.watch(imageIdStableProvider(_currentProjectId ?? -1));
 
-    // Restore per-project transform once when project id is ready
     if (!_transformAppliedForProject && _currentProjectId != null) {
       final Matrix4? saved = _savedTransforms[_currentProjectId!];
       if (saved != null) {
@@ -163,8 +115,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
       }
       _transformAppliedForProject = true;
     }
-
-    // Image presence determined via providers; listeners are registered in didChangeDependencies
 
     return ColoredBox(
       color: kGrey10,
@@ -175,8 +125,6 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
               projectId: _currentProjectId!,
               controller: _imgCtrl!,
             ),
-          // Header handled by shared shell; keep content only when embedded
-          // Detail filter bar with bottom border
           ImageDetailHeaderBar(
             activeId: (() {
               final page = ref.watch(currentPageProvider);
@@ -202,11 +150,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Main detail area placeholder
-                  Expanded(
-                    child: _buildDetailBody(),
-                  ),
-                  // Right side panel (empty for now)
+                  Expanded(child: _buildDetailBody()),
                   ImageDetailRightPanel(
                     width: _rightPanelWidth,
                     onResize: (delta) {
@@ -282,76 +226,25 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
       ),
     );
   }
-}
-
-extension on _AppImageDetailPageState {
-  Future<void> _handleImageBytes(Uint8List bytes) async {
-    if (_currentProjectId == null) return;
-    assert(() {
-      debugPrint(
-          '[ImageDetail] _handleImageBytes len=${bytes.length} pid=$_currentProjectId');
-      return true;
-    }());
-    // Decode to get dimensions in isolate
-    final dims = await compute(ic.decodeDimensions, bytes);
-    // Detect DPI from metadata (must exist per spec)
-    final int? decodedDpi = await compute(ic.decodeDpi, bytes);
-    final int? width = dims.width;
-    final int? height = dims.height;
-    final imagesDao = ref.read(appDatabaseProvider);
-    // Insert image row
-    final String mime = ic.detectMimeType(bytes);
-    final imageId = await imagesDao.into(imagesDao.images).insert(
-          ImagesCompanion.insert(
-            origSrc: Value(bytes),
-            origBytes: Value(bytes.length),
-            origWidth: width != null ? Value(width) : const Value.absent(),
-            origHeight: height != null ? Value(height) : const Value.absent(),
-            mimeType: Value(mime),
-          ),
-        );
-    // Persist DPI (schema v22+): write both orig_dpi and dpi
-    final int resolvedDpi =
-        (decodedDpi != null && decodedDpi > 0) ? decodedDpi : 96;
-    await imagesDao.customStatement(
-      'UPDATE images SET orig_dpi = ?, dpi = ? WHERE id = ?',
-      [resolvedDpi, resolvedDpi, imageId],
-    );
-    // Point project to this image via ProjectService (batched writes)
-    final projectService = ref.read(projectServiceProvider);
-    await projectService.batchUpdate(
-      ref,
-      _currentProjectId!,
-      imageId: imageId,
-    );
-    // Do not modify project canvas from Image upload path (strict decoupling)
-    debugPrint('[ImageDetail] image stored id=$imageId; updating controllers');
-    // Seed physical pixel floats from original dimensions
-    await imagesDao.customStatement(
-      'UPDATE images SET phys_width_px4 = ?, phys_height_px4 = ? WHERE id = ?',
-      [width?.toDouble(), height?.toDouble(), imageId],
-    );
-    // Invalidate phys-pixels provider so any listeners refresh
-    ref.invalidate(imagePhysPixelsProvider(imageId));
-    // Update controllers from physical floats
-    _imgCtrl?.applyRemotePx(
-        widthPx: width?.toDouble(), heightPx: height?.toDouble());
-  }
 
   Future<void> _pickViaDialog() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: const ['png', 'jpg', 'jpeg', 'PNG', 'JPG', 'JPEG'],
+      allowedExtensions: const ['svg', 'SVG'],
     );
     final file = result?.files.first;
     if (file?.path != null) {
       final bytes = await File(file!.path!).readAsBytes();
+      // Reject non-SVG files defensively
+      if (!_looksLikeSvg(bytes)) {
+        debugPrint('[IconDetail] rejected non-SVG file selection');
+        return;
+      }
       await _handleImageBytes(bytes);
     }
   }
 
   Future<void> _initProject() async {
-    // Determine project to load: prefer explicit id, else load first project if any
     final repo = ref.read(projectRepositoryProvider);
     try {
       if (widget.projectId != null) {
@@ -366,13 +259,10 @@ extension on _AppImageDetailPageState {
         _currentProjectId = p.id;
         _projectController.text = p.title;
       }
-    } catch (_) {
-      // Ignore load errors for now; keep empty controller
-    }
+    } catch (_) {}
   }
 
   Widget _buildDetailBody() {
-    // Prefer explicit widget.projectId, then local state, then provider
     final int? pid = widget.projectId ??
         _currentProjectId ??
         ref.watch(currentProjectIdProvider);
@@ -386,7 +276,7 @@ extension on _AppImageDetailPageState {
 
     assert(() {
       debugPrint(
-          '[ImageDetail] build pid=$pid imageId=$imageId bytes=${bytes?.length ?? 0}');
+          '[IconDetail] build pid=$pid imageId=$imageId bytes=${bytes?.length ?? 0}');
       return true;
     }());
 
@@ -403,7 +293,6 @@ extension on _AppImageDetailPageState {
       });
     }
 
-    // Canvas via project fields (decoupled) — fallback placeholder when missing
     if (pid == null) {
       const double placeholderW = 100.0;
       const double placeholderH = 100.0;
@@ -440,7 +329,6 @@ extension on _AppImageDetailPageState {
 
     final double canvasW = canvasPx.width;
     final double canvasH = canvasPx.height;
-    // Derive preview size from image bytes or fallback to canvas size
     final double imgW = canvasW;
     final double imgH = canvasH;
     final double maxContentW = imgW > canvasW ? imgW : canvasW;
@@ -453,6 +341,10 @@ extension on _AppImageDetailPageState {
       return Center(
         child: ImageUploadText(
           onImageDropped: (b) async {
+            if (!_looksLikeSvg(b)) {
+              debugPrint('[IconDetail] drop rejected: not SVG');
+              return;
+            }
             final r = await ref
                 .read(imageUploadServiceProvider)
                 .insertImageAndMetadata(ref, b);
@@ -465,11 +357,13 @@ extension on _AppImageDetailPageState {
                 widthPx: r.width?.toDouble(), heightPx: r.height?.toDouble());
           },
           onUploadTap: _pickViaDialog,
+          uploadLabel: 'Upload SVG',
+          formatsText: 'Allowed format is .svg',
         ),
       );
     }
 
-    // no local pad; styles handled in child widgets
+    final bool isSvg = bytes != null && _looksLikeSvg(bytes);
     return ColoredBox(
       color: kGrey70,
       child: ImagePreview(
@@ -478,11 +372,99 @@ extension on _AppImageDetailPageState {
         boardH: boardH,
         canvasW: canvasW,
         canvasH: canvasH,
-        bytes: bytes,
+        bytes: isSvg ? null : bytes,
         viewportKey: _viewportKey,
       ),
     );
   }
 }
 
-// _loadImageDimensions removed; dimensions are provided exclusively by imageDimensionsProvider
+extension on _AppIconDetailPageState {
+  bool _looksLikeSvg(Uint8List bytes) {
+    final int len = bytes.length < 1024 ? bytes.length : 1024;
+    final String head = String.fromCharCodes(bytes.sublist(0, len));
+    return head.contains('<svg');
+  }
+
+  Future<void> _handleImageBytes(Uint8List bytes) async {
+    if (_currentProjectId == null) return;
+    assert(() {
+      debugPrint(
+          '[IconDetail] _handleImageBytes len=${bytes.length} pid=$_currentProjectId');
+      return true;
+    }());
+    final (_SvgSize?, String) parsed = _parseSvgSize(bytes);
+    final _SvgSize? svg = parsed.$1;
+    final int? width = svg?.width?.round();
+    final int? height = svg?.height?.round();
+    final imagesDao = ref.read(appDatabaseProvider);
+    final String mime = 'image/svg+xml';
+    final imageId = await imagesDao.into(imagesDao.images).insert(
+          ImagesCompanion.insert(
+            origSrc: Value(bytes),
+            origBytes: Value(bytes.length),
+            origWidth: width != null ? Value(width) : const Value.absent(),
+            origHeight: height != null ? Value(height) : const Value.absent(),
+            mimeType: Value(mime),
+          ),
+        );
+    final int resolvedDpi = 96;
+    await imagesDao.customStatement(
+      'UPDATE images SET orig_dpi = ?, dpi = ? WHERE id = ?',
+      [resolvedDpi, resolvedDpi, imageId],
+    );
+    final projectService = ref.read(projectServiceProvider);
+    await projectService.batchUpdate(
+      ref,
+      _currentProjectId!,
+      imageId: imageId,
+    );
+    debugPrint('[IconDetail] image stored id=$imageId; updating controllers');
+    await imagesDao.customStatement(
+      'UPDATE images SET phys_width_px4 = ?, phys_height_px4 = ? WHERE id = ?',
+      [width?.toDouble(), height?.toDouble(), imageId],
+    );
+    ref.invalidate(imagePhysPixelsProvider(imageId));
+    _imgCtrl?.applyRemotePx(
+        widthPx: width?.toDouble(), heightPx: height?.toDouble());
+  }
+
+  (_SvgSize?, String) _parseSvgSize(Uint8List bytes) {
+    try {
+      final int len = bytes.length < 4096 ? bytes.length : 4096;
+      final String head = String.fromCharCodes(bytes.sublist(0, len));
+      final RegExp wRe = RegExp(
+          r'\bwidth\s*=\s*"([0-9]+(?:\.[0-9]+)?)([a-z%]*)"',
+          caseSensitive: false);
+      final RegExp hRe = RegExp(
+          r'\bheight\s*=\s*"([0-9]+(?:\.[0-9]+)?)([a-z%]*)"',
+          caseSensitive: false);
+      final RegExp vbRe = RegExp(
+          r'\bviewBox\s*=\s*"\s*[-0-9.]+\s+[-0-9.]+\s+([0-9.]+)\s+([0-9.]+)\s*"',
+          caseSensitive: false);
+      double? w;
+      double? h;
+      final wM = wRe.firstMatch(head);
+      final hM = hRe.firstMatch(head);
+      if (wM != null && hM != null) {
+        w = double.tryParse(wM.group(1)!);
+        h = double.tryParse(hM.group(1)!);
+      } else {
+        final vb = vbRe.firstMatch(head);
+        if (vb != null) {
+          w = double.tryParse(vb.group(1)!);
+          h = double.tryParse(vb.group(2)!);
+        }
+      }
+      return (_SvgSize(width: w, height: h), head);
+    } catch (e) {
+      return (null, '');
+    }
+  }
+}
+
+class _SvgSize {
+  final double? width;
+  final double? height;
+  const _SvgSize({this.width, this.height});
+}

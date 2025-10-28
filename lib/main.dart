@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:vettore/app_image_detail.dart';
+import 'package:vettore/app_icon_detail.dart';
 import 'package:vettore/app_overview.dart';
 import 'package:vettore/app_project_detail.dart';
 import 'package:vettore/data/database.dart';
@@ -288,6 +289,8 @@ class _AppShellState extends ConsumerState<_AppShell> {
                         );
                       case PageId.image:
                         return AppImageDetailPage(projectId: _currentProjectId);
+                      case PageId.icon:
+                        return AppIconDetailPage(projectId: _currentProjectId);
                       case PageId.conversion:
                       case PageId.grid:
                       case PageId.output:
