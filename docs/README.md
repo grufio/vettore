@@ -11,6 +11,8 @@ Generated files (partial, work-in-progress):
 - [lib/services/router_observer.dart](code/lib/services/router_observer.dart.md)
 - [lib/services/settings_service.dart](code/lib/services/settings_service.dart.md)
 - [lib/providers/tabs_providers.dart](code/lib/providers/tabs_providers.dart.md)
+- [lib/widgets/app_header_bar.dart](code/lib/widgets/app_header_bar.dart.md)
+- [lib/widgets/tabs_main.dart](code/lib/widgets/tabs_main.dart.md)
 - [lib/widgets/overview/asset_gallery.dart](code/lib/widgets/overview/asset_gallery.dart.md)
 - [lib/widgets/project/svg_gallery.dart](code/lib/widgets/project/svg_gallery.dart.md)
 - [lib/widgets/thumbnail_tile.dart](code/lib/widgets/thumbnail_tile.dart.md)

@@ -1,17 +1,23 @@
 # tabs_providers.dart
 
 - Path: lib/providers/tabs_providers.dart
-- Purpose: Unknown
+- Purpose: Riverpod state management for header tabs and active index, with persistence via `SettingsService`, plus a helper `TabsService` for high-level tab operations.
 - Public API
-  - Classes/Widgets (exported): Unknown
-  - Functions (exported): Unknown
-- Key dependencies: Unknown
+  - Providers:
+    - `tabsProvider`: `StateNotifierProvider<TabsNotifier, List<GrufioTabData>>` holding visible tabs.
+    - `activeTabIndexProvider`: `StateNotifierProvider<ActiveTabIndexNotifier, int>` holding selected tab index.
+    - `tabsServiceProvider`: `Provider<TabsService>` exposing high-level operations.
+  - Notifiers/Services:
+    - `TabsNotifier`: loads/persists tabs (JSON), add/close tabs, update labels, ensures Home tab at index 0.
+    - `ActiveTabIndexNotifier`: sets/clamps active index and persists it.
+    - `TabsService`: add-or-select project tab and close tab (with active index adjustment).
+- Key dependencies: `flutter_riverpod`, `SettingsService`, `GrufioTabData`.
 - Data flow & state
-  - Inputs: Unknown
-  - Outputs: Unknown
-  - Providers/Streams watched: Unknown
-- Rendering/Side effects: Unknown
-- Invariants & caveats: Unknown
-- Extension points: Unknown
-- Tests referencing this file: Unknown
+  - Inputs: Calls to add/close/select from UI/router.
+  - Outputs: Persisted JSON (`ui_tabs_json`) and active index (`ui_tabs_active_index`) via `SettingsService`.
+  - Providers/Streams watched: `settingsServiceProvider` to construct notifiers.
+- Rendering/Side effects: No UI; persistence side effects on every state change; ensures Home tab presence.
+- Invariants & caveats: Index 0 is reserved for Home and never closable; `addProjectTab` dedupes by `projectId` and uses `color-palette` icon.
+- Extension points: Additional tab types; migration for stored schema; richer metadata per tab.
+- Tests referencing this file: Not applicable
 - Last reviewed: 2025-10-28
