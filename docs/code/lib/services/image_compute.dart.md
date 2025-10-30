@@ -1,0 +1,23 @@
+# image_compute.dart
+
+- Path: lib/services/image_compute.dart
+- Purpose: Top-level, isolate-friendly image utilities for MIME detection, dimension decoding, unique color counting, and best-effort DPI extraction for PNG/JPEG.
+- Public API
+  - Data classes:
+    - `DecodedDimensions(width, height)`
+    - `UniqueColorsResult(count, width?, height?)`
+  - Functions:
+    - `detectMimeType(bytes)`
+    - `decodeDimensions(bytes)`
+    - `decodeUniqueColors(bytes)`
+    - `decodeDpi(bytes)` (async)
+- Key dependencies: `package:image`, `package:exif`.
+- Data flow & state
+  - Inputs: Raw image bytes.
+  - Outputs: Decoded metadata (dimensions, unique color count, dpi).
+  - Providers/Streams watched: Not applicable.
+- Rendering/Side effects: Pure compute helpers; no UI or DB.
+- Invariants & caveats: PNG DPI via pHYs (ppm→dpi); JPEG DPI via JFIF density (units handling); EXIF preferred when present; returns null if unknown.
+- Extension points: Add format support; performance tuning; partial decodes.
+- Tests referencing this file: Not applicable
+- Last reviewed: 2025-10-28
