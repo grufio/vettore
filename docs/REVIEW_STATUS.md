@@ -43,3 +43,8 @@
 | lib/widgets/side_panel.dart | reviewed | 2025-10-28 | Resizable panel |
 | lib/widgets/content_filter_bar.dart | reviewed | 2025-10-28 | Filter bar |
 | lib/widgets/chip_filter.dart | reviewed | 2025-10-28 | Chip |
+| lib/icons/grufio_icons.dart | reviewed | 2025-10-28 | Generated icon constants |
+| lib/icons/grufio_registry.dart | reviewed | 2025-10-28 | Icon id registry |
+| lib/theme/app_theme_colors.dart | reviewed | 2025-10-28 | Color palette constants |
+| lib/theme/app_theme_typography.dart | reviewed | 2025-10-28 | Text styles |
+| lib/models/grufio_tab_data.dart | reviewed | 2025-10-28 | Tab data model |

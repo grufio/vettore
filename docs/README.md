@@ -4,6 +4,12 @@ This directory contains per-file documentation for Dart source files under `lib/
 
 Generated files (partial, work-in-progress):
 
+- [lib/icons/grufio_icons.dart](code/lib/icons/grufio_icons.dart.md)
+- [lib/icons/grufio_registry.dart](code/lib/icons/grufio_registry.dart.md)
+- [lib/theme/app_theme_colors.dart](code/lib/theme/app_theme_colors.dart.md)
+- [lib/theme/app_theme_typography.dart](code/lib/theme/app_theme_typography.dart.md)
+- [lib/models/grufio_tab_data.dart](code/lib/models/grufio_tab_data.dart.md)
+
 - [lib/widgets/image_preview.dart](code/lib/widgets/image_preview.dart.md)
 - [lib/widgets/image_detail/image_detail_header_bar.dart](code/lib/widgets/image_detail/image_detail_header_bar.dart.md)
 - [lib/widgets/image_detail/image_detail_right_panel.dart](code/lib/widgets/image_detail/image_detail_right_panel.dart.md)
