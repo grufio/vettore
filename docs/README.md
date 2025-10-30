@@ -4,6 +4,19 @@ This directory contains per-file documentation for Dart source files under `lib/
 
 Generated files (partial, work-in-progress):
 
+- [lib/widgets/image_preview.dart](code/lib/widgets/image_preview.dart.md)
+- [lib/widgets/image_detail/image_detail_header_bar.dart](code/lib/widgets/image_detail/image_detail_header_bar.dart.md)
+- [lib/widgets/image_detail/image_detail_right_panel.dart](code/lib/widgets/image_detail/image_detail_right_panel.dart.md)
+- [lib/widgets/image_dimensions_section.dart](code/lib/widgets/image_dimensions_section.dart.md)
+- [lib/widgets/image_dimension_panel.dart](code/lib/widgets/image_dimension_panel.dart.md)
+- [lib/widgets/button_app.dart](code/lib/widgets/button_app.dart.md)
+- [lib/widgets/button_toggle.dart](code/lib/widgets/button_toggle.dart.md)
+- [lib/widgets/snackbar_image.dart](code/lib/widgets/snackbar_image.dart.md)
+- [lib/widgets/overview/overview_header.dart](code/lib/widgets/overview/overview_header.dart.md)
+- [lib/widgets/side_panel.dart](code/lib/widgets/side_panel.dart.md)
+- [lib/widgets/content_filter_bar.dart](code/lib/widgets/content_filter_bar.dart.md)
+- [lib/widgets/chip_filter.dart](code/lib/widgets/chip_filter.dart.md)
+
 - [lib/app_overview.dart](code/lib/app_overview.dart.md)
 - [lib/app_project_info.dart](code/lib/app_project_info.dart.md)
 - [lib/app_router.dart](code/lib/app_router.dart.md)

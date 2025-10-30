@@ -31,3 +31,15 @@
 | lib/providers/canvas_providers.dart | reviewed | 2025-10-28 | Canvas preview state |
 | lib/providers/image_spec_providers.dart | reviewed | 2025-10-28 | Unit defaults |
 | lib/providers/project_provider.dart | reviewed | 2025-10-28 | Project streams + logic |
+| lib/widgets/image_preview.dart | reviewed | 2025-10-28 | Artboard + zoom snackbar |
+| lib/widgets/image_detail/image_detail_header_bar.dart | reviewed | 2025-10-28 | Detail filters |
+| lib/widgets/image_detail/image_detail_right_panel.dart | reviewed | 2025-10-28 | Right panel + dims |
+| lib/widgets/image_dimensions_section.dart | reviewed | 2025-10-28 | Dimensions binder |
+| lib/widgets/image_dimension_panel.dart | reviewed | 2025-10-28 | Dimension UI panel |
+| lib/widgets/button_app.dart | reviewed | 2025-10-28 | Buttons |
+| lib/widgets/button_toggle.dart | reviewed | 2025-10-28 | Link toggle |
+| lib/widgets/snackbar_image.dart | reviewed | 2025-10-28 | Zoom controls |
+| lib/widgets/overview/overview_header.dart | reviewed | 2025-10-28 | Header adapter |
+| lib/widgets/side_panel.dart | reviewed | 2025-10-28 | Resizable panel |
+| lib/widgets/content_filter_bar.dart | reviewed | 2025-10-28 | Filter bar |
+| lib/widgets/chip_filter.dart | reviewed | 2025-10-28 | Chip |
