@@ -48,3 +48,19 @@
 | lib/theme/app_theme_colors.dart | reviewed | 2025-10-28 | Color palette constants |
 | lib/theme/app_theme_typography.dart | reviewed | 2025-10-28 | Text styles |
 | lib/models/grufio_tab_data.dart | reviewed | 2025-10-28 | Tab data model |
+| lib/widgets/input_value_type/text_default.dart | reviewed | 2025-10-28 | Text IVT wrapper |
+| lib/widgets/input_value_type/interpolation_selector.dart | reviewed | 2025-10-28 | Interpolation dropdown |
+| lib/widgets/input_value_type/resolution_selector.dart | reviewed | 2025-10-28 | DPI dropdown |
+| lib/widgets/input_value_type/prefix_icon.dart | reviewed | 2025-10-28 | Input prefix icons |
+| lib/widgets/input_value_type/input_value_type.dart | reviewed | 2025-10-28 | Core input w/ dropdown |
+| lib/widgets/input_value_type/dimension_row.dart | reviewed | 2025-10-28 | Width/height row |
+| lib/widgets/input_value_type/suffix.dart | reviewed | 2025-10-28 | Hover selector suffix |
+| lib/widgets/input_value_type/dropdown_item.dart | reviewed | 2025-10-28 | Dropdown row |
+| lib/widgets/input_value_type/unit_value_controller.dart | reviewed | 2025-10-28 | Value/unit controller |
+| lib/widgets/input_value_type/unit_selector_field.dart | reviewed | 2025-10-28 | Unit selector field |
+| lib/widgets/input_value_type/unit_conversion.dart | reviewed | 2025-10-28 | Unit conversion utils |
+| lib/widgets/input_value_type/number_utils.dart | reviewed | 2025-10-28 | Numeric sanitize/convert |
+| lib/widgets/input_value_type/interpolation_map.dart | reviewed | 2025-10-28 | Label→CV map |
+| lib/widgets/input_value_type/dropdown_overlay.dart | reviewed | 2025-10-28 | Overlay dropdown |
+| lib/widgets/input_value_type/dimension_compare_utils.dart | reviewed | 2025-10-28 | Compare helpers |
+| lib/widgets/input_value_type/controller.dart | reviewed | 2025-10-28 | Dropdown controller |

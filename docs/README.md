@@ -4,6 +4,24 @@ This directory contains per-file documentation for Dart source files under `lib/
 
 Generated files (partial, work-in-progress):
 
+- Input Value Type
+  - [lib/widgets/input_value_type/text_default.dart](code/lib/widgets/input_value_type/text_default.dart.md)
+  - [lib/widgets/input_value_type/interpolation_selector.dart](code/lib/widgets/input_value_type/interpolation_selector.dart.md)
+  - [lib/widgets/input_value_type/resolution_selector.dart](code/lib/widgets/input_value_type/resolution_selector.dart.md)
+  - [lib/widgets/input_value_type/prefix_icon.dart](code/lib/widgets/input_value_type/prefix_icon.dart.md)
+  - [lib/widgets/input_value_type/input_value_type.dart](code/lib/widgets/input_value_type/input_value_type.dart.md)
+  - [lib/widgets/input_value_type/dimension_row.dart](code/lib/widgets/input_value_type/dimension_row.dart.md)
+  - [lib/widgets/input_value_type/suffix.dart](code/lib/widgets/input_value_type/suffix.dart.md)
+  - [lib/widgets/input_value_type/dropdown_item.dart](code/lib/widgets/input_value_type/dropdown_item.dart.md)
+  - [lib/widgets/input_value_type/unit_value_controller.dart](code/lib/widgets/input_value_type/unit_value_controller.dart.md)
+  - [lib/widgets/input_value_type/unit_selector_field.dart](code/lib/widgets/input_value_type/unit_selector_field.dart.md)
+  - [lib/widgets/input_value_type/unit_conversion.dart](code/lib/widgets/input_value_type/unit_conversion.dart.md)
+  - [lib/widgets/input_value_type/number_utils.dart](code/lib/widgets/input_value_type/number_utils.dart.md)
+  - [lib/widgets/input_value_type/interpolation_map.dart](code/lib/widgets/input_value_type/interpolation_map.dart.md)
+  - [lib/widgets/input_value_type/dropdown_overlay.dart](code/lib/widgets/input_value_type/dropdown_overlay.dart.md)
+  - [lib/widgets/input_value_type/dimension_compare_utils.dart](code/lib/widgets/input_value_type/dimension_compare_utils.dart.md)
+  - [lib/widgets/input_value_type/controller.dart](code/lib/widgets/input_value_type/controller.dart.md)
+
 - [lib/icons/grufio_icons.dart](code/lib/icons/grufio_icons.dart.md)
 - [lib/icons/grufio_registry.dart](code/lib/icons/grufio_registry.dart.md)
 - [lib/theme/app_theme_colors.dart](code/lib/theme/app_theme_colors.dart.md)
