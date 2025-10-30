@@ -26,3 +26,8 @@
 | lib/repositories/project_repository.dart | reviewed | 2025-10-28 | CRUD + streams |
 | lib/repositories/palette_repository.dart | reviewed | 2025-10-28 | Palettes + joins |
 | lib/data/database.dart | reviewed | 2025-10-28 | Schema + migrations |
+| lib/providers/application_providers.dart | reviewed | 2025-10-28 | Core graph + UI state |
+| lib/providers/image_providers.dart | reviewed | 2025-10-28 | Image bytes/dpi/phys |
+| lib/providers/canvas_providers.dart | reviewed | 2025-10-28 | Canvas preview state |
+| lib/providers/image_spec_providers.dart | reviewed | 2025-10-28 | Unit defaults |
+| lib/providers/project_provider.dart | reviewed | 2025-10-28 | Project streams + logic |

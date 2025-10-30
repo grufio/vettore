@@ -1,0 +1,27 @@
+# project_provider.dart
+
+- Path: lib/providers/project_provider.dart
+- Purpose: Project-related providers: streams for projects and aggregated vendor colors; helpers to decode images for a project; stable imageId caching; and an imperative `ProjectLogic` facade calling services.
+- Public API
+  - Providers:
+    - `projectsStreamProvider`: stream of `List<DbProject>`.
+    - `vendorColorsAggregatedProvider(vendorId)`: debounced stream aggregating sizes and LEGO color metadata.
+    - `projectStreamProvider(projectId)`: stream of `ProjectState` including an optional decoded `Image`.
+    - `projectByIdProvider(projectId)`: stream of `DbProject?`.
+    - `imageIdStableProvider(projectId)`: stable image id derived from project stream + local cache.
+    - `projectLogicProvider(projectId)`: `Provider<ProjectLogic>`.
+  - Classes:
+    - `VendorColorAggregated(color, sizes, rgbHex?, startYear?, endYear?)`
+    - `IsolateVectorObject(x,y,color)` with `toJson()`
+    - `ProjectState(project, decodedImage?)`
+    - `ProjectLogic(ref, projectId)`: methods `quantizeImage`, `generateGrid` (no-op), `updateImage`, `resizeToCv`, `resetImage`.
+- Key dependencies: `AppDatabase` (customSelect/watch), `projectRepositoryProvider`, `imageProcessingServiceProvider`, `logWarn`, `flutter_riverpod`.
+- Data flow & state
+  - Inputs: vendor id, project id; internal debounced filter for vendor colors.
+  - Outputs: Streams and imperative actions; provider invalidations.
+  - Providers/Streams watched: Multiple reads/watches on app DB and repository providers.
+- Rendering/Side effects: Decodes images to `Image` in `projectStreamProvider`; Python/OpenCV calls via `ImageProcessingService` through `ProjectLogic`.
+- Invariants & caveats: Debounced vendor color filter (200ms) internal; `imageIdStableProvider` caches last non-null id to avoid flicker; `generateGrid` is a placeholder.
+- Extension points: Expose vendor filter; add project mutations; progress reporting.
+- Tests referencing this file: Not applicable
+- Last reviewed: 2025-10-28

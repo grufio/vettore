@@ -1,0 +1,22 @@
+# application_providers.dart
+
+- Path: lib/providers/application_providers.dart
+- Purpose: Core providers for database, repositories, services, and overview UI state (home navigation index).
+- Public API
+  - Providers:
+    - `appDatabaseProvider`: `Provider<AppDatabase>` (default constructor; overridden in main).
+    - `projectRepositoryProvider`, `paletteRepositoryProvider`.
+    - `projectServiceProvider`, `aiServiceProvider`.
+    - `homeNavSelectedIndexProvider`: persisted overview nav index via `SettingsService`.
+  - Notifiers:
+    - `HomeNavIndexNotifier`: loads/saves selected index to settings.
+- Key dependencies: `AppDatabase`, `ProjectRepository`, `PaletteRepository`, `ProjectService`, `AIService`, `SettingsService`.
+- Data flow & state
+  - Inputs: Consumer reads/writes; settings persistence for home nav index.
+  - Outputs: New instances of repos/services; saved nav index under `homeNavIndex`.
+  - Providers/Streams watched: Reads `settingsServiceProvider` inside notifiers and for service construction.
+- Rendering/Side effects: No UI; creates service graph; persists simple UI state.
+- Invariants & caveats: `appDatabaseProvider` is not overridden here—ensure main overrides as needed.
+- Extension points: Add more repositories/services; additional UI state.
+- Tests referencing this file: Not applicable
+- Last reviewed: 2025-10-28
