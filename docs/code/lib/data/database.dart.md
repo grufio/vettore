@@ -1,0 +1,21 @@
+# database.dart
+
+- Path: lib/data/database.dart
+- Purpose: Drift database schema and access layer for palettes, vendors, images, projects, settings, and LEGO colors. Provides the `AppDatabase` with schema versioning and additive migrations.
+- Public API
+  - Tables: `Palettes`, `PaletteColors`, `Vendors`, `VendorColors`, `VendorColorVariants`, `ColorComponents`, `Settings`, `Images`, `Projects`, `LegoColors`.
+  - Classes:
+    - `AppDatabase`: Drift database with `schemaVersion = 26`, additive `MigrationStrategy`, helper `updatePaletteColorWithComponents`, and getter `allVendorColorsWithVariants`.
+    - `VendorColorWithVariants` (DTO): pairs a vendor color with its variants.
+  - Top-level:
+    - `_openConnection()` returns a `LazyDatabase` created in app documents directory (`db_grufio.sqlite`).
+- Key dependencies: `drift`, `drift/native`, `path_provider` (documents dir), `path` (file join).
+- Data flow & state
+  - Inputs: DB operations via Drift; migrations based on `from` → `to`.
+  - Outputs: Tables creation, indexes, migration DDL; helper queries aggregating vendor colors and variants.
+  - Providers/Streams watched: Not applicable here (providers defined elsewhere).
+- Rendering/Side effects: No UI; filesystem access to locate DB file; executes raw SQL during migrations.
+- Invariants & caveats: Migrations are incremental and non-destructive; several guards check for existing columns; projects table rebuilt in phases to enforce constraints and defaults.
+- Extension points: New tables/columns; additional helper methods; migration hooks for data backfills.
+- Tests referencing this file: Not applicable
+- Last reviewed: 2025-10-28

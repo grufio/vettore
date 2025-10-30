@@ -23,3 +23,6 @@
 | lib/services/image_detail_controller.dart | reviewed | 2025-10-28 | Controller for detail |
 | lib/services/image_actions.dart | reviewed | 2025-10-28 | High-level action |
 | lib/services/canvas_image_helpers.dart | reviewed | 2025-10-28 | Preview size helpers |
+| lib/repositories/project_repository.dart | reviewed | 2025-10-28 | CRUD + streams |
+| lib/repositories/palette_repository.dart | reviewed | 2025-10-28 | Palettes + joins |
+| lib/data/database.dart | reviewed | 2025-10-28 | Schema + migrations |
