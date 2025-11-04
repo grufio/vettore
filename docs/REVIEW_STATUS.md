@@ -64,3 +64,7 @@
 | lib/widgets/input_value_type/dropdown_overlay.dart | reviewed | 2025-10-28 | Overlay dropdown |
 | lib/widgets/input_value_type/dimension_compare_utils.dart | reviewed | 2025-10-28 | Compare helpers |
 | lib/widgets/input_value_type/controller.dart | reviewed | 2025-10-28 | Dropdown controller |
+| lib/widgets/image_listeners.dart | reviewed | 2025-10-28 | Controller sync helper |
+| lib/widgets/constants/input_constants.dart | reviewed | 2025-10-28 | Input constants |
+| lib/widgets/artboard_view.dart | reviewed | 2025-10-28 | Artboard + hairline border |
+| lib/widgets/section_sidebar.dart | reviewed | 2025-10-28 | Section + row layout |

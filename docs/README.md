@@ -4,6 +4,11 @@ This directory contains per-file documentation for Dart source files under `lib/
 
 Generated files (partial, work-in-progress):
 
+- [lib/widgets/image_listeners.dart](code/lib/widgets/image_listeners.dart.md)
+- [lib/widgets/constants/input_constants.dart](code/lib/widgets/constants/input_constants.dart.md)
+- [lib/widgets/artboard_view.dart](code/lib/widgets/artboard_view.dart.md)
+- [lib/widgets/section_sidebar.dart](code/lib/widgets/section_sidebar.dart.md)
+
 - Input Value Type
   - [lib/widgets/input_value_type/text_default.dart](code/lib/widgets/input_value_type/text_default.dart.md)
   - [lib/widgets/input_value_type/interpolation_selector.dart](code/lib/widgets/input_value_type/interpolation_selector.dart.md)
