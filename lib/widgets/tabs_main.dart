@@ -51,21 +51,7 @@ class _GrufioTabState extends State<GrufioTab> {
   final GlobalKey _tabIconKey = GlobalKey(debugLabel: 'tabIcon');
   final GlobalKey _closeIconKey = GlobalKey(debugLabel: 'closeIcon');
 
-  void _logIconSizesOnce(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final double dpr = MediaQuery.of(context).devicePixelRatio;
-      final RenderBox? rTab =
-          _tabIconKey.currentContext?.findRenderObject() as RenderBox?;
-      final RenderBox? rClose =
-          _closeIconKey.currentContext?.findRenderObject() as RenderBox?;
-      if (rTab != null) {
-        debugPrint('[tabs] DPR=$dpr tabIcon size=${rTab.size}');
-      }
-      if (rClose != null) {
-        debugPrint('[tabs] DPR=$dpr closeIcon size=${rClose.size}');
-      }
-    });
-  }
+  // logging helper removed
 
   @override
   void initState() {
@@ -109,7 +95,6 @@ class _GrufioTabState extends State<GrufioTab> {
 
   @override
   Widget build(BuildContext context) {
-    _logIconSizesOnce(context);
     final bool isClosable = widget.onClose != null;
     final Color contentColor = widget.isActive
         ? kGrey90

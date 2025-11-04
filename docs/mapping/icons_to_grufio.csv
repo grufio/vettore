@@ -1,0 +1,22 @@
+asset_id,grufio_id,usage_size_px,usage_colors,status,notes
+chevron-down,Grufio.chevronDown,12,kGrey70/kGrey100,"ok","suffix chevron; hover changes color"
+help,Grufio.help,16,kGrey70,"ok","prefix icon in inputs"
+width,Grufio.width,16,kGrey70,"ok","prefix icon in inputs"
+height,Grufio.height,16,kGrey70,"ok","prefix icon in inputs"
+link,Grufio.link,16,kGrey70/kGrey100,"ok","toggle active/hover colors"
+unlink,Grufio.unlink,16,kGrey70/kGrey100,"ok","toggle active/hover colors"
+zoom-in,Grufio.zoomIn,24,kGrey70/kGrey100,"ok","snackbar zoom control"
+zoom-out,Grufio.zoomOut,24,kGrey70/kGrey100,"ok","snackbar zoom control"
+zoom-fit,Grufio.zoomFit,24,kGrey70/kGrey100,"ok","snackbar zoom control"
+image,Grufio.image,20,kGrey100,"ok","thumbnail footer leading icon"
+no-image,Grufio.noImage,24,kGrey70,"ok","thumbnail placeholder"
+add,Grufio.add,20,kWhite/kTabTextColorInactive,"ok","buttons/tabs add; color varies by context"
+close,Grufio.close,16,kTabTextColorInactive/kGrey100,"ok","tab close (hover shows)"
+document-blank,Grufio.documentBlank,16,kGrey70,"ok","default prefix for text input"
+home,Grufio.home,20,kTabTextColorInactive/kGrey90,"ok","home tab icon in header"
+color-palette,Grufio.colorPalette,20,kTabTextColorInactive/kGrey90,"ok","project tab icon in header"
+
+# Unscanned assets below (pending full scan of assets/icons/**):,,,
+# caret--down.svg,,,(unknown),missing?,"not mapped; verify presence in Grufio"
+# caution.svg,,,(unknown),missing?,"not mapped; verify presence in Grufio"
+

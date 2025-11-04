@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vettore/app_overview.dart';
-import 'package:vettore/app_project_detail.dart';
+import 'package:vettore/app_project_info.dart';
 import 'package:vettore/data/database.dart';
 import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:vettore/providers/application_providers.dart';
@@ -102,7 +102,7 @@ final GoRouter appRouter = GoRouter(
                   }();
                 });
               }
-              return AppProjectDetailPage(projectId: projectId);
+              return AppProjectInfoPage(projectId: projectId);
             });
           },
         ),

@@ -14,7 +14,7 @@ class TabsSyncRouterObserver extends NavigatorObserver {
     if (route == null || nav == null) return;
     final BuildContext ctx = nav.context;
     final container = ProviderScope.containerOf(ctx);
-    final String? location =
+    final String location =
         GoRouter.of(ctx).routeInformationProvider.value.location;
     if (location == null || location.isEmpty) return;
     final Uri uri = Uri.parse(location);

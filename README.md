@@ -149,17 +149,21 @@ This app uses a custom icon font (`Grufio`) for crisp, consistent icons in the m
   - DPR≥2 (retina/high‑dpi) renders noticeably crisper. On macOS without a retina display DPR=1 is expected.
   - For local checks, use iOS Simulator (retina devices) or Android emulators with xhdpi/xxhdpi.
 
-- Golden tests (tabs)
-  - Goldens are authored at DPR2.
-  - Run tests:
-    ```bash
-    flutter test test/widgets/tab_icon_ab_test.dart -r expanded
-    ```
-  - Update goldens:
-    ```bash
-    flutter test test/widgets/tab_icon_ab_test.dart --update-goldens -r expanded
-    ```
+- Review flow (no goldens)
+  - Mapping source of truth: `docs/mapping/icons_to_grufio.csv` (asset id → `Grufio` glyph, size, colors, status).
+  - For a PR that changes icons:
+    - Verify the mapping row exists/updated.
+    - Check sizes visually at DPR≥2 (retina) and DPR=1: chevron‑down 12, help/width/height 16, link/unlink 16 in 24 box, zoom icons 24, image 20, no‑image 24, add 20, close 16.
+    - Confirm alignment: integer sizes, centered in 20×20 or 24×24 containers as appropriate.
+    - Confirm colors: idle kGrey70 (or component default), hover kGrey100, exceptions noted below.
+
+- Exceptions
+  - Header tabs: add/close follow tab palette (inactive `kTabTextColorInactive`, hover `kGrey100`).
+  - Thumbnail footer leading icon uses `kGrey100` at 20.
+  - "No image" placeholder uses `kGrey70` at 24.
+  - If a glyph is missing in `Grufio`, add an entry to the mapping CSV with `status=missing` and open a follow‑up task; do not reintroduce SVGs.
 
 - Finding icon names
   - See `assets/fonts/Grufio/style.css` or `assets/fonts/Grufio/demo.html` for glyph names.
   - Constants are exposed via `Grufio.<iconName>` in `lib/icons/grufio_icons.dart`.
+  - Deterministic IDs map in `lib/icons/grufio_registry.dart` and are referenced by code (e.g. `'chevron-down'`).

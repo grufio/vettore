@@ -18,33 +18,41 @@ class SideMenu33 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // New spec: whole side panel has black background; only the active item
-    // has white background with a grey right border and black icon.
-    const Color bg = kGrey70;
+    // Remove side panel background; only the active item has a fill.
+    const Color bg = kTransparent;
 
     return Container(
-      width: 33.0,
+      width: 40.0,
       height: double.infinity,
-      decoration: const BoxDecoration(color: bg),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          _MenuIconButton(
-            icon: Grufio.documentBlank,
-            selected: selectedIndex == 0,
-            onTap: () => onSelect(0),
-          ),
-          _MenuIconButton(
-            icon: Grufio.image,
-            selected: selectedIndex == 1,
-            onTap: () => onSelect(1),
-          ),
-          _MenuIconButton(
-            icon: Grufio.colorPalette,
-            selected: selectedIndex == 2,
-            onTap: () => onSelect(2),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: bg,
+        border: Border(
+          right: BorderSide(color: kBordersColor),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: Column(
+          children: [
+            _MenuIconButton(
+              icon: Grufio.documentBlank,
+              selected: selectedIndex == 0,
+              onTap: () => onSelect(0),
+            ),
+            const SizedBox(height: 8.0),
+            _MenuIconButton(
+              icon: Grufio.image,
+              selected: selectedIndex == 1,
+              onTap: () => onSelect(1),
+            ),
+            const SizedBox(height: 8.0),
+            _MenuIconButton(
+              icon: Grufio.colorPalette,
+              selected: selectedIndex == 2,
+              onTap: () => onSelect(2),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -63,26 +71,35 @@ class _MenuIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color iconColor = selected ? kGrey100 : kWhite;
-    final BoxDecoration deco = selected
-        ? const BoxDecoration(
-            color: kWhite,
-            border: Border(right: BorderSide(color: kBordersColor)),
-          )
-        : const BoxDecoration(color: kGrey70);
+    final Color iconColor = selected ? kWhite : kGrey100;
+    // Row background remains transparent; selected state draws a 24×24 pill
+    // behind the icon with 4px radius.
+    const BoxDecoration deco = BoxDecoration(color: kTransparent);
     return GestureDetector(
       onTap: onTap,
       child: DecoratedBox(
         decoration: deco,
         child: _CrispBox(
-          w: 33.0,
-          h: 32.0,
-          childW: 20.0,
-          childH: 20.0,
-          child: Icon(
-            icon,
-            size: 20.0,
-            color: iconColor,
+          w: 24.0,
+          h: 24.0,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (selected)
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: kGrey100,
+                    borderRadius: BorderRadius.all(Radius.circular(4.0)),
+                  ),
+                ),
+              Center(
+                child: Icon(
+                  icon,
+                  size: 20.0,
+                  color: iconColor,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -95,14 +112,10 @@ class _CrispBox extends StatelessWidget {
     required this.child,
     required this.w,
     required this.h,
-    required this.childW,
-    required this.childH,
   });
   final Widget child;
   final double w;
   final double h;
-  final double childW;
-  final double childH;
 
   double _snap(BuildContext context, double logical) {
     final dpr = MediaQuery.of(context).devicePixelRatio;
@@ -116,34 +129,9 @@ class _CrispBox extends StatelessWidget {
     return SizedBox(
       width: sw,
       height: sh,
-      child: CustomSingleChildLayout(
-        delegate: _SnapCenterDelegate(
-          MediaQuery.of(context).devicePixelRatio,
-          childW,
-          childH,
-        ),
-        child: child,
-      ),
+      child: Center(child: child),
     );
   }
 }
 
-class _SnapCenterDelegate extends SingleChildLayoutDelegate {
-  const _SnapCenterDelegate(this.dpr, this.childW, this.childH);
-  final double dpr;
-  final double childW;
-  final double childH;
-  @override
-  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
-      BoxConstraints.tightFor(width: childW, height: childH);
-  @override
-  Offset getPositionForChild(Size size, Size childSize) {
-    final dx = ((size.width - childSize.width) / 2 * dpr).round() / dpr;
-    final dy = ((size.height - childSize.height) / 2 * dpr).round() / dpr;
-    return Offset(dx, dy);
-  }
-
-  @override
-  bool shouldRelayout(covariant _SnapCenterDelegate oldDelegate) =>
-      oldDelegate.dpr != dpr;
-}
+// _SnapCenterDelegate removed; using Center alignment for precise centering.
