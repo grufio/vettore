@@ -2,14 +2,14 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vettore/app_overview.dart';
-import 'package:vettore/app_project_info.dart';
+import 'package:vettore/app_project_detail.dart';
+import 'package:vettore/data/database.dart';
 import 'package:vettore/models/grufio_tab_data.dart';
+import 'package:vettore/providers/application_providers.dart';
+import 'package:vettore/providers/tabs_providers.dart';
+import 'package:vettore/services/router_observer.dart';
 import 'package:vettore/theme/app_theme_colors.dart';
 import 'package:vettore/widgets/app_header_bar.dart';
-import 'package:vettore/providers/tabs_providers.dart';
-import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/data/database.dart';
-import 'package:vettore/services/router_observer.dart';
 
 /// Global GoRouter configuration using a ShellRoute to keep the AppHeaderBar
 /// persistent while routing content underneath.
@@ -102,7 +102,7 @@ final GoRouter appRouter = GoRouter(
                   }();
                 });
               }
-              return AppProjectInfoPage(projectId: projectId);
+              return AppProjectDetailPage(projectId: projectId);
             });
           },
         ),

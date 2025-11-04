@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vettore/app_router.dart';
 import 'package:vettore/data/database.dart';
@@ -50,10 +51,18 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    // Use go_router for all platforms.
+    // Use WidgetsApp with explicit localization delegates (no Material shell)
     return WidgetsApp.router(
       color: kWhite,
       routerConfig: appRouter,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+      ],
     );
   }
 }

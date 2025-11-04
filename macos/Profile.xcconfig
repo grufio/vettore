@@ -1,2 +1,2 @@
-#include "../../Flutter/Flutter-Release.xcconfig"
-#include "Warnings.xcconfig"
+#include "Runner/Configs/Profile.xcconfig"
+#include "Runner/Configs/Warnings.xcconfig"
