@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/input_value_type/dropdown_item.dart';
+// ignore_for_file: always_use_package_imports
+import '../../theme/app_theme_colors.dart';
+import 'dropdown_item.dart';
 
 const double kDropdownItemHeight = 24.0;
 const double kDropdownPanelWidth = 120.0;

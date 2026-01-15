@@ -244,7 +244,7 @@ String? _resolveUri(
     String repoRoot, String libDir, String fromFile, String uri) {
   if (uri.startsWith('dart:')) return null; // SDK
   if (uri.startsWith('package:')) {
-    final pkg = 'package:vettore/';
+    final pkg = 'package:grufio/';
     if (!uri.startsWith(pkg)) return null; // other packages
     final rel = uri.substring(pkg.length);
     final abs = p.normalize(p.join(libDir, rel));

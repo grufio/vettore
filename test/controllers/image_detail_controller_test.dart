@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vettore/services/image_detail_controller.dart';
+import 'package:grufio/services/image_detail_controller.dart';
 
 void main() {
   group('ImageDetailController linking', () {

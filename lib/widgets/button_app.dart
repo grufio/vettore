@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
-import 'package:vettore/icons/grufio_icons.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/theme/app_theme_typography.dart';
+// ignore_for_file: always_use_package_imports
+import '../icons/grufio_icons.dart';
+import '../theme/app_theme_colors.dart';
+import '../theme/app_theme_typography.dart';
 
 class AddProjectButton extends StatefulWidget {
   const AddProjectButton({super.key, required this.onTap});

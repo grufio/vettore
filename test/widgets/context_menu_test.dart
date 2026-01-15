@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vettore/widgets/context_menu.dart';
+import 'package:grufio/widgets/context_menu.dart';
 
 void main() {
   testWidgets('Escape closes context menu via onKeyEvent', (tester) async {

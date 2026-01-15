@@ -1,11 +1,10 @@
-import 'package:drift/drift.dart' as drift;
-import 'package:vettore/data/database.dart';
-import 'package:vettore/repositories/project_repository.dart';
+// ignore_for_file: always_use_package_imports
+import '../repositories/project_repository_pg.dart';
 
 /// ProjectService centralizes common project operations via the repository
 class ProjectService {
   ProjectService({required this.repo});
-  final ProjectRepository repo;
+  final ProjectRepositoryPg repo;
 
   Future<int> createDraft(String title, {String? author}) {
     return repo.insertDraft(title: title, author: author);
@@ -30,53 +29,22 @@ class ProjectService {
     double? gridCellHeightValue,
     String? gridCellHeightUnit,
   }) async {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await repo.runInTransaction(() async {
-      await repo.update(
-        ProjectsCompanion(
-          id: drift.Value(projectId),
-          title:
-              title != null ? drift.Value(title) : const drift.Value.absent(),
-          author:
-              author != null ? drift.Value(author) : const drift.Value.absent(),
-          status:
-              status != null ? drift.Value(status) : const drift.Value.absent(),
-          imageId: imageId != null
-              ? drift.Value(imageId)
-              : const drift.Value.absent(),
-          canvasWidthPx: canvasWidthPx != null
-              ? drift.Value(canvasWidthPx)
-              : const drift.Value.absent(),
-          canvasHeightPx: canvasHeightPx != null
-              ? drift.Value(canvasHeightPx)
-              : const drift.Value.absent(),
-          canvasWidthValue: canvasWidthValue != null
-              ? drift.Value(canvasWidthValue)
-              : const drift.Value.absent(),
-          canvasWidthUnit: canvasWidthUnit != null
-              ? drift.Value(canvasWidthUnit)
-              : const drift.Value.absent(),
-          canvasHeightValue: canvasHeightValue != null
-              ? drift.Value(canvasHeightValue)
-              : const drift.Value.absent(),
-          canvasHeightUnit: canvasHeightUnit != null
-              ? drift.Value(canvasHeightUnit)
-              : const drift.Value.absent(),
-          gridCellWidthValue: gridCellWidthValue != null
-              ? drift.Value(gridCellWidthValue)
-              : const drift.Value.absent(),
-          gridCellWidthUnit: gridCellWidthUnit != null
-              ? drift.Value(gridCellWidthUnit)
-              : const drift.Value.absent(),
-          gridCellHeightValue: gridCellHeightValue != null
-              ? drift.Value(gridCellHeightValue)
-              : const drift.Value.absent(),
-          gridCellHeightUnit: gridCellHeightUnit != null
-              ? drift.Value(gridCellHeightUnit)
-              : const drift.Value.absent(),
-          updatedAt: drift.Value(now),
-        ),
-      );
-    });
+    await repo.updateFields(
+      projectId,
+      title: title,
+      author: author,
+      status: status,
+      imageId: imageId,
+      canvasWidthPx: canvasWidthPx,
+      canvasHeightPx: canvasHeightPx,
+      canvasWidthValue: canvasWidthValue,
+      canvasWidthUnit: canvasWidthUnit,
+      canvasHeightValue: canvasHeightValue,
+      canvasHeightUnit: canvasHeightUnit,
+      gridCellWidthValue: gridCellWidthValue,
+      gridCellWidthUnit: gridCellWidthUnit,
+      gridCellHeightValue: gridCellHeightValue,
+      gridCellHeightUnit: gridCellHeightUnit,
+    );
   }
 }

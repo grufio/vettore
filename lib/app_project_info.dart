@@ -1,13 +1,14 @@
 import 'package:flutter/widgets.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/side_menu_left.dart';
-import 'package:vettore/widgets/side_menu_navigation.dart'
-    show ProjectNavigation;
-import 'package:vettore/widgets/side_panel.dart';
-import 'package:vettore/widgets/content_toolbar.dart';
-import 'package:vettore/widgets/content_filter_bar.dart';
-import 'package:vettore/widgets/button_app.dart';
-import 'package:vettore/widgets/overview/asset_gallery.dart';
+
+// ignore_for_file: always_use_package_imports
+import 'theme/app_theme_colors.dart';
+import 'widgets/button_app.dart';
+import 'widgets/content_filter_bar.dart';
+import 'widgets/content_toolbar.dart';
+import 'widgets/overview/asset_gallery.dart';
+import 'widgets/side_menu_left.dart';
+import 'widgets/side_menu_navigation.dart' show ProjectNavigation;
+import 'widgets/side_panel.dart';
 
 /// Project Info page shell: renders top tabs, a 33px side menu, and a side filters panel.
 class AppProjectInfoPage extends StatefulWidget {
@@ -22,7 +23,7 @@ class AppProjectInfoPage extends StatefulWidget {
 class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
   // Side menu selection: 0=SVG, 1=Images, 2=Color Styles
   int _menuIndex = 0;
-  bool _menuOn =
+  final bool _menuOn =
       true; // when false → off style (black bg, white icons, no border)
   // No embedded context menu state here
   double _leftPanelWidth = 240.0;
@@ -54,7 +55,6 @@ class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
               _leftPanelWidth = 240.0;
             }),
             child: ProjectNavigation(
-              selectedIndex: 1,
               onTap: (_) {},
             ),
           ),
@@ -80,9 +80,7 @@ class _AppProjectInfoPageState extends State<AppProjectInfoPage> {
                 const Expanded(
                   child: ColoredBox(
                     color: kWhite,
-                    child: AssetGallery(
-                      showVendors: false,
-                    ),
+                    child: AssetGallery(),
                   ),
                 ),
               ],

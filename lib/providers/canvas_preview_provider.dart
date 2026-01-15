@@ -1,8 +1,8 @@
 import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/services/canvas_image_helpers.dart';
+import 'package:grufio/providers/project_providers.dart';
+import 'package:grufio/services/canvas_image_helpers.dart';
 
 /// Canvas preview size provider (px) derived strictly from project fields.
 /// Updates reactively when project dimensions change.

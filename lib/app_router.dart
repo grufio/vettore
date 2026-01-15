@@ -1,15 +1,14 @@
+// ignore_for_file: always_use_package_imports
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:vettore/app_overview.dart';
-import 'package:vettore/app_project_info.dart';
-import 'package:vettore/data/database.dart';
-import 'package:vettore/models/grufio_tab_data.dart';
-import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/providers/tabs_providers.dart';
-import 'package:vettore/services/router_observer.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/app_header_bar.dart';
+import 'widgets/overview/app_overview.dart';
+import 'app_project_detail.dart';
+import 'models/grufio_tab_data.dart';
+import 'providers/tabs_providers.dart';
+import 'services/router_observer.dart';
+import 'theme/app_theme_colors.dart';
+import 'widgets/app_header_bar.dart';
 
 /// Global GoRouter configuration using a ShellRoute to keep the AppHeaderBar
 /// persistent while routing content underneath.
@@ -77,33 +76,8 @@ final GoRouter appRouter = GoRouter(
           builder: (BuildContext context, GoRouterState state) {
             final String? idStr = state.pathParameters['id'];
             final int? projectId = idStr == null ? null : int.tryParse(idStr);
-            return Consumer(builder: (context, ref, _) {
-              if (projectId != null) {
-                // Ensure a tab exists & is selected; update its label from DB
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  // Add/select immediately with fallback label
-                  ref.read(tabsServiceProvider).addOrSelectProjectTab(
-                        projectId: projectId,
-                        label: 'Untitled',
-                      );
-                  // Fetch real title asynchronously and update label
-                  () async {
-                    try {
-                      final repo = ref.read(projectRepositoryProvider);
-                      final DbProject p = await repo.getById(projectId);
-                      final String label =
-                          (p.title.isNotEmpty) ? p.title : 'Untitled';
-                      ref
-                          .read(tabsProvider.notifier)
-                          .updateProjectTabLabel(projectId, label);
-                    } catch (_) {
-                      // ignore fetch errors in UI
-                    }
-                  }();
-                });
-              }
-              return AppProjectInfoPage(projectId: projectId);
-            });
+            // Tab synchronization is handled centrally by TabsSyncRouterObserver
+            return AppProjectDetailPage(projectId: projectId);
           },
         ),
       ],

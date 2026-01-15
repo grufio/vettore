@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'package:vettore/icons/grufio_icons.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
+// ignore_for_file: always_use_package_imports
+import '../icons/grufio_icons.dart';
+import '../theme/app_theme_colors.dart';
 // Context menus not used here; revert to simple tap only
 
 /// 33px full-height side menu with spec styles (external widget).

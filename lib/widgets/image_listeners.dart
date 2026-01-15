@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/services/image_detail_controller.dart';
+import 'package:grufio/providers/image_providers.dart';
+import 'package:grufio/providers/project_image_providers.dart';
+import 'package:grufio/services/image_detail_controller.dart';
 
 /// Small helper widget to wire project/image listeners and sync DPI/phys px into the controller.
 class ImageListeners extends ConsumerStatefulWidget {
@@ -22,7 +22,8 @@ class _ImageListenersState extends ConsumerState<ImageListeners> {
   int? _lastImageId;
   @override
   Widget build(BuildContext context) {
-    final int? imageId = ref.watch(imageIdStableProvider(widget.projectId));
+    final int? imageId =
+        ref.watch(projectImageIdProvider(widget.projectId)).value;
     if (imageId != null && imageId != _lastImageId) {
       _lastImageId = imageId;
       // Seed phys px

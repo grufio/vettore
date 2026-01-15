@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:grufio/theme/app_theme_colors.dart';
 
 class ArtboardView extends StatelessWidget {
   const ArtboardView({

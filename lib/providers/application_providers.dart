@@ -1,30 +1,20 @@
+// ignore_for_file: always_use_package_imports
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/data/database.dart';
-import 'package:vettore/repositories/palette_repository.dart';
-import 'package:vettore/repositories/project_repository.dart';
-import 'package:vettore/services/ai_service.dart';
-import 'package:vettore/services/project_service.dart';
-import 'package:vettore/services/settings_service.dart';
+
+import '../repositories/image_repository_pg.dart';
+import '../repositories/project_repository_pg.dart';
+import '../services/project_service.dart';
 // duplicate imports removed
 
-//-
-// Database Provider
-//-
-final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  return AppDatabase();
+/// In-memory/no-op repositories (DB removed)
+final projectRepositoryPgProvider =
+    Provider.autoDispose<ProjectRepositoryPg>((ref) {
+  return ProjectRepositoryPg();
 });
 
-//-
-// Repository Providers
-//-
-final projectRepositoryProvider = Provider<ProjectRepository>((ref) {
-  final db = ref.watch(appDatabaseProvider);
-  return ProjectRepository(db);
-});
-
-final paletteRepositoryProvider = Provider<PaletteRepository>((ref) {
-  final db = ref.watch(appDatabaseProvider);
-  return PaletteRepository(db);
+final imageRepositoryPgProvider =
+    Provider.autoDispose<ImageRepositoryPg>((ref) {
+  return ImageRepositoryPg();
 });
 
 // removed legacy projectsNew provider
@@ -33,42 +23,26 @@ final paletteRepositoryProvider = Provider<PaletteRepository>((ref) {
 // Service Providers
 //-
 final projectServiceProvider = Provider<ProjectService>((ref) {
-  final repo = ref.watch(projectRepositoryProvider);
-  return ProjectService(repo: repo);
+  final repoPg = ref.watch(projectRepositoryPgProvider);
+  return ProjectService(repo: repoPg);
 });
 
-final aiServiceProvider = Provider<AIService>((ref) {
-  final settingsService = ref.watch(settingsServiceProvider);
-  return AIService(settingsService: settingsService);
-});
-
-// removed legacy projectNew service provider
+// removed AIService and legacy providers
 
 //-
 // UI State Providers
 //-
 // Removed: DPI is now image-scoped (images.dpi)
 
-// Overview menu selection (HomeNavigation) - default Projects / All
+// Overview menu selection (HomeNavigation) - default Projects / All (ephemeral)
 class HomeNavIndexNotifier extends StateNotifier<int> {
-  HomeNavIndexNotifier(this._settings) : super(1) {
-    try {
-      final cached = _settings.getInt(_key, 1);
-      state = cached;
-    } catch (_) {
-      // ignore settings read errors
-    }
-  }
-  final SettingsService _settings;
-  static const String _key = 'homeNavIndex';
+  HomeNavIndexNotifier() : super(1);
   void set(int index) {
     state = index;
-    _settings.setInt(_key, index);
   }
 }
 
 final homeNavSelectedIndexProvider =
     StateNotifierProvider<HomeNavIndexNotifier, int>((ref) {
-  final settings = ref.watch(settingsServiceProvider);
-  return HomeNavIndexNotifier(settings);
+  return HomeNavIndexNotifier();
 });

@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
-import 'package:vettore/widgets/artboard_view.dart';
-import 'package:vettore/widgets/snackbar_image.dart';
+import 'package:grufio/widgets/artboard_view.dart';
+import 'package:grufio/widgets/snackbar_image.dart';
 
 class ImagePreview extends StatelessWidget {
   const ImagePreview({

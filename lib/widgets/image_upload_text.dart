@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/widgets.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:grufio/theme/app_theme_colors.dart';
 
 class ImageUploadText extends StatefulWidget {
   const ImageUploadText({

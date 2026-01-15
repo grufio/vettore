@@ -9,16 +9,16 @@ import 'package:flutter/material.dart'
         TextCapitalization;
 import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:flutter/widgets.dart';
-import 'package:vettore/icons/grufio_icons.dart';
+import 'package:grufio/icons/grufio_icons.dart';
 // Removed: keyboard services, handled by RawAutocomplete and TextField
 // Removed: async utilities
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/theme/app_theme_typography.dart';
-import 'package:vettore/widgets/input_value_type/controller.dart';
-import 'package:vettore/widgets/input_value_type/dropdown_overlay.dart'
+import 'package:grufio/theme/app_theme_colors.dart';
+import 'package:grufio/theme/app_theme_typography.dart';
+import 'package:grufio/widgets/input_value_type/controller.dart';
+import 'package:grufio/widgets/input_value_type/dropdown_overlay.dart'
     as ivt_ovl;
-import 'package:vettore/widgets/input_value_type/prefix_icon.dart';
-import 'package:vettore/widgets/input_value_type/suffix.dart' as ivt_sfx;
+import 'package:grufio/widgets/input_value_type/prefix_icon.dart';
+import 'package:grufio/widgets/input_value_type/suffix.dart' as ivt_sfx;
 
 /// Visual/behavior variants for the right-side affordance.
 /// - regular: fixed suffix text (if provided), no dropdown.

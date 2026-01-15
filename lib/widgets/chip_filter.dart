@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/theme/app_theme_typography.dart';
+// ignore_for_file: always_use_package_imports
+import '../theme/app_theme_colors.dart';
+import '../theme/app_theme_typography.dart';
 
 /// Active filter chip
 /// - height: 20px

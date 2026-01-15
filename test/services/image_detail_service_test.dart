@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vettore/services/image_detail_service.dart';
+import 'package:grufio/services/image_detail_service.dart';
 
 void main() {
   group('ImageDetailService', () {

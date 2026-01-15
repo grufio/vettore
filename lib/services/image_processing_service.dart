@@ -1,27 +1,26 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart' show FilterQuality;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grufio/providers/image_providers.dart';
+import 'package:grufio/services/image_compute.dart' as ic;
+import 'package:grufio/services/logger.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:vettore/data/database.dart';
-import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/services/image_compute.dart' as ic;
-import 'package:vettore/services/logger.dart';
-import 'package:vettore/services/settings_service.dart';
+
+// ignore_for_file: always_use_package_imports
+import '../providers/application_providers.dart';
+import '../providers/runtime_settings_provider.dart';
 
 class ImageProcessingService {
   const ImageProcessingService();
 
   Future<void> quantizeImage(WidgetRef ref, int projectId) async {
-    final projectRepository = ref.read(projectRepositoryProvider);
-    final settings = ref.read(settingsServiceProvider);
-    final db = ref.read(appDatabaseProvider);
+    final projectRepository = ref.read(projectRepositoryPgProvider);
+    final settings = ref.read(runtimeSettingsProvider);
+    final images = ref.read(imageRepositoryPgProvider);
     final project = await projectRepository.getById(projectId);
     if (project.imageId == null) return;
     try {
@@ -32,10 +31,7 @@ class ImageProcessingService {
 
       final inputPath = '${tempDir.path}/temp_in.png';
       final outputPath = '${tempDir.path}/temp_out.png';
-      final imageRow = await (db.select(db.images)
-            ..where((t) => t.id.equals(project.imageId!)))
-          .getSingle();
-      final inputBytes = imageRow.convSrc ?? imageRow.origSrc;
+      final inputBytes = await images.getBestBytes(project.imageId!);
       if (inputBytes == null || inputBytes.isEmpty) return;
       await File(inputPath).writeAsBytes(inputBytes);
 
@@ -54,9 +50,7 @@ class ImageProcessingService {
       }
 
       final newImageData = await File(outputPath).readAsBytes();
-      final paletteJson = result.stdout as String;
-      final paletteList =
-          (jsonDecode(paletteJson) as List).map((c) => c as List).toList();
+      // Palette result is printed by script; not persisted in PG schema
 
       final ic.DecodedDimensions decodedDims =
           await compute(ic.decodeDimensions, newImageData);
@@ -64,18 +58,9 @@ class ImageProcessingService {
         throw Exception('Could not decode the quantized image output.');
       }
 
-      await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
-          .write(ImagesCompanion(
-        convSrc: Value(newImageData),
-        convBytes: Value(newImageData.length),
-        convWidth: Value(decodedDims.width),
-        convHeight: Value(decodedDims.height),
-        convUniqueColors: Value(paletteList.length),
-      ));
-      final now = DateTime.now().millisecondsSinceEpoch;
-      await projectRepository.update(
-        ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)),
-      );
+      await images.setConverted(project.imageId!, newImageData);
+      // Bump project updated_at via dynamic updateFields (no field changes needed)
+      await projectRepository.updateFields(projectId);
       // Invalidate derived bytes
       ref.invalidate(imageBytesProvider(project.imageId!));
     } catch (e, st) {
@@ -91,8 +76,8 @@ class ImageProcessingService {
     required int targetH,
     required String interpolationName,
   }) async {
-    final projectRepository = ref.read(projectRepositoryProvider);
-    final db = ref.read(appDatabaseProvider);
+    final projectRepository = ref.read(projectRepositoryPgProvider);
+    final images = ref.read(imageRepositoryPgProvider);
     final project = await projectRepository.getById(projectId);
     if (project.imageId == null) return;
 
@@ -104,10 +89,7 @@ class ImageProcessingService {
     final scriptContent = await rootBundle.loadString('scripts/resize_cv.py');
     await File(scriptPath).writeAsString(scriptContent);
 
-    final imageRow = await (db.select(db.images)
-          ..where((t) => t.id.equals(project.imageId!)))
-        .getSingle();
-    final orig = imageRow.origSrc;
+    final orig = await images.getBestBytes(project.imageId!);
     if (orig == null || orig.isEmpty) return;
     await File(inputPath).writeAsBytes(orig);
 
@@ -124,27 +106,11 @@ class ImageProcessingService {
     }
 
     final newImageData = await File(outputPath).readAsBytes();
-    final dims = jsonDecode(result.stdout as String) as Map<String, dynamic>;
-    final newW = dims['width'] as int;
-    final newH = dims['height'] as int;
+    // Dimensions are parsed for verification only (not persisted in PG schema)
+    // final dims = jsonDecode(result.stdout as String) as Map<String, dynamic>;
 
-    final ic.UniqueColorsResult uc2 =
-        await compute(ic.decodeUniqueColors, newImageData);
-    final int uniqueColorCount = uc2.count;
-
-    await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
-        .write(ImagesCompanion(
-      convSrc: Value(newImageData),
-      convBytes: Value(newImageData.length),
-      convWidth: Value(newW),
-      convHeight: Value(newH),
-      convUniqueColors: Value(uniqueColorCount),
-    ));
-
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await projectRepository.update(
-      ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)),
-    );
+    await images.setConverted(project.imageId!, newImageData);
+    await projectRepository.updateFields(projectId);
 
     if (project.imageId != null) {
       ref.invalidate(imageBytesProvider(project.imageId!));
@@ -165,8 +131,8 @@ class ImageProcessingService {
     required double scalePercent,
     required FilterQuality filterQuality,
   }) async {
-    final projectRepository = ref.read(projectRepositoryProvider);
-    final db = ref.read(appDatabaseProvider);
+    final projectRepository = ref.read(projectRepositoryPgProvider);
+    final images = ref.read(imageRepositoryPgProvider);
     final project = await projectRepository.getById(projectId);
     if (project.imageId == null) return;
 
@@ -179,10 +145,7 @@ class ImageProcessingService {
 
       final inputPath = '${tempDir.path}/resize_in.png';
       final inputFile = File(inputPath);
-      final imageRow = await (db.select(db.images)
-            ..where((t) => t.id.equals(project.imageId!)))
-          .getSingle();
-      final orig = imageRow.origSrc;
+      final orig = await images.getBestBytes(project.imageId!);
       if (orig == null || orig.isEmpty) return;
       await inputFile.writeAsBytes(orig);
 
@@ -202,25 +165,11 @@ class ImageProcessingService {
       }
 
       final newImageData = await File(outputPath).readAsBytes();
-      final dimensionsJson = jsonDecode(result.stdout as String);
-      final newWidth = (dimensionsJson['width'] as int).toDouble();
-      final newHeight = (dimensionsJson['height'] as int).toDouble();
+      // Dimensions JSON only for debug/verification; not persisted
+      // final dimensionsJson = jsonDecode(result.stdout as String);
 
-      final ic.UniqueColorsResult uc =
-          await compute(ic.decodeUniqueColors, newImageData);
-      final int uniqueColorCount = uc.count;
-
-      await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
-          .write(ImagesCompanion(
-        convSrc: Value(newImageData),
-        convBytes: Value(newImageData.length),
-        convWidth: Value(newWidth.toInt()),
-        convHeight: Value(newHeight.toInt()),
-        convUniqueColors: Value(uniqueColorCount),
-      ));
-      final now = DateTime.now().millisecondsSinceEpoch;
-      await projectRepository.update(
-          ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)));
+      await images.setConverted(project.imageId!, newImageData);
+      await projectRepository.updateFields(projectId);
 
       if (project.imageId != null) {
         ref.invalidate(imageBytesProvider(project.imageId!));
@@ -236,29 +185,12 @@ class ImageProcessingService {
   }
 
   Future<void> resetImage(WidgetRef ref, int projectId) async {
-    final projectRepository = ref.read(projectRepositoryProvider);
-    final db = ref.read(appDatabaseProvider);
+    final projectRepository = ref.read(projectRepositoryPgProvider);
     final project = await projectRepository.getById(projectId);
     if (project.imageId == null) return;
 
-    int uniqueColorCount = 0;
-    final imageRow = await (db.select(db.images)
-          ..where((t) => t.id.equals(project.imageId!)))
-        .getSingleOrNull();
-    final orig = imageRow?.origSrc;
-    if (orig != null) {
-      final ic.UniqueColorsResult uc3 =
-          await compute(ic.decodeUniqueColors, orig);
-      uniqueColorCount = uc3.count;
-    }
-
-    await (db.update(db.images)..where((t) => t.id.equals(project.imageId!)))
-        .write(ImagesCompanion(
-      convUniqueColors: Value(uniqueColorCount),
-    ));
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await projectRepository
-        .update(ProjectsCompanion(id: Value(projectId), updatedAt: Value(now)));
+    // Unique colors not persisted in PG schema; skip counting.
+    await projectRepository.updateFields(projectId);
   }
 }
 

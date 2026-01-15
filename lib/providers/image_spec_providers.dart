@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // project_provider not needed here
-import 'package:vettore/services/settings_service.dart';
+import 'package:grufio/services/settings_service.dart';
 
 // Removed ImageSpec/imageSpecProvider (unused)
 

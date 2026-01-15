@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:grufio/theme/app_theme_colors.dart';
 
 enum SidePanelSide { left, right }
 

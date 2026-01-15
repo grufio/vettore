@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 /// Pumps a minimal ProviderScope + Directionality shell and executes [run]
 /// with the [WidgetRef] after first frame.
@@ -47,4 +48,3 @@ class CallsTracker {
     resizeCalled = false;
   }
 }
-

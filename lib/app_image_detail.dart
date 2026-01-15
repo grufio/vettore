@@ -2,39 +2,39 @@ import 'dart:async';
 import 'dart:io' show File;
 import 'dart:typed_data';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 // dimensions_guard not used here any more
 import 'package:flutter/foundation.dart'
     show compute, debugPrint, kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/data/database.dart';
-// import 'package:vettore/widgets/image_upload_text.dart';
-import 'package:vettore/providers/application_providers.dart';
+// import 'package:grufio/widgets/image_upload_text.dart';
+import 'package:grufio/providers/application_providers.dart';
+// image repo is accessed via provider in _handleImageBytes
 // Replaced specific rows with unified DimensionRow (now used inside panel)
-import 'package:vettore/providers/canvas_preview_provider.dart';
-import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/providers/navigation_providers.dart';
-import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/services/image_actions.dart';
-import 'package:vettore/services/image_compute.dart' as ic;
-import 'package:vettore/services/image_detail_controller.dart';
-// import 'package:vettore/services/image_detail_service.dart';
-import 'package:vettore/services/image_upload_service.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/artboard_view.dart';
-import 'package:vettore/widgets/image_detail/image_detail_header_bar.dart';
-import 'package:vettore/widgets/image_detail/image_detail_right_panel.dart';
+import 'package:grufio/providers/canvas_preview_provider.dart';
+import 'package:grufio/providers/image_providers.dart';
+import 'package:grufio/providers/navigation_providers.dart';
+import 'package:grufio/providers/project_image_providers.dart';
+// removed legacy project_provider; using PG providers
+import 'package:grufio/services/image_actions.dart';
+import 'package:grufio/services/image_compute.dart' as ic;
+import 'package:grufio/services/image_detail_controller.dart';
+// import 'package:grufio/services/image_detail_service.dart';
+import 'package:grufio/services/image_upload_service.dart';
+import 'package:grufio/theme/app_theme_colors.dart';
+import 'package:grufio/widgets/artboard_view.dart';
+import 'package:grufio/widgets/image_detail/image_detail_header_bar.dart';
+import 'package:grufio/widgets/image_detail/image_detail_right_panel.dart';
 // Dimension panel now wrapped by ImageDimensionsSection
 // removed unused image_resize_service import after inlining px computation
-import 'package:vettore/widgets/image_listeners.dart';
+import 'package:grufio/widgets/image_listeners.dart';
 // PhotoView removed in favor of InteractiveViewer for infinite pasteboard
 
-import 'package:vettore/widgets/image_preview.dart';
-import 'package:vettore/widgets/image_upload_text.dart';
-import 'package:vettore/widgets/input_value_type/dimension_compare_utils.dart';
-import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
+import 'package:grufio/widgets/image_preview.dart';
+import 'package:grufio/widgets/image_upload_text.dart';
+import 'package:grufio/widgets/input_value_type/dimension_compare_utils.dart';
+import 'package:grufio/widgets/input_value_type/interpolation_map.dart';
 // side_panel moved into ImageDetailRightPanel
 
 class AppImageDetailPage extends ConsumerStatefulWidget {
@@ -69,7 +69,7 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
   String _interp = 'nearest';
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
-  StreamSubscription<DbProject?>? _projectSub;
+  StreamSubscription<dynamic>? _projectSub;
   // Link/unlink width/height
   bool _linkWH = false;
   // Units are controlled by ImageDetailController
@@ -153,7 +153,9 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
     }
 
     // Trigger provider resolution (unused local)
-    ref.watch(imageIdStableProvider(_currentProjectId ?? -1));
+    if (_currentProjectId != null) {
+      ref.watch(projectImageIdProvider(_currentProjectId!));
+    }
 
     // Restore per-project transform once when project id is ready
     if (!_transformAppliedForProject && _currentProjectId != null) {
@@ -239,8 +241,8 @@ class _AppImageDetailPageState extends ConsumerState<AppImageDetailPage>
                             trimTrailingDot(_inputValueController2.text);
                         final double? wVal = double.tryParse(wText);
                         final double? hVal = double.tryParse(hText);
-                        final int? imgId =
-                            ref.read(imageIdStableProvider(_currentProjectId!));
+                        final int? imgId = await ref.read(
+                            projectImageIdProvider(_currentProjectId!).future);
                         if (imgId == null) return;
                         final int dpi =
                             (await ref.read(imageDpiProvider(imgId).future)) ??
@@ -298,25 +300,21 @@ extension on _AppImageDetailPageState {
     final int? decodedDpi = await compute(ic.decodeDpi, bytes);
     final int? width = dims.width;
     final int? height = dims.height;
-    final imagesDao = ref.read(appDatabaseProvider);
-    // Insert image row
+    final imagesRepo = ref.read(imageRepositoryPgProvider);
+    // Insert image row (PG)
     final String mime = ic.detectMimeType(bytes);
-    final imageId = await imagesDao.into(imagesDao.images).insert(
-          ImagesCompanion.insert(
-            origSrc: Value(bytes),
-            origBytes: Value(bytes.length),
-            origWidth: width != null ? Value(width) : const Value.absent(),
-            origHeight: height != null ? Value(height) : const Value.absent(),
-            mimeType: Value(mime),
-          ),
-        );
-    // Persist DPI (schema v22+): write both orig_dpi and dpi
+    final imageId = await imagesRepo.insertBase(
+      origSrc: bytes,
+      origBytes: bytes.length,
+      origWidth: width,
+      origHeight: height,
+      mimeType: mime,
+    );
+    // Persist DPI
     final int resolvedDpi =
         (decodedDpi != null && decodedDpi > 0) ? decodedDpi : 96;
-    await imagesDao.customStatement(
-      'UPDATE images SET orig_dpi = ?, dpi = ? WHERE id = ?',
-      [resolvedDpi, resolvedDpi, imageId],
-    );
+    await imagesRepo.setDpiAndPhys(
+        imageId, resolvedDpi, width?.toDouble(), height?.toDouble());
     // Point project to this image via ProjectService (batched writes)
     final projectService = ref.read(projectServiceProvider);
     await projectService.batchUpdate(
@@ -326,11 +324,6 @@ extension on _AppImageDetailPageState {
     );
     // Do not modify project canvas from Image upload path (strict decoupling)
     debugPrint('[ImageDetail] image stored id=$imageId; updating controllers');
-    // Seed physical pixel floats from original dimensions
-    await imagesDao.customStatement(
-      'UPDATE images SET phys_width_px4 = ?, phys_height_px4 = ? WHERE id = ?',
-      [width?.toDouble(), height?.toDouble(), imageId],
-    );
     // Invalidate phys-pixels provider so any listeners refresh
     ref.invalidate(imagePhysPixelsProvider(imageId));
     // Update controllers from physical floats
@@ -352,7 +345,7 @@ extension on _AppImageDetailPageState {
 
   Future<void> _initProject() async {
     // Determine project to load: prefer explicit id, else load first project if any
-    final repo = ref.read(projectRepositoryProvider);
+    final repo = ref.read(projectRepositoryPgProvider);
     try {
       if (widget.projectId != null) {
         _currentProjectId = widget.projectId;
@@ -377,7 +370,7 @@ extension on _AppImageDetailPageState {
         _currentProjectId ??
         ref.watch(currentProjectIdProvider);
     final int? imageId =
-        (pid != null) ? ref.watch(imageIdStableProvider(pid)) : null;
+        (pid != null) ? ref.watch(projectImageIdProvider(pid)).value : null;
     final Uint8List? bytes = (imageId != null)
         ? ref.watch(
             imageBytesProvider(imageId).select((a) => a.asData?.value),

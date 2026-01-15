@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:vettore/icons/grufio_icons.dart';
+// ignore_for_file: always_use_package_imports
+import 'grufio_icons.dart';
 
 // Central deterministic registry mapping stable IDs to IconData.
 const Map<String, IconData> grufioById = <String, IconData>{

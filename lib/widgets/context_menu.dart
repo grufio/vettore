@@ -1,185 +1,88 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/input_value_type/dropdown_overlay.dart'
-    show kDropdownItemHeight, kDropdownPanelWidth;
-
-class ContextMenuItem {
-  const ContextMenuItem({required this.label, required this.onTap});
-  final String label;
-  final VoidCallback onTap;
-}
-
-class ContextMenuController {
-  OverlayEntry? _entry;
-  void close() {
-    _entry?.remove();
-    _entry = null;
-  }
-}
+import 'package:flutter/widgets.dart';
+// ignore_for_file: always_use_package_imports
+import '../theme/app_theme_colors.dart';
+import 'input_value_type/dropdown_overlay.dart';
 
 class ContextMenu {
   static const double menuWidth = kDropdownPanelWidth;
   static const double itemHeight = kDropdownItemHeight;
-  static const EdgeInsets panelPadding = EdgeInsets.all(8.0);
-  // Single-open guard
-  static ContextMenuController? _activeController;
-  static VoidCallback? _activeOnClose;
-  static void _clearActive() {
-    _activeController = null;
-    _activeOnClose = null;
-  }
 
-  static ContextMenuController show({
+  static void show({
     required BuildContext context,
     required Offset globalPosition,
     required List<ContextMenuItem> items,
-    VoidCallback? onClose,
+    required VoidCallback onClose,
   }) {
-    // Close any existing menu first (material will also handle single-open, but we ensure border clears)
-    _activeController?.close();
-    _activeOnClose?.call();
-    _clearActive();
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+    // Wrap items to ensure the overlay entry is removed on selection
+    final List<ContextMenuItem> wrappedItems = items
+        .map((it) => ContextMenuItem(
+              label: it.label,
+              onTap: () {
+                entry.remove();
+                it.onTap();
+                onClose();
+              },
+            ))
+        .toList();
 
-    final controller = ContextMenuController();
-
-    // Use a custom overlay panel to avoid requiring MaterialLocalizations
-    final RenderBox overlayBox =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
-    final Offset local = overlayBox.globalToLocal(globalPosition);
-
-    void dismiss() {
-      onClose?.call();
-      controller.close();
-      _clearActive();
-    }
-
-    final FocusNode _rootFocus = FocusNode();
-    final OverlayEntry entry = OverlayEntry(
-      builder: (BuildContext context) {
-        return RawKeyboardListener(
-          focusNode: _rootFocus,
-          autofocus: true,
-          onKey: (RawKeyEvent e) {
-            if (e is RawKeyDownEvent &&
-                e.logicalKey == LogicalKeyboardKey.escape) {
-              dismiss();
-            }
-          },
-          child: Stack(
-            children: [
-              // Dismiss on outside tap
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: dismiss,
-                ),
-              ),
-              Positioned(
-                left: local.dx,
-                top: local.dy,
-                child: _ContextMenuPanel(
-                  items: items,
-                  onDismiss: dismiss,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    entry = OverlayEntry(
+      builder: (_) => _MenuPanel(
+        position: globalPosition,
+        items: wrappedItems,
+        onClose: () {
+          entry.remove();
+          onClose();
+        },
+      ),
     );
-
-    controller._entry = entry;
-    Overlay.of(context).insert(entry);
-    // Ensure keyboard focus for ESC handling
-    // ignore: discarded_futures
-    Future<void>.delayed(Duration.zero).then((_) => _rootFocus.requestFocus());
-    _activeController = controller;
-    _activeOnClose = onClose;
-    return controller;
+    overlay.insert(entry);
   }
 }
 
-class _ContextMenuPanel extends StatefulWidget {
-  const _ContextMenuPanel({required this.items, required this.onDismiss});
+class ContextMenuItem {
+  ContextMenuItem({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+}
+
+class _MenuPanel extends StatelessWidget {
+  const _MenuPanel(
+      {required this.position, required this.items, required this.onClose});
+  final Offset position;
   final List<ContextMenuItem> items;
-  final VoidCallback onDismiss;
-
-  @override
-  State<_ContextMenuPanel> createState() => _ContextMenuPanelState();
-}
-
-class _ContextMenuPanelState extends State<_ContextMenuPanel> {
-  int _hoverIndex = -1;
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
+  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: Focus(
-        focusNode: _focusNode,
-        autofocus: true,
-        onFocusChange: (hasFocus) {
-          if (!hasFocus) widget.onDismiss();
-        },
-        onKeyEvent: (node, KeyEvent event) {
-          if (event is KeyDownEvent &&
-              event.logicalKey == LogicalKeyboardKey.escape) {
-            widget.onDismiss();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
+    return Stack(children: [
+      Positioned.fill(
+        child: GestureDetector(
+            onTap: onClose, child: const ColoredBox(color: Color(0x00000000))),
+      ),
+      Positioned(
+        left: position.dx,
+        top: position.dy,
         child: ConstrainedBox(
           constraints:
               const BoxConstraints.tightFor(width: kDropdownPanelWidth),
-          child: Container(
-            padding: ContextMenu.panelPadding,
-            decoration: const BoxDecoration(
-              color: kGrey100,
-              borderRadius: BorderRadius.all(Radius.circular(8.0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x22000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
+          child: ColoredBox(
+            color: kGrey100,
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (int i = 0; i < widget.items.length; i++)
-                  _ContextMenuRow(
-                    label: widget.items[i].label,
-                    hovered: _hoverIndex == i,
-                    onEnter: () => setState(() => _hoverIndex = i),
-                    onExit: () => setState(() => _hoverIndex = -1),
-                    onTap: () {
-                      widget.onDismiss();
-                      widget.items[i].onTap();
-                    },
-                  ),
-              ],
+              children: [for (final it in items) _MenuRow(item: it)],
             ),
           ),
         ),
       ),
-    );
+    ]);
   }
 }
 
 class _MenuRow extends StatefulWidget {
-  const _MenuRow({required this.label});
-  final String label;
+  const _MenuRow({required this.item});
+  final ContextMenuItem item;
   @override
   State<_MenuRow> createState() => _MenuRowState();
 }
@@ -191,67 +94,16 @@ class _MenuRowState extends State<_MenuRow> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: Container(
-        height: kDropdownItemHeight,
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        decoration: BoxDecoration(
-          color: _hovered ? kInputBackground : kTransparent,
-          borderRadius: const BorderRadius.all(Radius.circular(4.0)),
-        ),
-        alignment: Alignment.centerLeft,
-        child: Text(
-          widget.label,
-          style: const TextStyle(
-            fontSize: 12.0,
-            fontWeight: FontWeight.w400,
-            color: kWhite,
-            height: 1.0,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-  }
-}
-
-class _ContextMenuRow extends StatelessWidget {
-  const _ContextMenuRow({
-    required this.label,
-    required this.hovered,
-    required this.onTap,
-    required this.onEnter,
-    required this.onExit,
-  });
-  final String label;
-  final bool hovered;
-  final VoidCallback onTap;
-  final VoidCallback onEnter;
-  final VoidCallback onExit;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => onEnter(),
-      onExit: (_) => onExit(),
       child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
+        onTap: widget.item.onTap,
         child: Container(
           height: kDropdownItemHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          color: hovered ? kInputBackground : kTransparent,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12.0,
-              fontWeight: FontWeight.w400,
-              color: kWhite,
-              height: 1.0,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          color: _hovered ? kInputBackground : kTransparent,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child:
+                Text(widget.item.label, style: const TextStyle(color: kWhite)),
           ),
         ),
       ),

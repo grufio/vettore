@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:vettore/widgets/chip_filter.dart';
+// ignore_for_file: always_use_package_imports
+import 'chip_filter.dart';
 
 class FilterItem {
   const FilterItem({required this.id, required this.label});
@@ -15,7 +16,7 @@ class ContentFilterBar extends StatefulWidget {
     required this.activeId,
     required this.onChanged,
     this.height = 40.0,
-    this.horizontalPadding = 24.0,
+    this.horizontalPadding = 16.0,
     this.gap = 4.0,
     this.scrollable = true,
   });

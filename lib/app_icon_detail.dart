@@ -5,31 +5,29 @@ import 'dart:async';
 import 'dart:io' show File;
 import 'dart:typed_data';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart'
     show debugPrint, kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/data/database.dart';
-import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/providers/canvas_preview_provider.dart';
-import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/providers/navigation_providers.dart';
-import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/services/image_actions.dart';
-// import 'package:vettore/services/image_compute.dart' as ic; // not used for SVG
-import 'package:vettore/services/image_detail_controller.dart';
-import 'package:vettore/services/image_upload_service.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/artboard_view.dart';
-import 'package:vettore/widgets/image_detail/image_detail_header_bar.dart';
-import 'package:vettore/widgets/image_detail/image_detail_right_panel.dart';
-import 'package:vettore/widgets/image_listeners.dart';
-import 'package:vettore/widgets/image_preview.dart';
-import 'package:vettore/widgets/image_upload_text.dart';
-import 'package:vettore/widgets/input_value_type/dimension_compare_utils.dart';
-import 'package:vettore/widgets/input_value_type/interpolation_map.dart';
+import 'package:grufio/providers/application_providers.dart';
+import 'package:grufio/providers/canvas_preview_provider.dart';
+import 'package:grufio/providers/image_providers.dart';
+import 'package:grufio/providers/navigation_providers.dart';
+import 'package:grufio/providers/project_image_providers.dart';
+import 'package:grufio/services/image_actions.dart';
+// import 'package:grufio/services/image_compute.dart' as ic; // not used for SVG
+import 'package:grufio/services/image_detail_controller.dart';
+import 'package:grufio/services/image_upload_service.dart';
+import 'package:grufio/theme/app_theme_colors.dart';
+import 'package:grufio/widgets/artboard_view.dart';
+import 'package:grufio/widgets/image_detail/image_detail_header_bar.dart';
+import 'package:grufio/widgets/image_detail/image_detail_right_panel.dart';
+import 'package:grufio/widgets/image_listeners.dart';
+import 'package:grufio/widgets/image_preview.dart';
+import 'package:grufio/widgets/image_upload_text.dart';
+import 'package:grufio/widgets/input_value_type/dimension_compare_utils.dart';
+import 'package:grufio/widgets/input_value_type/interpolation_map.dart';
 
 class AppIconDetailPage extends ConsumerStatefulWidget {
   const AppIconDetailPage({super.key, this.projectId});
@@ -50,7 +48,7 @@ class _AppIconDetailPageState extends ConsumerState<AppIconDetailPage>
   String _interp = 'nearest';
   int? _currentProjectId;
   double _rightPanelWidth = 320.0;
-  StreamSubscription<DbProject?>? _projectSub;
+  StreamSubscription<dynamic>? _projectSub;
   bool _linkWH = false;
   int? _requestedDimsForImageId;
   int? _lastProjectId;
@@ -106,7 +104,9 @@ class _AppIconDetailPageState extends ConsumerState<AppIconDetailPage>
       _lastProjectId = _currentProjectId;
     }
 
-    ref.watch(imageIdStableProvider(_currentProjectId ?? -1));
+    if (_currentProjectId != null) {
+      ref.watch(projectImageIdProvider(_currentProjectId!));
+    }
 
     if (!_transformAppliedForProject && _currentProjectId != null) {
       final Matrix4? saved = _savedTransforms[_currentProjectId!];
@@ -183,8 +183,8 @@ class _AppIconDetailPageState extends ConsumerState<AppIconDetailPage>
                             trimTrailingDot(_inputValueController2.text);
                         final double? wVal = double.tryParse(wText);
                         final double? hVal = double.tryParse(hText);
-                        final int? imgId =
-                            ref.read(imageIdStableProvider(_currentProjectId!));
+                        final int? imgId = await ref
+                            .read(projectImageIdProvider(_currentProjectId!).future);
                         if (imgId == null) return;
                         final int dpi =
                             (await ref.read(imageDpiProvider(imgId).future)) ??
@@ -245,7 +245,7 @@ class _AppIconDetailPageState extends ConsumerState<AppIconDetailPage>
   }
 
   Future<void> _initProject() async {
-    final repo = ref.read(projectRepositoryProvider);
+    final repo = ref.read(projectRepositoryPgProvider);
     try {
       if (widget.projectId != null) {
         _currentProjectId = widget.projectId;
@@ -266,8 +266,9 @@ class _AppIconDetailPageState extends ConsumerState<AppIconDetailPage>
     final int? pid = widget.projectId ??
         _currentProjectId ??
         ref.watch(currentProjectIdProvider);
-    final int? imageId =
-        (pid != null) ? ref.watch(imageIdStableProvider(pid)) : null;
+    final int? imageId = (pid != null)
+        ? ref.watch(projectImageIdProvider(pid)).value
+        : null;
     final Uint8List? bytes = (imageId != null)
         ? ref.watch(
             imageBytesProvider(imageId).select((a) => a.asData?.value),
@@ -397,22 +398,18 @@ extension on _AppIconDetailPageState {
     final _SvgSize? svg = parsed.$1;
     final int? width = svg?.width?.round();
     final int? height = svg?.height?.round();
-    final imagesDao = ref.read(appDatabaseProvider);
+    final imagesRepo = ref.read(imageRepositoryPgProvider);
     final String mime = 'image/svg+xml';
-    final imageId = await imagesDao.into(imagesDao.images).insert(
-          ImagesCompanion.insert(
-            origSrc: Value(bytes),
-            origBytes: Value(bytes.length),
-            origWidth: width != null ? Value(width) : const Value.absent(),
-            origHeight: height != null ? Value(height) : const Value.absent(),
-            mimeType: Value(mime),
-          ),
-        );
-    final int resolvedDpi = 96;
-    await imagesDao.customStatement(
-      'UPDATE images SET orig_dpi = ?, dpi = ? WHERE id = ?',
-      [resolvedDpi, resolvedDpi, imageId],
+    final imageId = await imagesRepo.insertBase(
+      origSrc: bytes,
+      origBytes: bytes.length,
+      origWidth: width,
+      origHeight: height,
+      mimeType: mime,
     );
+    final int resolvedDpi = 96;
+    await imagesRepo.setDpiAndPhys(
+        imageId, resolvedDpi, width?.toDouble(), height?.toDouble());
     final projectService = ref.read(projectServiceProvider);
     await projectService.batchUpdate(
       ref,
@@ -420,10 +417,7 @@ extension on _AppIconDetailPageState {
       imageId: imageId,
     );
     debugPrint('[IconDetail] image stored id=$imageId; updating controllers');
-    await imagesDao.customStatement(
-      'UPDATE images SET phys_width_px4 = ?, phys_height_px4 = ? WHERE id = ?',
-      [width?.toDouble(), height?.toDouble(), imageId],
-    );
+    // phys already set above with setDpiAndPhys
     ref.invalidate(imagePhysPixelsProvider(imageId));
     _imgCtrl?.applyRemotePx(
         widthPx: width?.toDouble(), heightPx: height?.toDouble());
@@ -464,7 +458,7 @@ extension on _AppIconDetailPageState {
 }
 
 class _SvgSize {
+  const _SvgSize({this.width, this.height});
   final double? width;
   final double? height;
-  const _SvgSize({this.width, this.height});
 }

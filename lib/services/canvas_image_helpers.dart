@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
+import 'package:grufio/widgets/input_value_type/unit_conversion.dart';
 
 /// Returns the canvas preview size in pixels for on-screen rendering only.
 /// Strictly derived from the project's stored value+unit; no image coupling.

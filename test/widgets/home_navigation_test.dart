@@ -2,8 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/side_menu_navigation.dart';
+import 'package:grufio/theme/app_theme_colors.dart';
+import 'package:grufio/widgets/side_menu_navigation.dart';
 
 void main() {
   testWidgets('ProjectNavigation: selected uses kSelected', (tester) async {

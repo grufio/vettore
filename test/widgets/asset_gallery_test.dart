@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vettore/data/database.dart';
-import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/widgets/overview/asset_gallery.dart'
+import 'package:grufio/data/database.dart';
+import 'package:grufio/providers/project_provider.dart';
+import 'package:grufio/widgets/overview/asset_gallery.dart'
     as hg; // providers + widget
-import 'package:vettore/widgets/thumbnail_tile.dart';
+import 'package:grufio/widgets/thumbnail_tile.dart';
 
 void main() {
   group('HomeGallery grid', () {

@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:flutter/widgets.dart';
-import 'package:vettore/widgets/input_value_type/input_value_type.dart';
-import 'package:vettore/widgets/input_value_type/number_utils.dart';
+import 'package:grufio/widgets/input_value_type/input_value_type.dart';
+import 'package:grufio/widgets/input_value_type/number_utils.dart';
 
 /// A thin wrapper around InputValueType that renders a text field with a unit
 /// selector dropdown and a suffix that mirrors the selected unit. It centralizes

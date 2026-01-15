@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/app_router.dart';
-import 'package:vettore/providers/tabs_providers.dart';
-import 'package:vettore/models/grufio_tab_data.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
-import 'package:vettore/services/settings_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:vettore/app_router.dart';
 import 'package:vettore/data/database.dart';
+import 'package:vettore/models/grufio_tab_data.dart';
+import 'package:vettore/providers/tabs_providers.dart';
+import 'package:vettore/services/settings_service.dart';
 
 class _FakeSettings extends SettingsService {
   _FakeSettings() : super(AppDatabase());

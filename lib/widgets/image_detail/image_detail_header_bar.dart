@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/content_filter_bar.dart';
+import 'package:grufio/theme/app_theme_colors.dart';
+import 'package:grufio/widgets/content_filter_bar.dart';
 
 class ImageDetailHeaderBar extends StatelessWidget {
   const ImageDetailHeaderBar({

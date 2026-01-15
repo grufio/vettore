@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:vettore/data/database.dart';
-import 'package:vettore/services/logger.dart';
+import 'package:grufio/data/database.dart';
+import 'package:grufio/services/logger.dart';
 
 // A simple script to verify the color weights in the database.
 //

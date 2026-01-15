@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/thumbnail_tile.dart';
+import 'package:grufio/theme/app_theme_colors.dart';
+import 'package:grufio/widgets/thumbnail_tile.dart';
 
 /// Square-thumbnail gallery intended for SVG previews (1:1 image area).
 /// Data wiring will be added later – for now we render an empty/placeholder grid

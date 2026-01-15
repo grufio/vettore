@@ -1,7 +1,8 @@
 import 'package:flutter/widgets.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
-import 'package:vettore/icons/grufio_icons.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
+// ignore_for_file: always_use_package_imports
+import '../../icons/grufio_icons.dart';
+import '../../theme/app_theme_colors.dart';
 
 class DropdownItem extends StatefulWidget {
   const DropdownItem({
@@ -48,8 +49,7 @@ class _DropdownItemState extends State<DropdownItem> {
                 width: 16.0,
                 height: 16.0,
                 child: widget.isSelected
-                    ? const Icon(Grufio.checkmark,
-                        size: 16.0, color: kWhite)
+                    ? const Icon(Grufio.checkmark, size: 16.0, color: kWhite)
                     : const SizedBox.shrink(),
               ),
               const SizedBox(width: 8.0),

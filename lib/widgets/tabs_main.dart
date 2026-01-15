@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'package:vettore/icons/grufio_icons.dart';
-import 'package:vettore/icons/grufio_registry.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
+import 'package:grufio/icons/grufio_icons.dart';
+import 'package:grufio/icons/grufio_registry.dart';
+import 'package:grufio/theme/app_theme_colors.dart';
 
 // Vector loaders removed; using font icons
 

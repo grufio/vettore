@@ -1,0 +1,21 @@
+{
+  "projects": [
+    {
+      "title": "Demo",
+      "status": "at_work",
+      "updated_at": 1761177600000,
+      "created_at": 1761177600000,
+      "author": null,
+      "image_id": null
+    },
+    {
+      "title": "Corporate",
+      "status": "at_work",
+      "updated_at": 1758672000000,
+      "created_at": 1758672000000,
+      "author": null,
+      "image_id": null
+    }
+  ]
+}
+

@@ -2,35 +2,36 @@
 
 import 'dart:async';
 
-import 'package:drift/drift.dart' show Variable;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, TextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/data/database.dart';
-import 'package:vettore/providers/application_providers.dart';
+
+// ignore_for_file: always_use_package_imports
+import 'providers/application_providers.dart';
 // import removed: DPI control moved to Image Detail
-import 'package:vettore/providers/canvas_providers.dart';
+import 'providers/canvas_providers.dart';
 // import 'package:vettore/services/dimensions_guard.dart';
 // import 'package:flutter/foundation.dart' show compute;
 // import 'package:vettore/services/image_compute.dart' as ic;
 
-import 'package:vettore/providers/navigation_providers.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/button_app.dart';
-import 'package:vettore/widgets/constants/input_constants.dart';
-import 'package:vettore/widgets/content_filter_bar.dart';
-import 'package:vettore/widgets/input_value_type/dimension_row.dart';
-import 'package:vettore/widgets/input_value_type/input_value_type.dart';
+import 'providers/navigation_providers.dart';
+import 'repositories/project_repository_pg.dart';
+import 'theme/app_theme_colors.dart';
+import 'widgets/button_app.dart';
+import 'widgets/constants/input_constants.dart';
+import 'widgets/content_filter_bar.dart';
+import 'widgets/input_value_type/dimension_row.dart';
+import 'widgets/input_value_type/input_value_type.dart';
 // import 'package:vettore/widgets/image_upload_text.dart';
 // import 'package:vettore/widgets/image_upload_area.dart';
-import 'package:vettore/widgets/input_value_type/text_default.dart';
-import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
-import 'package:vettore/widgets/input_value_type/unit_value_controller.dart';
-import 'package:vettore/widgets/section_sidebar.dart';
-import 'package:vettore/widgets/side_panel.dart';
+import 'widgets/input_value_type/text_default.dart';
+import 'widgets/input_value_type/unit_conversion.dart';
+import 'widgets/input_value_type/unit_value_controller.dart';
+import 'widgets/section_sidebar.dart';
+import 'widgets/side_panel.dart';
 
 class AppProjectDetailPage extends ConsumerStatefulWidget {
   const AppProjectDetailPage({
@@ -72,7 +73,7 @@ class _AppProjectDetailPageState extends ConsumerState<AppProjectDetailPage>
   double _rightPanelWidth = 320.0;
   String _lastSavedTitle = '';
   late final FocusNode _projectTitleFocusNode;
-  StreamSubscription<DbProject?>? _projectSub;
+  StreamSubscription<ProjectRow?>? _projectSub;
   // Scoped rebuild: notify preview only when px size changes
   final ValueNotifier<Size?> _canvasPxNotifier = ValueNotifier<Size?>(null);
   // Link/unlink width/height
@@ -614,7 +615,7 @@ extension on _AppProjectDetailPageState {
 
   Future<void> _initProject() async {
     // Determine project to load: prefer explicit id, else load first project if any
-    final repo = ref.read(projectRepositoryProvider);
+    final repo = ref.read(projectRepositoryPgProvider);
     try {
       if (widget.projectId != null) {
         _currentProjectId = widget.projectId;
@@ -673,7 +674,7 @@ extension on _AppProjectDetailPageState {
   void _subscribeToProject(int projectId) {
     _projectSub?.cancel();
     _projectSub =
-        ref.read(projectRepositoryProvider).watchById(projectId).listen((p) {
+        ref.read(projectRepositoryPgProvider).watchById(projectId).listen((p) {
       if (!mounted) return;
       if (p == null) {
         return;
@@ -707,48 +708,32 @@ extension on _AppProjectDetailPageState {
 
   Future<void> _loadCanvasSpecFromDb(int projectId) async {
     try {
-      final db = ref.read(appDatabaseProvider);
-      final row = await db.customSelect(
-        'SELECT canvas_width_value, canvas_width_unit, canvas_height_value, canvas_height_unit, '
-        'grid_cell_width_value, grid_cell_width_unit, grid_cell_height_value, grid_cell_height_unit '
-        'FROM projects WHERE id = ? LIMIT 1',
-        variables: [Variable.withInt(projectId)],
-      ).getSingleOrNull();
-      if (row == null) return;
-      final data = row.data;
-      final num? cwRaw = data['canvas_width_value'] as num?;
-      final num? chRaw = data['canvas_height_value'] as num?;
-      final String? cuw = data['canvas_width_unit'] as String?;
-      final String? cuh = data['canvas_height_unit'] as String?;
-      final num? gcwRaw = data['grid_cell_width_value'] as num?;
-      final num? gchRaw = data['grid_cell_height_value'] as num?;
-      final String? gcwu = data['grid_cell_width_unit'] as String?;
-      final String? gchu = data['grid_cell_height_unit'] as String?;
-      _canvasWUnit = cuw ?? 'mm';
-      _canvasHUnit = cuh ?? 'mm';
+      final p = await ref.read(projectRepositoryPgProvider).getById(projectId);
+      _canvasWUnit = p.canvasWidthUnit;
+      _canvasHUnit = p.canvasHeightUnit;
       _canvasWUnitE = parseUnit(_canvasWUnit);
       _canvasHUnitE = parseUnit(_canvasHUnit);
       _persistWUnitE = _canvasWUnitE;
       _persistHUnitE = _canvasHUnitE;
-      _inputValueController.text = (cwRaw ?? 100).toString();
-      _inputValueController2.text = (chRaw ?? 100).toString();
-      _persistWVal = (cwRaw ?? 100).toDouble();
-      _persistHVal = (chRaw ?? 100).toDouble();
+      _inputValueController.text = p.canvasWidthValue.toString();
+      _inputValueController2.text = p.canvasHeightValue.toString();
+      _persistWVal = p.canvasWidthValue;
+      _persistHVal = p.canvasHeightValue;
       // Seed grid controllers/units
-      _gridWUnit = gcwu ?? 'mm';
-      _gridHUnit = gchu ?? 'mm';
+      _gridWUnit = p.gridCellWidthUnit;
+      _gridHUnit = p.gridCellHeightUnit;
       _gridWUnitE = parseUnit(_gridWUnit);
       _gridHUnitE = parseUnit(_gridHUnit);
-      _gridWController.text = (gcwRaw ?? 10).toString();
-      _gridHController.text = (gchRaw ?? 10).toString();
+      _gridWController.text = p.gridCellWidthValue.toString();
+      _gridHController.text = p.gridCellHeightValue.toString();
       _recomputeGridFromInputs();
       final double wPx = convertUnitTyped(
-          value: (cwRaw ?? 100).toDouble(),
+          value: p.canvasWidthValue,
           from: _canvasWUnitE,
           to: Unit.px,
           dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);
       final double hPx = convertUnitTyped(
-          value: (chRaw ?? 100).toDouble(),
+          value: p.canvasHeightValue,
           from: _canvasHUnitE,
           to: Unit.px,
           dpi: _AppProjectDetailPageState.kCanvasPreviewPpi);

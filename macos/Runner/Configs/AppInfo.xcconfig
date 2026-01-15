@@ -5,7 +5,7 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = vettore
+PRODUCT_NAME = grufio
 // Ensure a valid Swift module name in all configs
 PRODUCT_MODULE_NAME = $(PRODUCT_NAME:rfc1034identifier)
 SWIFT_MODULE_NAME = $(PRODUCT_MODULE_NAME)

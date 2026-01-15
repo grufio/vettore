@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vettore/widgets/thumbnail_tile.dart';
+import 'package:grufio/widgets/thumbnail_tile.dart';
 
 // A 1x1 transparent PNG
 final Uint8List kPng1x1 = Uint8List.fromList(<int>[

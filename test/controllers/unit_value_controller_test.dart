@@ -15,7 +15,7 @@ void main() {
       // User types 120.50 mm
       c.setValueFromUnit(120.50, isUserInput: true);
       // Simulate storage rounding to nearest integer pixel in background
-      final pxBefore = c.valuePx!;
+      final pxBefore = c.valuePx;
       c.setValuePx(pxBefore + 0.3); // < 0.5 px drift → should echo typed value
       final display = c.getDisplayValueInUnit();
       expect(display, isNotNull);

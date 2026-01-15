@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:vettore/services/settings_service.dart';
+import 'package:grufio/services/settings_service.dart';
 
 class AIService {
   AIService({required SettingsService settingsService})

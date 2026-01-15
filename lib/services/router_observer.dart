@@ -1,9 +1,10 @@
 import 'package:flutter/widgets.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/data/database.dart';
-import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/providers/tabs_providers.dart';
+import 'package:go_router/go_router.dart';
+
+// ignore_for_file: always_use_package_imports
+import '../providers/application_providers.dart';
+import '../providers/tabs_providers.dart';
 
 /// Navigator observer that keeps header tabs in sync with the current URL.
 /// - Ensures a project tab exists and is selected when navigating to /project/:id
@@ -16,7 +17,7 @@ class TabsSyncRouterObserver extends NavigatorObserver {
     final container = ProviderScope.containerOf(ctx);
     final String location =
         GoRouter.of(ctx).routeInformationProvider.value.location;
-    if (location == null || location.isEmpty) return;
+    if (location.isEmpty) return;
     final Uri uri = Uri.parse(location);
     if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'project') {
       if (uri.pathSegments.length >= 2) {
@@ -30,8 +31,8 @@ class TabsSyncRouterObserver extends NavigatorObserver {
           // Fetch title and update label asynchronously
           () async {
             try {
-              final repo = container.read(projectRepositoryProvider);
-              final DbProject p = await repo.getById(projectId);
+              final repo = container.read(projectRepositoryPgProvider);
+              final p = await repo.getById(projectId);
               final String label = (p.title.isNotEmpty) ? p.title : 'Untitled';
               container
                   .read(tabsProvider.notifier)

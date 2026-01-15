@@ -1,28 +1,28 @@
-// lib/app_overview.dart
+// lib/widgets/overview/app_overview.dart
 
 import 'dart:io' show Platform;
+import 'dart:convert' show jsonDecode;
+import 'package:flutter/services.dart' show rootBundle;
 
-import 'package:drift/drift.dart' as drift show Value;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-// Removed inline detail pages; routing handles project pages
-import 'package:vettore/data/database.dart';
-import 'package:vettore/models/grufio_tab_data.dart';
-import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/providers/tabs_providers.dart';
-// import 'package:vettore/providers/project_provider.dart';
-// import 'package:vettore/widgets/app_header_bar.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
-import 'package:vettore/widgets/button_app.dart';
-import 'package:vettore/widgets/content_filter_bar.dart';
-import 'package:vettore/widgets/content_toolbar.dart';
-import 'package:vettore/widgets/side_menu_navigation.dart';
+// ignore_for_file: always_use_package_imports
+import '../../models/grufio_tab_data.dart';
+import '../../providers/application_providers.dart';
+import '../../providers/tabs_providers.dart';
+// import 'package:grufio/providers/project_provider.dart';
+// import 'package:grufio/widgets/app_header_bar.dart';
+import '../../theme/app_theme_colors.dart';
+import '../button_app.dart';
+import '../content_filter_bar.dart';
+import '../content_toolbar.dart';
 // import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:vettore/widgets/overview/asset_gallery.dart';
-import 'package:vettore/widgets/overview/overview_header.dart';
-import 'package:vettore/widgets/side_panel.dart';
-import 'package:vettore/widgets/tabs_main.dart' show GrufioTab;
+import 'asset_gallery.dart';
+import 'overview_header.dart';
+import '../side_menu_navigation.dart';
+import '../side_panel.dart';
+import '../tabs_main.dart' show GrufioTab;
 
 const double _kToolbarHeight = 40.0;
 
@@ -77,6 +77,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
   int _activeIndex = 0;
   String _activeFilterId = 'completed';
   double _sidePanelWidth = 260.0;
+  String _pageTitle = 'Projects';
   // int? _newProjectIdForDetail; // removed
   // Persistent index now handled by provider
   final _tabs = <GrufioTabData>[
@@ -93,6 +94,27 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
     super.initState();
     // Force initial view to Home (gallery)
     _activeIndex = 0;
+    _loadTitleFromJson();
+  }
+
+  Future<void> _loadTitleFromJson() async {
+    try {
+      final String jsonString =
+          await rootBundle.loadString('data/app_overview.json');
+      final dynamic decoded = jsonDecode(jsonString);
+      if (decoded is Map<String, dynamic>) {
+        final String? title = decoded['pageTitle']?.toString();
+        if (title != null && title.isNotEmpty) {
+          if (mounted) {
+            setState(() {
+              _pageTitle = title;
+            });
+          }
+        }
+      }
+    } catch (_) {
+      // Ignore errors and keep default title
+    }
   }
 
   void _onCloseTab(int index) {
@@ -110,24 +132,10 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
   void _onAddTab() {
     // Create an Untitled project, then insert a tab labeled with its title
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final repo = ref.read(projectRepositoryProvider);
-      final now = DateTime.now().millisecondsSinceEpoch;
+      final svc = ref.read(projectServiceProvider);
       int id;
       try {
-        id = await repo.insert(ProjectsCompanion.insert(
-          title: 'Untitled',
-          author: const drift.Value(null),
-          status: const drift.Value('draft'),
-          createdAt: now,
-          updatedAt: now,
-          imageId: const drift.Value(null),
-          canvasWidthPx: const drift.Value(100),
-          canvasHeightPx: const drift.Value(100),
-          canvasWidthValue: const drift.Value(100.0),
-          canvasWidthUnit: const drift.Value('mm'),
-          canvasHeightValue: const drift.Value(100.0),
-          canvasHeightUnit: const drift.Value('mm'),
-        ));
+        id = await svc.createDraft('Untitled');
       } catch (e) {
         // ignore: avoid_print
         print('[overview] project insert failed: $e');
@@ -138,7 +146,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
         setState(() {
           final int paletteIndex =
               _tabs.indexWhere((t) => t.label == 'Palette');
-          final int insertIndex =
+        final int insertIndex =
               paletteIndex >= 0 ? paletteIndex + 1 : _tabs.length;
           _tabs.insert(
             insertIndex,
@@ -197,11 +205,11 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
               ),
               Expanded(
                 child: Consumer(builder: (context, ref, _) {
-                  final navIndex = ref.watch(homeNavSelectedIndexProvider);
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ContentToolbar(
+                        title: _pageTitle,
                         trailing: [
                           AddProjectButton(
                               onTap: widget.onAddProject ?? _onAddTab),
@@ -215,22 +223,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                         activeId: _activeFilterId,
                         onChanged: (id) => setState(() => _activeFilterId = id),
                       ),
-                      Expanded(
-                          child: AssetGallery(
-                        onOpenProject: widget.onOpenProject ??
-                            (int projId) {
-                              if (mounted) {
-                                context.push('/project/$projId');
-                              }
-                            },
-                        onOpenVendor: widget.onOpenVendor,
-                        showProjects: (navIndex >= 0 && navIndex <= 7)
-                            ? true
-                            : (navIndex == 1),
-                        showVendors: (navIndex >= 8 && navIndex <= 11)
-                            ? true
-                            : (navIndex == 9),
-                      )),
+                      const Expanded(child: AssetGallery()),
                     ],
                   );
                 }),
@@ -292,6 +285,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                         children: [
                           if (_activeIndex == 0)
                             ContentToolbar(
+                              title: _pageTitle,
                               trailing: [
                                 AddProjectButton(
                                     onTap: widget.onAddProject ?? _onAddTab),
@@ -307,27 +301,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
                               onChanged: (id) =>
                                   setState(() => _activeFilterId = id),
                             ),
-                          Expanded(
-                            child: Consumer(builder: (context, ref2, _) {
-                              final navIndex =
-                                  ref2.watch(homeNavSelectedIndexProvider);
-                              return AssetGallery(
-                                onOpenProject: widget.onOpenProject ??
-                                    (int projId) {
-                                      if (mounted) {
-                                        context.push('/project/$projId');
-                                      }
-                                    },
-                                onOpenVendor: widget.onOpenVendor,
-                                showProjects: (navIndex >= 0 && navIndex <= 7)
-                                    ? true
-                                    : (navIndex == 1),
-                                showVendors: (navIndex >= 8 && navIndex <= 11)
-                                    ? true
-                                    : (navIndex == 9),
-                              );
-                            }),
-                          ),
+                          const Expanded(child: AssetGallery()),
                         ],
                       ),
                     ),
@@ -362,7 +336,7 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
           // Content
           Expanded(
             child: Center(
-              child: Text('Content for Tab ${_activeIndex + 1}'),
+              child: Text('Content for Tab ${_activeIndex + 1}')
             ),
           ),
         ],
@@ -370,3 +344,6 @@ class _AppOverviewPageState extends ConsumerState<AppOverviewPage> {
     );
   }
 }
+
+
+

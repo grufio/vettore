@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/providers/image_spec_providers.dart';
-import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/services/image_detail_controller.dart';
-import 'package:vettore/widgets/image_dimension_panel.dart';
+import 'package:grufio/providers/application_providers.dart';
+import 'package:grufio/providers/image_providers.dart';
+import 'package:grufio/providers/image_spec_providers.dart';
+import 'package:grufio/providers/project_image_providers.dart';
+import 'package:grufio/services/image_detail_controller.dart';
+import 'package:grufio/widgets/image_dimension_panel.dart';
 
 class ImageDimensionsSection extends ConsumerWidget {
   const ImageDimensionsSection({
@@ -32,7 +32,7 @@ class ImageDimensionsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final int? imageId = ref.watch(imageIdStableProvider(projectId));
+    final int? imageId = ref.watch(projectImageIdProvider(projectId)).value;
     final bool hasImage = imageId != null;
 
     // Ensure unit controllers reflect persisted selection (per project)
@@ -68,12 +68,12 @@ class ImageDimensionsSection extends ConsumerWidget {
       currentDpi: currentDpi,
       onDpiChanged: (newDpi) async {
         if (imageId == null) return;
-        final db = ref.read(appDatabaseProvider);
-        await db.customStatement(
-          'UPDATE images SET dpi = ? WHERE id = ?',
-          [newDpi, imageId],
-        );
-        // Update controllers immediately to keep conversions consistent
+        // Keep existing phys values, only update dpi
+        final (double?, double?) phys =
+            await ref.read(imagePhysPixelsProvider(imageId).future);
+        await ref
+            .read(imageRepositoryPgProvider)
+            .setDpiAndPhys(imageId, newDpi, phys.$1, phys.$2);
         imgCtrl.setUiDpi(newDpi);
         ref.invalidate(imageDpiProvider(imageId));
       },

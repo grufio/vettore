@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:vettore/theme/app_theme_colors.dart';
+// ignore_for_file: always_use_package_imports
+import 'app_theme_colors.dart';
 
 // Exported text style constants
 class AppTextStylesExported {

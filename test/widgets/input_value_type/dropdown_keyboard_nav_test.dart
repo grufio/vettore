@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vettore/widgets/input_value_type/input_value_type.dart';
+import 'package:grufio/widgets/input_value_type/input_value_type.dart';
 
 void main() {
   Widget makeHost(Widget child) {

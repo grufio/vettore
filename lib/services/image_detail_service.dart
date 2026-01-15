@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/providers/application_providers.dart';
-import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/providers/project_provider.dart';
-import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
+// ignore_for_file: always_use_package_imports
+import '../providers/application_providers.dart';
+import '../providers/image_providers.dart';
+import '../widgets/input_value_type/unit_conversion.dart';
 
 class ImageDetailService {
   const ImageDetailService();
@@ -46,12 +46,9 @@ class ImageDetailService {
   /// Persist physical floats to DB for an image id.
   Future<void> persistPhys(
       WidgetRef ref, int imageId, double physW, double physH) async {
-    final db = ref.read(appDatabaseProvider);
-    await db.customStatement(
-      'UPDATE images SET phys_width_px4 = ?, phys_height_px4 = ? WHERE id = ?',
-      [physW, physH, imageId],
-    );
-    // Invalidate phys provider to propagate changes
+    final repo = ref.read(imageRepositoryPgProvider);
+    final int? dpi = await repo.getDpi(imageId);
+    await repo.setDpiAndPhys(imageId, dpi ?? 96, physW, physH);
     ref.invalidate(imagePhysPixelsProvider(imageId));
   }
 

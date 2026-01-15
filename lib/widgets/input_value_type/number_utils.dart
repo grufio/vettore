@@ -1,4 +1,4 @@
-import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
+import 'package:grufio/widgets/input_value_type/unit_conversion.dart';
 
 /// Keep only digits and at most a single decimal separator '.'
 String sanitizeNumber(String raw) {

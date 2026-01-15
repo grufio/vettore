@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:vettore/widgets/input_value_type/unit_conversion.dart';
+import 'package:grufio/widgets/input_value_type/unit_conversion.dart';
 
 /// Controller that manages a numeric value stored in base pixels, its display
 /// unit, and DPI for conversions. Supports optional linking with a partner

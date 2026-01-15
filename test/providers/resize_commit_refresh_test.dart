@@ -1,9 +1,10 @@
 // unused import removed
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vettore/services/image_actions.dart';
 import 'package:vettore/services/image_detail_service.dart';
+
+import '../test_utils.dart';
 
 void main() {
   testWidgets('resizeCommit persists phys and refreshes providers',
@@ -11,36 +12,33 @@ void main() {
     bool calledPersist = false;
     bool calledResize = false;
 
-    await tester.pumpWidget(ProviderScope(
+    await pumpWithRef(
+      tester,
       overrides: [
         imageDetailServiceProvider.overrideWithValue(_FakeDetailService(
           onPersistPhys: (imageId, w, h) => calledPersist = true,
           onResize: (w, h) => calledResize = true,
         )),
       ],
-      child: Consumer(builder: (context, ref, _) {
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
-          final actions = ref.read(imageActionsProvider);
-          await actions.resizeCommit(
-            ref,
-            projectId: 123,
-            imageId: 1,
-            interpName: 'nearest',
-            curPhysW: 100,
-            curPhysH: 50,
-            typedW: 200,
-            wUnit: 'px',
-            typedH: 100,
-            hUnit: 'px',
-            dpi: 96,
-            onPhysCommitted: (w, h) {},
-          );
-        });
-        return const SizedBox.shrink();
-      }),
-    ));
+      run: (ref) async {
+        final actions = ref.read(imageActionsProvider);
+        await actions.resizeCommit(
+          ref,
+          projectId: 123,
+          imageId: 1,
+          interpName: 'nearest',
+          curPhysW: 100,
+          curPhysH: 50,
+          typedW: 200,
+          wUnit: 'px',
+          typedH: 100,
+          hUnit: 'px',
+          dpi: 96,
+          onPhysCommitted: (w, h) {},
+        );
+      },
+    );
 
-    await tester.pumpAndSettle();
     expect(calledResize, isTrue);
     expect(calledPersist, isTrue);
   });

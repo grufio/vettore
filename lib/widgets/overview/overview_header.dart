@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'package:vettore/models/grufio_tab_data.dart';
-import 'package:vettore/widgets/app_header_bar.dart';
+// ignore_for_file: always_use_package_imports
+import '../../models/grufio_tab_data.dart';
+import '../app_header_bar.dart';
 
 class OverviewHeader extends StatelessWidget {
   const OverviewHeader({
@@ -25,7 +26,6 @@ class OverviewHeader extends StatelessWidget {
       activeIndex: activeIndex,
       onTabSelected: onTabSelected,
       onCloseTab: onCloseTab,
-      onAddTab: onAddTab,
     );
   }
 }

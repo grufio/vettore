@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vettore/providers/image_providers.dart';
-import 'package:vettore/services/image_detail_service.dart';
+import 'package:grufio/providers/image_providers.dart';
+import 'package:grufio/services/image_detail_service.dart';
 
 class ImageActions {
   const ImageActions();

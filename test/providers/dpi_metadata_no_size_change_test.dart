@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vettore/providers/image_providers.dart';
+import 'package:grufio/providers/image_providers.dart';
 
 void main() {
   testWidgets('DPI metadata change does not alter phys pixels', (tester) async {

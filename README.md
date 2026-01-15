@@ -120,7 +120,7 @@ This app uses a custom icon font (`Grufio`) for crisp, consistent icons in the m
 - Usage
   - Import once where needed:
     ```dart
-    import 'package:vettore/icons/grufio_icons.dart';
+    import 'package:grufio/icons/grufio_icons.dart';
     ```
   - Render icons at their intended size for that usage (avoid runtime scaling). Sizes are not fixed to 20x20; preserve each icon’s existing size and its container/hit area:
     ```dart

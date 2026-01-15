@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vettore/app_project_detail.dart';
+import 'package:grufio/app_project_detail.dart';
 
 void main() {
   testWidgets('Model/Type persistence and filtering', (tester) async {
